@@ -11,6 +11,10 @@ dist/
 # env — NEVER commit real credentials
 .env.local
 .env
+.supabase-db-password
+
+# supabase local
+supabase/.temp/
 
 # misc
 .DS_Store
