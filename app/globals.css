@@ -2,42 +2,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Semantic tokens — values switch via .light / .dark on <html> */
+/* Claude-inspired warm neutrals + navy structure + gold accent */
 :root,
 .light {
-  --bg-page: #f0f9ff;
-  --bg-card: #ffffff;
-  --bg-surface: #f0f9ff;
-  --bg-badge: #dbeafe;
-  --fg: #0c1a2e;
-  --border: #bae6fd;
-  --muted: #647a90;
-  --muted-light: #94aec4;
-  --accent: #0891b2;
-  --accent-light: #e0f9ff;
-  --primary: #1d4ed8;
-  --primary-fg: #ffffff;
-  --danger: #dc2626;
-  --hint-ok: #059669;
-  --hint-warn-border: #93c5fd;
+  --bg-page: #faf6ef;
+  --bg-card: #fffcf8;
+  --bg-surface: #f5f0e8;
+  --bg-badge: #eef2f8;
+  --fg: #0f1a2e;
+  --border: #e5ddd2;
+  --muted: #6b7485;
+  --muted-light: #9aa3b0;
+  --accent: #c9a227;
+  --accent-light: #fdf8e8;
+  --primary: #152a47;
+  --primary-fg: #fffcf8;
+  --danger: #b91c1c;
+  --hint-ok: #047857;
+  --hint-warn-border: #e0d4a8;
 }
 
 .dark {
-  --bg-page: #07101e;
-  --bg-card: #0d1829;
-  --bg-surface: #121f33;
-  --bg-badge: #1a3050;
-  --fg: #dff0ff;
-  --border: #1e3a5f;
-  --muted: #5a82a0;
-  --muted-light: #3d5d78;
-  --accent: #22d3ee;
-  --accent-light: #083344;
-  --primary: #3b82f6;
-  --primary-fg: #ffffff;
+  --bg-page: #010306;
+  --bg-card: #03060c;
+  --bg-surface: #060b14;
+  --bg-badge: #0a101c;
+  --fg: #f5f0e8;
+  --border: #0f1828;
+  --muted: #6d8aa3;
+  --muted-light: #445a6e;
+  --accent: #f0c829;
+  --accent-light: #2e2818;
+  --primary: #356599;
+  --primary-fg: #f5f0e8;
   --danger: #f87171;
   --hint-ok: #34d399;
-  --hint-warn-border: #1e40af;
+  --hint-warn-border: #4a4020;
 }
 
 @theme inline {
