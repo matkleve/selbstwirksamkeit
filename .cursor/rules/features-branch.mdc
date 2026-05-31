@@ -1,0 +1,11 @@
+---
+description: Feature work must use the features git branch
+alwaysApply: true
+---
+
+# Features-Branch
+
+- Commit all feature work on branch **`features`**, never on `master`.
+- Before editing: `git switch features` (or create from `origin/features`).
+- Push to `origin features` after commits.
+- See `AGENTS.md` for full workflow.
