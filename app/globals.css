@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  --accent: #cc7a4a;
+  --accent-light: #f5e6d8;
+}
+
+body {
+  background: #faf9f7;
+  color: #1a1a1a;
+  font-family: system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #111;
+    color: #f0ece6;
+  }
+}
