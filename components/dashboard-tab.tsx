@@ -1,11 +1,10 @@
 import { isToday, calcStreak, nudgeText, timeAgo } from '@/lib/utils'
 import type { Entry } from '@/lib/types'
 import { CategoryPills } from '@/components/category-pills'
+import { Button } from '@/components/button'
 
 const cardClass = 'bg-card border border-border rounded-xl p-5 mb-4'
 const labelClass = 'text-[11px] text-muted uppercase tracking-wider mb-2.5'
-const primaryBtnClass =
-  'bg-primary text-primary-fg border-0 rounded-lg px-[18px] py-2 text-sm cursor-pointer font-inherit disabled:opacity-45 disabled:cursor-not-allowed'
 
 function pickFrom(entries: Entry[], minDays: number, maxDays: number): Entry | null {
   const pool = entries.filter(e => {
@@ -76,16 +75,12 @@ export function DashboardTab({
       {entries.length === 0 && (
         <div className="text-center py-12">
           <p className="text-muted text-sm mb-4">Noch keine Einträge. Fang jetzt an!</p>
-          <button type="button" onClick={onAddClick} className={primaryBtnClass}>
-            + Ersten Erfolg eintragen
-          </button>
+          <Button onClick={onAddClick}>+ Ersten Erfolg eintragen</Button>
         </div>
       )}
 
       {entries.length > 0 && (
-        <button type="button" onClick={onAddClick} className={`${primaryBtnClass} w-full mt-1`}>
-          + Neuen Erfolg eintragen
-        </button>
+        <Button onClick={onAddClick} className="w-full mt-1">+ Neuen Erfolg eintragen</Button>
       )}
     </>
   )

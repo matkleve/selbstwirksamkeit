@@ -1,10 +1,9 @@
 import { nudgeText, timeAgo } from '@/lib/utils'
 import type { Entry } from '@/lib/types'
+import { Button } from '@/components/button'
 
 const cardClass = 'bg-card border border-border rounded-xl p-5 mb-4'
 const labelClass = 'text-[11px] text-muted uppercase tracking-wider mb-2.5'
-const ghostBtnClass =
-  'bg-transparent text-muted border border-border rounded-lg px-[18px] py-2 text-sm cursor-pointer font-inherit'
 
 export function ReminderTab({
   reminder,
@@ -30,9 +29,9 @@ export function ReminderTab({
           </p>
         </div>
       ) : null}
-      <button type="button" onClick={onPickAnother} className={`${ghostBtnClass} w-full mt-3`}>
+      <Button variant="ghost" onClick={onPickAnother} className="w-full mt-3">
         ↻ Andere Erinnerung
-      </button>
+      </Button>
     </>
   )
 }

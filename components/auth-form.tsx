@@ -4,12 +4,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Button } from '@/components/button'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
 
 const inputClass =
   'w-full border border-border rounded-lg px-3 py-2.5 text-[15px] font-inherit outline-none bg-surface text-foreground'
-const primaryBtnClass =
-  'bg-primary text-primary-fg border-0 rounded-lg px-[18px] py-2 text-sm cursor-pointer font-inherit disabled:opacity-45 disabled:cursor-not-allowed'
 
 export function AuthForm() {
   const router = useRouter()
@@ -76,13 +75,13 @@ export function AuthForm() {
           </ul>
         )}
         {authError && <p className="text-[13px] text-danger">{authError}</p>}
-        <button
+        <Button
           type="submit"
           disabled={authMode === 'signup' && !passwordOk}
-          className={primaryBtnClass}
+          className="w-full"
         >
           {authMode === 'login' ? 'Anmelden' : 'Registrieren'}
-        </button>
+        </Button>
       </form>
       <button
         type="button"
