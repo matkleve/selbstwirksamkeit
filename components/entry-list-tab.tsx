@@ -18,9 +18,11 @@ function filterBtnClass(active: boolean) {
 export function EntryListTab({
   entries,
   onDelete,
+  onAddClick,
 }: {
   entries: Entry[]
   onDelete: (id: string) => void
+  onAddClick: () => void
 }) {
   const [activeFilter, setActiveFilter] = useState<Category | null>(null)
 
@@ -31,58 +33,69 @@ export function EntryListTab({
     ? entries.filter(e => e.categories?.includes(activeFilter))
     : entries
 
-  if (entries.length === 0) {
-    return <p className="text-muted text-sm text-center py-8">Noch keine Einträge.</p>
-  }
-
   return (
     <>
-      {usedCategories.length > 1 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          <button
-            type="button"
-            onClick={() => setActiveFilter(null)}
-            className={filterBtnClass(activeFilter === null)}
-          >
-            Alle
-          </button>
-          {usedCategories.map(cat => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setActiveFilter(activeFilter === cat ? null : cat)}
-              className={filterBtnClass(activeFilter === cat)}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Add button at top of list */}
+      <button
+        type="button"
+        onClick={onAddClick}
+        className="w-full border border-dashed border-accent text-accent text-sm rounded-lg py-2.5 mb-4 cursor-pointer font-inherit bg-transparent"
+      >
+        + Neuen Erfolg eintragen
+      </button>
 
-      {filtered.length === 0 ? (
-        <p className="text-muted text-sm text-center py-8">Keine Einträge in dieser Kategorie.</p>
+      {entries.length === 0 ? (
+        <p className="text-muted text-sm text-center py-8">Noch keine Einträge.</p>
       ) : (
-        filtered.map(e => (
-          <div
-            key={e.id}
-            className="border-l-2 border-accent bg-surface py-3.5 px-4 mb-3 rounded-l-none rounded-r-lg"
-          >
-            <p className="text-[15px] leading-relaxed mb-1.5">{e.text}</p>
-            <div className="text-xs text-muted flex flex-wrap items-center gap-2">
-              <span className="text-accent">{timeAgo(e.created_at)}</span>
-              <span>·</span>
-              <CategoryPills categories={e.categories ?? []} />
-              <span>·</span>
+        <>
+          {usedCategories.length > 1 && (
+            <div className="flex flex-wrap gap-1.5 mb-4">
               <button
                 type="button"
-                onClick={() => onDelete(e.id)}
-                className="text-xs text-muted-light bg-transparent border-0 cursor-pointer p-0 underline"
+                onClick={() => setActiveFilter(null)}
+                className={filterBtnClass(activeFilter === null)}
               >
-                löschen
+                Alle
               </button>
+              {usedCategories.map(cat => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveFilter(activeFilter === cat ? null : cat)}
+                  className={filterBtnClass(activeFilter === cat)}
+                >
+                  {cat}
+                </button>
+              ))}
             </div>
-          </div>
-        ))
+          )}
+
+          {filtered.length === 0 ? (
+            <p className="text-muted text-sm text-center py-8">Keine Einträge in dieser Kategorie.</p>
+          ) : (
+            filtered.map(e => (
+              <div
+                key={e.id}
+                className="border-l-2 border-accent bg-surface py-3.5 px-4 mb-3 rounded-l-none rounded-r-lg"
+              >
+                <p className="text-[15px] leading-relaxed mb-1.5">{e.text}</p>
+                <div className="text-xs text-muted flex flex-wrap items-center gap-2">
+                  <span className="text-accent">{timeAgo(e.created_at)}</span>
+                  <span>·</span>
+                  <CategoryPills categories={e.categories ?? []} />
+                  <span>·</span>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(e.id)}
+                    className="text-xs text-muted-light bg-transparent border-0 cursor-pointer p-0 underline"
+                  >
+                    löschen
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </>
       )}
     </>
   )

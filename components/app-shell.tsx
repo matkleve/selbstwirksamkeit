@@ -12,15 +12,14 @@ import { EntryListTab } from '@/components/entry-list-tab'
 
 type Tab = 'dashboard' | 'add' | 'reminder' | 'all'
 
-const TAB_LABELS: Record<Tab, string> = {
+const TAB_LABELS: Record<Exclude<Tab, 'add'>, string> = {
   dashboard: 'Übersicht',
-  add: 'Neuer Eintrag',
   reminder: 'Erinnere mich',
   all: 'Alle Einträge',
 }
 
 const tabBtnBase =
-  'rounded-full px-3.5 py-1.5 text-[13px] cursor-pointer font-inherit border border-solid'
+  'rounded-full px-3.5 py-1.5 text-[13px] cursor-pointer font-inherit border border-solid whitespace-nowrap'
 
 function tabBtnClass(active: boolean) {
   return active
@@ -78,35 +77,46 @@ export function AppShell({
   }
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="max-w-[560px] mx-auto">
-        <div className="flex justify-between items-start gap-3 mb-6 flex-wrap">
-          <div className="flex items-baseline gap-2.5 flex-wrap">
-            <h1 className="text-xl font-medium">Meine Erfolge</h1>
-            <span className="text-xs text-muted bg-badge rounded-full px-2.5 py-0.5">
-              {entries.length} Eintrag{entries.length !== 1 ? 'e' : ''}
-            </span>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="text-xs text-muted-light bg-transparent border-0 cursor-pointer"
-            >
-              Abmelden
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen flex flex-col">
+      {/* ── Sticky header ────────────────────────────────── */}
+      <header className="sticky top-0 z-20 bg-page border-b border-border shadow-sm">
+        <div className="max-w-[560px] mx-auto px-4">
 
-        <div className="flex gap-2 mb-5 flex-wrap">
-          {(['dashboard', 'add', 'reminder', 'all'] as Tab[]).map(t => (
-            <button key={t} type="button" onClick={() => setTab(t)} className={tabBtnClass(tab === t)}>
-              {TAB_LABELS[t]}
-            </button>
-          ))}
-        </div>
+          {/* Row 1: title + theme toggle + add button */}
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-lg font-semibold">Meine Erfolge</h1>
+              <span className="text-xs text-muted bg-badge rounded-full px-2.5 py-0.5">
+                {entries.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <ThemeToggle />
+              <button
+                type="button"
+                onClick={() => setTab('add')}
+                aria-label="Neuen Erfolg eintragen"
+                className="w-8 h-8 rounded-full bg-primary text-primary-fg border-0 cursor-pointer font-inherit text-xl leading-none flex items-center justify-center shrink-0"
+              >
+                +
+              </button>
+            </div>
+          </div>
 
+          {/* Row 2: tab nav */}
+          <div className="flex items-center gap-1.5 pb-3 overflow-x-auto">
+            {(Object.keys(TAB_LABELS) as Exclude<Tab, 'add'>[]).map(t => (
+              <button key={t} type="button" onClick={() => setTab(t)} className={tabBtnClass(tab === t)}>
+                {TAB_LABELS[t]}
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </header>
+
+      {/* ── Scrollable content ───────────────────────────── */}
+      <main className="flex-1 max-w-[560px] w-full mx-auto px-4 py-6 pb-28 sm:pb-8">
         {tab === 'dashboard' && (
           <DashboardTab entries={entries} onAddClick={() => setTab('add')} />
         )}
@@ -117,9 +127,32 @@ export function AppShell({
           <ReminderTab reminder={reminder} hasEntries={entries.length > 0} onPickAnother={() => pickReminder()} />
         )}
         {tab === 'all' && (
-          <EntryListTab entries={entries} onDelete={deleteEntry} />
+          <EntryListTab entries={entries} onDelete={deleteEntry} onAddClick={() => setTab('add')} />
         )}
-      </div>
+      </main>
+
+      {/* ── Footer: sign-out ─────────────────────────────── */}
+      <footer className="max-w-[560px] w-full mx-auto px-4 pb-6 sm:pb-4 flex justify-end">
+        <button
+          type="button"
+          onClick={handleSignOut}
+          className="text-xs text-muted-light bg-transparent border-0 cursor-pointer"
+        >
+          Abmelden
+        </button>
+      </footer>
+
+      {/* ── FAB: mobile add shortcut ─────────────────────── */}
+      {tab !== 'add' && (
+        <button
+          type="button"
+          onClick={() => setTab('add')}
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:hidden z-30 bg-primary text-primary-fg border-0 cursor-pointer font-inherit rounded-full px-5 py-3 shadow-lg text-sm flex items-center gap-1.5 whitespace-nowrap"
+        >
+          <span aria-hidden>+</span>
+          Neuer Erfolg
+        </button>
+      )}
     </div>
   )
 }
