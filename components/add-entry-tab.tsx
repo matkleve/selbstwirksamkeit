@@ -60,13 +60,15 @@ export function AddEntryTab({ onAdd }: { onAdd: (text: string, categories: Categ
         placeholder="z.B. Mathe-Test gemacht, obwohl ich keine Lust hatte…"
         rows={3}
         className={`${inputClass} resize-none`}
-        onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) handleAdd() }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAdd() }
+        }}
       />
-      <div className="flex gap-2 mt-2.5">
-        <button type="button" onClick={handleAdd} className={primaryBtnClass}>+ Eintragen</button>
+      <div className="flex justify-between gap-2 mt-2.5">
         <button type="button" onClick={() => setText('')} className={ghostBtnClass}>Löschen</button>
+        <button type="button" onClick={handleAdd} className={primaryBtnClass}>+ Eintragen</button>
       </div>
-      <p className="text-[11px] text-muted-light mt-2">⌘ + Enter zum Speichern</p>
+      <p className="hidden sm:block text-[11px] text-muted-light mt-2">Enter zum Speichern · Shift+Enter für neue Zeile</p>
     </div>
   )
 }
