@@ -1,19 +1,64 @@
 @import "tailwindcss";
 
-:root {
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Semantic tokens — values switch via .light / .dark on <html> */
+:root,
+.light {
+  --bg-page: #faf9f7;
+  --bg-card: #ffffff;
+  --bg-surface: #faf9f7;
+  --bg-badge: #f0ece6;
+  --fg: #1a1a1a;
+  --border: #e0dbd4;
+  --muted: #888888;
+  --muted-light: #aaaaaa;
   --accent: #cc7a4a;
   --accent-light: #f5e6d8;
+  --primary: #1a1a1a;
+  --primary-fg: #ffffff;
+  --danger: #c0392b;
+  --hint-ok: #2d6a4f;
+  --hint-warn-border: #e8c4b8;
+}
+
+.dark {
+  --bg-page: #111111;
+  --bg-card: #1a1a1a;
+  --bg-surface: #222222;
+  --bg-badge: #2a2622;
+  --fg: #f0ece6;
+  --border: #333333;
+  --muted: #999999;
+  --muted-light: #777777;
+  --accent: #d4926a;
+  --accent-light: #3d2e22;
+  --primary: #f0ece6;
+  --primary-fg: #1a1a1a;
+  --danger: #e07070;
+  --hint-ok: #6fcf97;
+  --hint-warn-border: #5c4030;
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+  --color-surface: var(--bg-surface);
+  --color-card: var(--bg-card);
+  --color-page: var(--bg-page);
+  --color-badge: var(--bg-badge);
+  --color-foreground: var(--fg);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-danger: var(--danger);
+  --color-hint-ok: var(--hint-ok);
 }
 
 body {
-  background: #faf9f7;
-  color: #1a1a1a;
+  background: var(--bg-page);
+  color: var(--fg);
   font-family: system-ui, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #111;
-    color: #f0ece6;
-  }
 }

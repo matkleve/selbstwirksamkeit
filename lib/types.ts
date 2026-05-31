@@ -4,6 +4,6 @@ export interface Entry {
   id: string
   user_id: string
   text: string
-  category: Category
+  categories: Category[]
   created_at: string
 }
