@@ -7,9 +7,9 @@ import type { Entry } from '@/lib/types'
 import { getValenceColor, getQuadrant } from '@/lib/types'
 import { getBodyStateHint, timeAgo } from '@/lib/utils'
 import { quadrantTexts } from '@/lib/quadrantTexts'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import BodyStateHint from './BodyStateHint'
-
-const CHIP_SELECT = 'id,user_id,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
 interface TimelineCardProps {
   entry: Entry
@@ -51,11 +51,14 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
     router.refresh()
   }
 
+  const tintBg = `color-mix(in srgb, ${valenceColor} 6%, var(--bg-card))`
+
   return (
     <div style={{
-      background: 'var(--bg-card)',
-      borderRadius: 12,
+      background: tintBg,
+      borderRadius: 'var(--radius-card, 0.875rem)',
       boxShadow: 'var(--shadow-card)',
+      border: '1px solid var(--border)',
       overflow: 'hidden',
       display: 'flex',
     }}>
@@ -109,57 +112,42 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
 
         {/* Reframe invite for negative entries without reframe */}
         {entry.grid_x !== null && entry.grid_x < 0 && !entry.reframe && !showReframe && (
-          <button
-            onClick={() => setShowReframe(true)}
-            style={{
-              fontSize: '0.8125rem',
-              color: 'var(--text-secondary)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '4px 0',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
+          <Button variant="link" size="sm" onClick={() => setShowReframe(true)}>
             → Wie siehst du das heute?
-          </button>
+          </Button>
         )}
 
         {/* Inline reframe input */}
         {showReframe && (
           <div style={{ marginTop: 10 }}>
-            <textarea
+            <Textarea
               value={reframeText}
               onChange={e => setReframeText(e.target.value)}
               rows={2}
               placeholder="Wie siehst du das heute?"
-              style={{ width: '100%', padding: '8px 10px', marginBottom: 8, fontSize: '0.875rem' }}
+              className="mb-2"
               autoFocus
             />
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowReframe(false)} className="btn-ghost" style={{ padding: '6px 12px', fontSize: '0.8125rem' }}>
+              <Button variant="ghost" size="sm" onClick={() => setShowReframe(false)}>
                 Abbrechen
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
                 onClick={handleReframeSave}
                 disabled={!reframeText.trim() || saving}
-                className="btn-primary"
-                style={{ padding: '6px 14px', fontSize: '0.8125rem' }}
               >
                 {saving ? 'Speichern…' : 'Speichern'}
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
         {/* Delete */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-          <button
-            onClick={handleDelete}
-            style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-          >
+          <Button variant="link" size="sm" onClick={handleDelete}>
             löschen
-          </button>
+          </Button>
         </div>
       </div>
     </div>

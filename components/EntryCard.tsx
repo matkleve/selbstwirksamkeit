@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import EntryGrid from './EntryGrid'
 import ReframeFlow from './ReframeFlow'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { quadrantTexts } from '@/lib/quadrantTexts'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
 import { formatDate, formatTime } from '@/lib/utils'
@@ -37,12 +39,33 @@ export default function EntryCard() {
   const [saving, setSaving] = useState(false)
   const [savedEntry, setSavedEntry] = useState<Entry | null>(null)
   const [now, setNow] = useState(() => new Date())
+  const [userId, setUserId] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState({
+    person: [] as string[],
+    location: [] as string[],
+    activity: [] as string[],
+  })
 
   const supabase = createClient()
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 60_000)
     return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    Promise.all([
+      supabase.from('persons').select('name').order('name'),
+      supabase.from('locations').select('name').order('name'),
+      supabase.from('activities').select('name').order('name'),
+    ]).then(([p, l, a]) => {
+      setSuggestions({
+        person: p.data?.map(r => r.name) ?? [],
+        location: l.data?.map(r => r.name) ?? [],
+        activity: a.data?.map(r => r.name) ?? [],
+      })
+    })
   }, [])
 
   useEffect(() => {
@@ -57,6 +80,18 @@ export default function EntryCard() {
     }, 200)
     return () => clearTimeout(t)
   }, [grid, lastQuadrant])
+
+  const saveEntityNames = (uid: string) => {
+    if (person.trim()) {
+      supabase.from('persons').upsert({ user_id: uid, name: person.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    }
+    if (location.trim()) {
+      supabase.from('locations').upsert({ user_id: uid, name: location.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    }
+    if (activity.trim()) {
+      supabase.from('activities').upsert({ user_id: uid, name: activity.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    }
+  }
 
   const handleSubmit = async () => {
     if (!text.trim()) return
@@ -76,6 +111,7 @@ export default function EntryCard() {
       .single()
     setSaving(false)
     if (error || !data) return
+    if (userId) saveEntityNames(userId)
     setSavedEntry(data as Entry)
     if (grid.x >= 0) reset()
   }
@@ -99,9 +135,9 @@ export default function EntryCard() {
     value: string
     setValue: (v: string) => void
   }> = [
-    { key: 'person',   icon: '👤', placeholder: 'z.B. Mama',    label: 'Person',     value: person,   setValue: setPerson },
-    { key: 'location', icon: '📍', placeholder: 'z.B. Büro',   label: 'Ort',        value: location, setValue: setLocation },
-    { key: 'activity', icon: '⚡', placeholder: 'z.B. Pendeln', label: 'Tätigkeit',  value: activity, setValue: setActivity },
+    { key: 'person',   icon: '👤', placeholder: 'z.B. Mama',    label: 'Person',    value: person,   setValue: setPerson },
+    { key: 'location', icon: '📍', placeholder: 'z.B. Büro',    label: 'Ort',       value: location, setValue: setLocation },
+    { key: 'activity', icon: '⚡', placeholder: 'z.B. Pendeln', label: 'Tätigkeit', value: activity, setValue: setActivity },
   ]
 
   return (
@@ -138,7 +174,7 @@ export default function EntryCard() {
 
       {/* Textarea */}
       <div style={{ marginBottom: 16 }}>
-        <textarea
+        <Textarea
           value={text}
           onChange={e => setText(e.target.value)}
           placeholder="Was geht dir durch den Kopf?"
@@ -170,16 +206,26 @@ export default function EntryCard() {
           }
           if (openChip === chip.key) {
             return (
-              <input
-                key={chip.key}
-                autoFocus
-                value={chip.value}
-                onChange={e => chip.setValue(e.target.value.slice(0, 30))}
-                onBlur={() => { if (!chip.value) setOpenChip(null) }}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setOpenChip(null) }}
-                placeholder={chip.placeholder}
-                style={{ width: 160, padding: '5px 11px', fontSize: '0.875rem' }}
-              />
+              <div key={chip.key} style={{ position: 'relative' }}>
+                <input
+                  autoFocus
+                  list={`${chip.key}-list`}
+                  value={chip.value}
+                  onChange={e => chip.setValue(e.target.value.slice(0, 40))}
+                  onBlur={() => { if (!chip.value) setOpenChip(null) }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setOpenChip(null) }}
+                  placeholder={chip.placeholder}
+                  style={{
+                    width: 160, padding: '5px 11px', fontSize: '0.875rem',
+                    border: '1px solid var(--border-focus)', borderRadius: 20,
+                    background: 'var(--bg-card)', color: 'var(--text-primary)',
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
+                />
+                <datalist id={`${chip.key}-list`}>
+                  {suggestions[chip.key].map(s => <option key={s} value={s} />)}
+                </datalist>
+              </div>
             )
           }
           return (
@@ -187,7 +233,7 @@ export default function EntryCard() {
               key={chip.key}
               onClick={() => setOpenChip(chip.key)}
               className="btn-ghost"
-              style={{ padding: '5px 12px', fontSize: '0.8125rem' }}
+              style={{ padding: '5px 12px', fontSize: '0.8125rem', height: 'auto' }}
             >
               + {chip.label}
             </button>
@@ -220,9 +266,9 @@ export default function EntryCard() {
       {/* Submit / ReframeFlow */}
       {!savedEntry ? (
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={handleSubmit} disabled={!text.trim() || saving} className="btn-primary">
+          <Button onClick={handleSubmit} disabled={!text.trim() || saving} size="lg">
             {saving ? 'Speichern…' : 'Eintragen →'}
-          </button>
+          </Button>
         </div>
       ) : (
         <ReframeFlow entry={savedEntry} onDone={reset} />

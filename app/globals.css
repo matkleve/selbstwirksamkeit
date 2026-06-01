@@ -92,10 +92,104 @@
   --text-muted:     #605850;
   --text-inverse:   #1C1917;
 
+  --valence-pos-strong: #5B9AE8;
+  --valence-pos-mid:    #7FB5EE;
+  --valence-pos-weak:   #A8C8F0;
+  --valence-neg-strong: #D4784A;
+  --valence-neg-mid:    #E09070;
+  --valence-neg-weak:   #EAB89A;
+  --valence-neutral:    #504840;
+
   --primary:    #F0EBE5;
   --primary-fg: #1C1917;
   --danger:     #D4886A;
   --hint-ok:    #7AB890;
+}
+
+/* ── Layout + component helpers ── */
+@layer components {
+  .page {
+    min-height: 100vh;
+    background-color: var(--bg-base);
+    padding: 24px 16px 64px;
+  }
+
+  .page-inner {
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    font-family: var(--font-display), Georgia, serif;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    font-weight: 400;
+  }
+
+  .card {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-card, 0.875rem);
+    box-shadow: var(--shadow-card);
+    border: 1px solid var(--border);
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 2.75rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    border-radius: var(--radius-field, 0.5625rem);
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--text-primary);
+    color: var(--text-inverse);
+    border: none;
+    cursor: pointer;
+    transition: opacity 150ms ease, transform 100ms ease;
+  }
+
+  .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+  .btn-primary:active:not(:disabled) { transform: scale(0.97); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    height: 2.5rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    border-radius: var(--radius-field, 0.5625rem);
+    font-size: 0.875rem;
+    font-family: inherit;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 150ms ease, color 150ms ease, background 150ms ease, transform 100ms ease;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--border-focus);
+    color: var(--text-primary);
+    background: var(--bg-subtle);
+  }
+
+  .btn-ghost:active { transform: scale(0.97); }
 }
 
 /* ── Base — inside @layer so Tailwind utilities win ── */

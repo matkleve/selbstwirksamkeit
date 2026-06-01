@@ -4,6 +4,7 @@ import Nav from '@/components/Nav'
 import SignOut from '@/components/SignOut'
 import TimelineCard from '@/components/TimelineCard'
 import type { Entry } from '@/lib/types'
+import { getValenceColor } from '@/lib/types'
 
 const ENTRY_SELECT = 'id,user_id,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
@@ -20,6 +21,15 @@ export default async function TimelinePage() {
 
   const entries = (data ?? []) as Entry[]
 
+  // Group entries by date for the dot strip
+  const byDate = entries.reduce<Record<string, Entry[]>>((acc, e) => {
+    const d = e.created_at.slice(0, 10)
+    if (!acc[d]) acc[d] = []
+    acc[d].push(e)
+    return acc
+  }, {})
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a))
+
   return (
     <main className="page">
       <div className="page-inner">
@@ -34,11 +44,44 @@ export default async function TimelinePage() {
             Noch keine Einträge.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {entries.map(entry => (
-              <TimelineCard key={entry.id} entry={entry} />
-            ))}
-          </div>
+          <>
+            {/* Dot strip: compact coloured squares grouped by day */}
+            <div className="card" style={{ padding: '14px 16px', marginBottom: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {dates.map(date => {
+                  const label = new Date(date + 'T12:00:00').toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
+                  return (
+                    <div key={date} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)', width: 40, flexShrink: 0 }}>{label}</span>
+                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                        {byDate[date].map(e => (
+                          <div
+                            key={e.id}
+                            title={e.text.slice(0, 60)}
+                            style={{
+                              width: 12,
+                              height: 12,
+                              borderRadius: 3,
+                              background: getValenceColor(e.grid_x),
+                              opacity: 0.75,
+                              flexShrink: 0,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Card list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {entries.map(entry => (
+                <TimelineCard key={entry.id} entry={entry} />
+              ))}
+            </div>
+          </>
         )}
       </div>
     </main>
