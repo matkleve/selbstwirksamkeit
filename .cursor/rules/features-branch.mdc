@@ -1,11 +1,13 @@
 ---
-description: Feature work must use the features git branch
+description: Default git branch for this app
 alwaysApply: true
 ---
 
-# Features-Branch
+# Git branch
 
-- Commit all feature work on branch **`features`**, never on `master`.
-- Before editing: `git switch features` (or create from `origin/features`).
-- Push to `origin features` after commits.
-- See `AGENTS.md` for full workflow.
+- **Default branch: `master`** — commit and push feature work here unless the user says otherwise.
+- Before editing: `git switch master` (or `git pull origin master`).
+- After commits: `git push origin master`.
+- Branch `features` may exist historically; do not switch to it unless the user asks.
+
+See `AGENTS.md` for full workflow.

@@ -4,17 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git Workflow
 
-**All feature work belongs on the `features` branch, never on `master`.**
+**Default branch: `master`** — commit and push here unless the user says otherwise.
 
 ```bash
-git switch features          # or: git switch -c features origin/features
+git switch master
+git pull origin master
 # ... make changes ...
 git add <files>
 git commit -m "feat: …"
-git push origin features
+git push origin master
 ```
-
-`master` is for stable releases — only merge when the user explicitly asks.
 
 ## Commands
 

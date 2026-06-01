@@ -1,23 +1,20 @@
 # Agent-Anweisungen
 
-## Git-Branch für Features
+## Git-Branch
 
-**Alle Feature-Arbeit und Commits gehören auf den Branch `features`.**
-
-- Vor dem Coden: `git checkout features` (bzw. `git switch features`)
-- Nach Änderungen: committen **auf `features`**, nicht auf `master`
-- `master` ist für stabile Releases — nur mergen, wenn der Nutzer das ausdrücklich verlangt
+**Standard: `master`** — alle Arbeit und Commits hier (Stand: Nutzerwunsch, ein Deploy-Branch).
 
 ```bash
 git fetch origin
-git switch features
+git switch master
+git pull origin master
 # … Änderungen …
 git add <relevante Dateien>
 git commit -m "feat: …"
-git push origin features
+git push origin master
 ```
 
-Wenn `features` lokal fehlt: `git switch -c features origin/features`
+`features` nur nutzen, wenn der Nutzer das ausdrücklich verlangt.
 
 ## Projekt-Kurzinfo
 
