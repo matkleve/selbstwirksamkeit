@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { createElement, useEffect, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Search } from 'lucide-react'
 
@@ -21,6 +21,8 @@ interface Props {
   align?: 'left' | 'right'
   minWidth?: number
   role?: 'menu' | 'listbox'
+  /** Prefer over `item.icon` when Lucide refs must render in the parent module */
+  renderIcon?: (item: Extract<DropdownMenuItem, { type: 'item' }>) => ReactNode
 }
 
 export function DropdownPanel({
@@ -30,6 +32,7 @@ export function DropdownPanel({
   align = 'left',
   minWidth = 220,
   role = 'menu',
+  renderIcon,
 }: Props) {
   const optionItems = items.filter((i): i is Extract<DropdownMenuItem, { type: 'item' }> => i.type === 'item')
   const showEmpty = search && optionItems.length === 0
@@ -65,7 +68,6 @@ export function DropdownPanel({
             if (entry.type === 'separator') {
               return <li key={`sep-${i}`} className="my-1 h-px bg-edge" role="separator" />
             }
-            const Icon = entry.icon
             return (
               <li key={entry.id}>
                 <button
@@ -78,11 +80,23 @@ export function DropdownPanel({
                     entry.destructive ? 'text-danger' : 'text-ink',
                   ].join(' ')}
                 >
-                  {Icon ? (
-                    <span className="inline-flex w-[15px] shrink-0 items-center justify-center text-ink-2">
-                      <Icon size={15} strokeWidth={1.75} aria-hidden />
-                    </span>
-                  ) : null}
+                  {(() => {
+                    const iconNode = renderIcon?.(entry) ?? (entry.icon
+                      ? createElement(entry.icon, {
+                          size: 15,
+                          strokeWidth: 1.75,
+                          'aria-hidden': true,
+                          className: 'size-[15px] text-ink-2',
+                        })
+                      : null)
+                    return iconNode ? (
+                      <span className="inline-flex size-[15px] shrink-0 items-center justify-center text-ink-2">
+                        {iconNode}
+                      </span>
+                    ) : (
+                      <span className="size-[15px] shrink-0" aria-hidden />
+                    )
+                  })()}
                   <span>{entry.label}</span>
                 </button>
               </li>

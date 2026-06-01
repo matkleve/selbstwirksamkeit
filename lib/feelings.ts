@@ -17,6 +17,7 @@ import {
   CloudFog,
 } from 'lucide-react'
 import type { BodyState } from '@/lib/types'
+import type { DropdownMenuItem } from '@/components/DropdownPanel'
 
 export interface FeelingOption {
   label: string
@@ -49,4 +50,18 @@ export function feelingBodyState(label: string): BodyState | null {
 
 export function feelingIcon(label: string): LucideIcon | undefined {
   return FEELINGS.find(f => f.label === label)?.icon
+}
+
+/** Build dropdown rows in this module so icon components stay tied to their imports */
+export function toFeelingMenuItems(
+  feelings: FeelingOption[],
+  onPick: (feeling: FeelingOption) => void,
+): DropdownMenuItem[] {
+  return feelings.map(feeling => ({
+    type: 'item',
+    id: feeling.label,
+    label: feeling.label,
+    icon: feeling.icon,
+    onClick: () => onPick(feeling),
+  }))
 }

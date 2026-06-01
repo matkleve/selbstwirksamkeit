@@ -10,7 +10,7 @@ import { getZone, zoneTexts, cardTintShadow } from '@/lib/gridZones'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
 import { formatTime } from '@/lib/utils'
 import { User, MapPin, Zap } from 'lucide-react'
-import { AddChip, FilledChip, ChipInput } from '@/components/EntityChip'
+import { AddChip, FilledChip, EntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
 
 const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
@@ -258,16 +258,14 @@ export default function EntryCard() {
                   commitChip()
                 }}
               >
-                <ChipInput
+                <EntityChipEditor
+                  icon={chip.Icon}
                   value={chip.value}
                   onChange={chip.setValue}
                   onClose={commitChip}
                   placeholder={chip.placeholder}
-                  listId={`${chip.key}-list`}
+                  suggestions={suggestions[chip.key]}
                 />
-                <datalist id={`${chip.key}-list`}>
-                  {suggestions[chip.key].map(s => <option key={s} value={s} />)}
-                </datalist>
               </div>
             )
           }
