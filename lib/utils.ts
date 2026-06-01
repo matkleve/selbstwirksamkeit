@@ -1,28 +1,4 @@
-export function isToday(dateStr: string): boolean {
-  const d = new Date(dateStr)
-  const now = new Date()
-  return d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-}
-
-export function calcStreak(entries: { created_at: string }[]): number {
-  if (!entries.length) return 0
-  const days = new Set(entries.map(e => {
-    const d = new Date(e.created_at)
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-  }))
-  let streak = 0
-  const now = new Date()
-  for (let i = 0; i < 365; i++) {
-    const d = new Date(now)
-    d.setDate(d.getDate() - i)
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
-    if (days.has(key)) streak++
-    else if (i > 0) break
-  }
-  return streak
-}
+import type { BodyState } from './types'
 
 export function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -39,15 +15,35 @@ export function timeAgo(dateStr: string): string {
   return `vor ${weeks} Wochen`
 }
 
-export function nudgeText(dateStr: string): string {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
-  if (days === 0) return 'Das war heute — du schaffst das regelmäßig.'
-  if (days <= 3) return 'Noch nicht mal eine Woche her — vertrau dir!'
-  if (days <= 7) return 'Erst letzte Woche — das steckt noch frisch in dir.'
-  if (days <= 30) return 'Erst diesen Monat — das bist immer noch du.'
-  return 'Das hast du wirklich geschafft — und du schaffst wieder Neues.'
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString('de-DE', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
 }
 
+export function formatTime(date: Date): string {
+  return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+}
+
+export function getBodyStateHint(body_state: BodyState, grid_x: number | null): string | null {
+  if (grid_x === null) return null
+  const pos = grid_x > 0
+  if (body_state === 'tired' && pos)
+    return "Du warst müde — und hast es trotzdem geschafft. Das zählt doppelt."
+  if (body_state === 'tired' && !pos)
+    return "Du warst müde — denkst du, das hat deine Wahrnehmung beeinflusst?"
+  if (body_state === 'stressed' && pos)
+    return "Du warst gestresst und hast es trotzdem hingekriegt."
+  if (body_state === 'stressed' && !pos)
+    return "Du warst gestresst — manchmal färbt das die Sicht ein."
+  if (body_state === 'calm' && !pos)
+    return "Du warst ruhig — das verdient ehrliche Aufmerksamkeit."
+  return null
+}
+
+// Kept for auth-form compatibility
 export const PASSWORD_RULES = [
   { id: 'length', label: 'Mindestens 8 Zeichen', test: (p: string) => p.length >= 8 },
   { id: 'letter', label: 'Mindestens ein Buchstabe', test: (p: string) => /[a-zA-ZäöüÄÖÜß]/.test(p) },

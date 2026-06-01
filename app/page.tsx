@@ -1,7 +1,9 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { AuthForm } from '@/components/auth-form'
-import { AppShell } from '@/components/app-shell'
-import type { Entry } from '@/lib/types'
+import EntryCard from '@/components/EntryCard'
+import Nav from '@/components/Nav'
+import SignOut from '@/components/SignOut'
+import Banner from '@/components/Banner'
 
 export default async function HomePage() {
   const supabase = await createServerSupabaseClient()
@@ -9,21 +11,26 @@ export default async function HomePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', background: 'var(--bg-base)' }}>
         <AuthForm />
       </div>
     )
   }
 
-  const { data: entries } = await supabase
-    .from('entries')
-    .select('*')
-    .order('created_at', { ascending: false })
-
   return (
-    <AppShell
-      initialEntries={(entries as Entry[]) ?? []}
-      user={{ id: user.id, email: user.email }}
-    />
+    <main style={{ minHeight: '100vh', background: 'var(--bg-base)', padding: '24px 16px 48px' }}>
+      <div style={{ maxWidth: 520, margin: '0 auto' }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, gap: 12, flexWrap: 'wrap' }}>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 400 }}>
+            Selbstwirksamkeit
+          </h1>
+          <Nav />
+          <SignOut />
+        </header>
+
+        <Banner />
+        <EntryCard />
+      </div>
+    </main>
   )
 }

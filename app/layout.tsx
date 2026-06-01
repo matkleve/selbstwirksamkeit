@@ -5,10 +5,10 @@ import { THEME_STORAGE_KEY } from '@/lib/theme'
 
 export const metadata: Metadata = {
   title: 'Selbstwirksamkeit',
-  description: 'Dein persönliches Erfolgs-Journal',
+  description: 'Dein persönliches Tagebuch für Selbstwirksamkeit',
   appleWebApp: {
     capable: true,
-    title: 'Erfolge',
+    title: 'Selbstwirksamkeit',
     statusBarStyle: 'default',
   },
 }
@@ -16,10 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf6ef' },
-    { media: '(prefers-color-scheme: dark)', color: '#010306' },
-  ],
+  themeColor: '#F7F6F3',
 }
 
 const themeScript = `
@@ -40,6 +37,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
