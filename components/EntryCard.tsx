@@ -12,10 +12,12 @@ import { formatTime } from '@/lib/utils'
 import { User, MapPin, Zap } from 'lucide-react'
 import { AddChip, FilledChip, EntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
+import { useEntries } from '@/components/EntriesProvider'
 
 const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
 export default function EntryCard() {
+  const { refresh: refreshEntries } = useEntries()
   const [grid, setGrid] = useState<GridPoint>({ x: 0, y: 0 })
   const [title, setTitle] = useState('')
   const [editingTitle, setEditingTitle] = useState(false)
@@ -141,6 +143,7 @@ export default function EntryCard() {
 
     saveEntityNames(uid)
     setEntryCount(c => (c !== null ? c + 1 : 1))
+    void refreshEntries()
 
     const entry = data as Entry
     const needsReframe = entry.grid_x !== null && entry.grid_x < 0

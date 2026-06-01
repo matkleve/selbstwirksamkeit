@@ -1,11 +1,10 @@
-import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { AuthForm } from '@/components/auth-form'
 import EntryCard from '@/components/EntryCard'
 import Banner from '@/components/Banner'
+import { getServerUser } from '@/lib/server-entries'
 
 export default async function HomePage() {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
 
   if (!user) {
     return (

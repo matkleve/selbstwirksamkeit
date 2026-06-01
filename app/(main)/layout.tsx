@@ -1,11 +1,12 @@
-import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { AppShell } from '@/components/AppShell'
+import { getServerEntries, getServerUser } from '@/lib/server-entries'
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getServerUser()
 
   if (!user) return <>{children}</>
 
-  return <AppShell>{children}</AppShell>
+  const entries = await getServerEntries()
+
+  return <AppShell initialEntries={entries}>{children}</AppShell>
 }
