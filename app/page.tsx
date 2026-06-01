@@ -1,8 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { AuthForm } from '@/components/auth-form'
+import { AppShell } from '@/components/AppShell'
 import EntryCard from '@/components/EntryCard'
-import Nav from '@/components/Nav'
-import SignOut from '@/components/SignOut'
 import Banner from '@/components/Banner'
 
 export default async function HomePage() {
@@ -18,16 +17,9 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="page">
-      <div className="page-inner">
-        <header className="page-header">
-          <h1 className="page-title">Selbstwirksamkeit</h1>
-          <Nav />
-          <SignOut />
-        </header>
-        <Banner />
-        <EntryCard />
-      </div>
-    </main>
+    <AppShell>
+      <Banner />
+      <EntryCard />
+    </AppShell>
   )
 }

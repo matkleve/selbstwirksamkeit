@@ -1,248 +1,213 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import Nav from '@/components/Nav'
-import SignOut from '@/components/SignOut'
+import { AppShell } from '@/components/AppShell'
+import ValenceChart from '@/components/ValenceChart'
 import CalendarHeatmap from '@/components/CalendarHeatmap'
 import TimeOfDayBars from '@/components/TimeOfDayBars'
+import TimelineCard from '@/components/TimelineCard'
+import Link from 'next/link'
 import type { Entry, BodyState } from '@/lib/types'
 import type { CalDay } from '@/components/CalendarHeatmap'
 import type { DayPeriod } from '@/components/TimeOfDayBars'
+import type { ChartPoint } from '@/components/ValenceChart'
 
 const ENTRY_SELECT = 'id,user_id,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
 export default async function DashboardPage() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user) redirect('/')
 
-  const { data } = await supabase
-    .from('entries')
-    .select(ENTRY_SELECT)
-    .order('created_at', { ascending: true })
-
+  const { data } = await supabase.from('entries').select(ENTRY_SELECT).order('created_at', { ascending: true })
   const entries = (data ?? []) as Entry[]
 
-  // ── Balance this week ──
+  // ── Week balance ──
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   const thisWeek = entries.filter(e => new Date(e.created_at) >= weekAgo)
   const posCount = thisWeek.filter(e => e.grid_x !== null && e.grid_x > 0).length
   const negCount = thisWeek.filter(e => e.grid_x !== null && e.grid_x < 0).length
 
-  // ── Calendar heatmap (16 weeks) ──
-  const today = new Date()
-  today.setHours(23, 59, 59, 999)
-  const todayDow = today.getDay()
+  // ── 14-day line chart ──
+  const now = new Date()
+  const chartData: ChartPoint[] = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(now)
+    d.setDate(d.getDate() - (13 - i))
+    const ds = d.toDateString()
+    const de = entries.filter(e => new Date(e.created_at).toDateString() === ds && e.grid_x !== null)
+    const label = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' })
+    if (!de.length) return { label, value: null }
+    const value = de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length
+    // pick the most recent entry text for tooltip
+    const latest = de[de.length - 1]
+    return { label, value, text: latest.text }
+  })
+
+  // ── Calendar heatmap ──
+  const todayDow = now.getDay()
   const daysToMonday = todayDow === 0 ? 6 : todayDow - 1
-  const thisMonday = new Date(today)
-  thisMonday.setDate(today.getDate() - daysToMonday)
+  const thisMonday = new Date(now)
+  thisMonday.setDate(now.getDate() - daysToMonday)
   thisMonday.setHours(0, 0, 0, 0)
   const calStart = new Date(thisMonday)
   calStart.setDate(thisMonday.getDate() - 15 * 7)
 
-  const calDays: CalDay[] = []
-  for (let i = 0; i < 16 * 7; i++) {
+  const calDays: CalDay[] = Array.from({ length: 16 * 7 }, (_, i) => {
     const d = new Date(calStart)
     d.setDate(calStart.getDate() + i)
     const dateStr = d.toISOString().slice(0, 10)
-    const dayEntries = entries.filter(e => e.created_at.slice(0, 10) === dateStr && e.grid_x !== null)
-    const avgValence = dayEntries.length > 0
-      ? dayEntries.reduce((s, e) => s + (e.grid_x ?? 0), 0) / dayEntries.length
-      : null
-    calDays.push({ dateStr, count: dayEntries.length, avgValence })
-  }
-  const calWeeks: CalDay[][] = []
-  for (let w = 0; w < 16; w++) calWeeks.push(calDays.slice(w * 7, w * 7 + 7))
+    const de = entries.filter(e => e.created_at.slice(0, 10) === dateStr && e.grid_x !== null)
+    return {
+      dateStr,
+      count: de.length,
+      avgValence: de.length ? de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length : null,
+    }
+  })
+  const calWeeks: CalDay[][] = Array.from({ length: 16 }, (_, w) => calDays.slice(w * 7, w * 7 + 7))
 
-  // ── Time-of-day bars ──
-  const PERIODS = [
+  // ── Time of day bars ──
+  const periodData: DayPeriod[] = [
     { label: 'Morgen', sublabel: '6–11 Uhr',  start: 6,  end: 11 },
     { label: 'Mittag', sublabel: '12–16 Uhr', start: 12, end: 16 },
     { label: 'Abend',  sublabel: '17–22 Uhr', start: 17, end: 22 },
-  ]
-  const periodData: DayPeriod[] = PERIODS.map(({ label, sublabel, start, end }) => {
-    const pe = entries.filter(e => {
-      const h = new Date(e.created_at).getHours()
-      return h >= start && h <= end
-    })
-    const withValence = pe.filter(e => e.grid_x !== null)
-    const avgValence = withValence.length > 0
-      ? withValence.reduce((s, e) => s + (e.grid_x ?? 0), 0) / withValence.length
-      : null
-    return { label, sublabel, count: pe.length, avgValence }
+  ].map(({ label, sublabel, start, end }) => {
+    const pe = entries.filter(e => { const h = new Date(e.created_at).getHours(); return h >= start && h <= end })
+    const wv = pe.filter(e => e.grid_x !== null)
+    return { label, sublabel, count: pe.length, avgValence: wv.length ? wv.reduce((s, e) => s + (e.grid_x ?? 0), 0) / wv.length : null }
   })
-
-  // ── Last 14 days chart ──
-  const now = new Date()
-  const days14 = Array.from({ length: 14 }, (_, i) => {
-    const d = new Date(now)
-    d.setDate(d.getDate() - (13 - i))
-    return d
-  })
-  const chartData = days14.map(day => {
-    const ds = day.toDateString()
-    const de = entries.filter(e => new Date(e.created_at).toDateString() === ds && e.grid_x !== null)
-    if (!de.length) return { day, value: null as number | null }
-    return { day, value: de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length }
-  })
-
-  const cW = 320, cH = 120
-  const pad = { t: 16, r: 12, b: 20, l: 28 }
-  const iW = cW - pad.l - pad.r
-  const iH = cH - pad.t - pad.b
-  const toX = (i: number) => pad.l + (i / 13) * iW
-  const toY = (v: number) => pad.t + ((5 - v) / 10) * iH
-  const zeroY = toY(0)
-
-  const validIdx = chartData.reduce<number[]>((a, d, i) => { if (d.value !== null) a.push(i); return a }, [])
-  const segments = validIdx.slice(1).reduce<Array<{ x1: number; y1: number; x2: number; y2: number; color: string }>>((acc, j, k) => {
-    const i = validIdx[k]
-    if (j === i + 1) {
-      const v1 = chartData[i].value!
-      const v2 = chartData[j].value!
-      acc.push({ x1: toX(i), y1: toY(v1), x2: toX(j), y2: toY(v2), color: (v1 + v2) / 2 >= 0 ? '#3B7DD8' : '#C4603A' })
-    }
-    return acc
-  }, [])
-  const dots = validIdx.map(i => ({ cx: toX(i), cy: toY(chartData[i].value!), pos: chartData[i].value! >= 0 }))
 
   // ── Quadrant counts ──
-  const gridEntries = entries.filter(e => e.grid_x !== null && e.grid_y !== null)
-  const qCounts = { 'pos-other': 0, 'pos-self': 0, 'neg-other': 0, 'neg-self': 0 }
-  gridEntries.forEach(e => {
-    if (e.grid_x! >= 0 && e.grid_y! >= 0) qCounts['pos-other']++
-    else if (e.grid_x! >= 0 && e.grid_y! < 0) qCounts['pos-self']++
-    else if (e.grid_x! < 0  && e.grid_y! >= 0) qCounts['neg-other']++
-    else qCounts['neg-self']++
+  const ge = entries.filter(e => e.grid_x !== null && e.grid_y !== null)
+  const qC = { 'pos-other': 0, 'pos-self': 0, 'neg-other': 0, 'neg-self': 0 }
+  ge.forEach(e => {
+    if (e.grid_x! >= 0 && e.grid_y! >= 0) qC['pos-other']++
+    else if (e.grid_x! >= 0) qC['pos-self']++
+    else if (e.grid_y! >= 0) qC['neg-other']++
+    else qC['neg-self']++
   })
-  const showHeatmap = gridEntries.length >= 5
-  const maxQ = Math.max(...Object.values(qCounts), 1)
+  const maxQ = Math.max(...Object.values(qC), 1)
 
   // ── Body state patterns ──
   const bodyGroups = (['stressed', 'calm', 'tired'] as BodyState[]).map(state => {
-    const group = entries.filter(e => e.body_state === state && e.grid_x !== null)
-    return { state, avg: group.length ? group.reduce((s, e) => s + (e.grid_x ?? 0), 0) / group.length : null, count: group.length }
+    const g = entries.filter(e => e.body_state === state && e.grid_x !== null)
+    return { state, avg: g.length ? g.reduce((s, e) => s + (e.grid_x ?? 0), 0) / g.length : null, count: g.length }
   }).filter(g => g.count >= 3)
-
   const stateLabel = (s: BodyState) => s === 'stressed' ? 'gestresst' : s === 'calm' ? 'ruhig' : 'müde'
   const bodyPatterns: string[] = []
   for (let i = 0; i < bodyGroups.length; i++) {
     for (let j = i + 1; j < bodyGroups.length; j++) {
-      const diff = Math.abs(bodyGroups[i].avg! - bodyGroups[j].avg!)
-      if (diff >= 2) {
-        const lo = bodyGroups[i].avg! < bodyGroups[j].avg! ? bodyGroups[i] : bodyGroups[j]
-        const hi = bodyGroups[i].avg! < bodyGroups[j].avg! ? bodyGroups[j] : bodyGroups[i]
-        bodyPatterns.push(
-          `Wenn du ${stateLabel(lo.state)} bist, liegen deine Einträge im Schnitt bei ${lo.avg!.toFixed(1)}. ${stateLabel(hi.state).charAt(0).toUpperCase() + stateLabel(hi.state).slice(1)} bei +${hi.avg!.toFixed(1)}.`
-        )
+      if (Math.abs(bodyGroups[i].avg! - bodyGroups[j].avg!) >= 2) {
+        const [lo, hi] = bodyGroups[i].avg! < bodyGroups[j].avg! ? [bodyGroups[i], bodyGroups[j]] : [bodyGroups[j], bodyGroups[i]]
+        bodyPatterns.push(`Wenn du ${stateLabel(lo.state)} bist: Ø ${lo.avg!.toFixed(1)}. ${stateLabel(hi.state).charAt(0).toUpperCase() + stateLabel(hi.state).slice(1)}: Ø +${hi.avg!.toFixed(1)}.`)
       }
     }
   }
 
-  const heatmapRows: Array<{ key: keyof typeof qCounts; label: string; color: string }[]> = [
-    [
-      { key: 'neg-other', label: 'neg / andere', color: '#C4603A' },
-      { key: 'pos-other', label: 'pos / andere', color: '#3B7DD8' },
-    ],
-    [
-      { key: 'neg-self', label: 'neg / ich', color: '#C4603A' },
-      { key: 'pos-self', label: 'pos / ich', color: '#3B7DD8' },
-    ],
-  ]
+  // Latest 3 entries for preview
+  const latestEntries = [...entries].reverse().slice(0, 3)
 
-  const card: React.CSSProperties = { background: 'var(--bg-card)', borderRadius: 12, boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 16 }
-  const sectionLabel: React.CSSProperties = { fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.05em' }
+  const card: React.CSSProperties = { background: 'var(--bg-card)', borderRadius: 12, boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 14 }
+  const lbl: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg-base)', padding: '24px 16px 64px' }}>
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, gap: 12, flexWrap: 'wrap' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 400 }}>
-            Selbstwirksamkeit
-          </h1>
-          <Nav />
-          <SignOut />
-        </header>
-
-        {entries.length === 0 ? (
-          <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9375rem', padding: 40 }}>
-            Noch keine Einträge.
+    <AppShell>
+      {entries.length === 0 ? (
+        <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Noch keine Einträge.</div>
+      ) : (
+        <>
+          {/* 1 — Balance */}
+          <div style={card}>
+            <p style={lbl}>Diese Woche</p>
+            <div style={{ display: 'flex', gap: 24 }}>
+              <div>
+                <div style={{ fontSize: '2.25rem', fontFamily: 'var(--font-display)', color: 'var(--valence-pos-strong)', lineHeight: 1 }}>{posCount}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>positiv</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '2.25rem', fontFamily: 'var(--font-display)', color: 'var(--valence-neg-strong)', lineHeight: 1 }}>{negCount}</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>schwierig</div>
+              </div>
+            </div>
           </div>
-        ) : (
-          <>
-            {/* Balance */}
+
+          {/* 2 — Valence chart (recharts) */}
+          {chartData.some(d => d.value !== null) && (
             <div style={card}>
-              <p style={sectionLabel}>Diese Woche</p>
-              <p style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
-                {posCount} gute Einträge · {negCount} schwierige
-              </p>
+              <p style={lbl}>Letzte 14 Tage</p>
+              <ValenceChart data={chartData} />
             </div>
+          )}
 
-            {/* Calendar heatmap */}
+          {/* Calendar heatmap */}
+          <div style={card}>
+            <p style={lbl}>Kalender · 16 Wochen</p>
+            <CalendarHeatmap weeks={calWeeks} />
+          </div>
+
+          {/* Time of day */}
+          <div style={card}>
+            <p style={lbl}>Tageszeit</p>
+            <TimeOfDayBars periods={periodData} />
+          </div>
+
+          {/* 3 — Quadrant counts */}
+          {ge.length >= 5 && (
             <div style={card}>
-              <p style={sectionLabel}>Kalender · 16 Wochen</p>
-              <CalendarHeatmap weeks={calWeeks} />
-            </div>
-
-            {/* Time of day */}
-            <div style={card}>
-              <p style={sectionLabel}>Tageszeit</p>
-              <TimeOfDayBars periods={periodData} />
-            </div>
-
-            {/* Valence chart */}
-            {dots.length > 1 && (
-              <div style={card}>
-                <p style={sectionLabel}>Letzte 14 Tage</p>
-                <svg width={cW} height={cH} style={{ display: 'block', maxWidth: '100%' }}>
-                  <line x1={pad.l} y1={zeroY} x2={cW - pad.r} y2={zeroY} stroke="var(--border-focus)" strokeWidth={1} strokeDasharray="4,3" />
-                  <text x={pad.l - 4} y={pad.t + 4} textAnchor="end" fontSize={9} fill="var(--text-muted)">+5</text>
-                  <text x={pad.l - 4} y={zeroY + 4} textAnchor="end" fontSize={9} fill="var(--text-muted)">0</text>
-                  <text x={pad.l - 4} y={cH - pad.b + 4} textAnchor="end" fontSize={9} fill="var(--text-muted)">−5</text>
-                  {segments.map((s, i) => (
-                    <line key={i} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={s.color} strokeWidth={2} strokeLinecap="round" />
-                  ))}
-                  {dots.map((d, i) => (
-                    <circle key={i} cx={d.cx} cy={d.cy} r={3} fill={d.pos ? '#3B7DD8' : '#C4603A'} />
-                  ))}
-                </svg>
-              </div>
-            )}
-
-            {/* Quadrant bars */}
-            {showHeatmap && (
-              <div style={card}>
-                <p style={sectionLabel}>Quadranten</p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
-                  {heatmapRows.flat().map(({ key, label, color }) => (
-                    <div key={key}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-                        <span>{label}</span>
-                        <span>{qCounts[key]}</span>
-                      </div>
-                      <div style={{ height: 6, background: 'var(--bg-subtle)', borderRadius: 3 }}>
-                        <div style={{ height: '100%', width: `${(qCounts[key] / maxQ) * 100}%`, background: color, borderRadius: 3, opacity: 0.65 }} />
-                      </div>
+              <p style={lbl}>Quadranten</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+                {[
+                  { key: 'neg-other' as const, label: 'neg / andere', color: 'var(--valence-neg-mid)' },
+                  { key: 'pos-other' as const, label: 'pos / andere', color: 'var(--valence-pos-mid)' },
+                  { key: 'neg-self'  as const, label: 'neg / ich',    color: 'var(--valence-neg-mid)' },
+                  { key: 'pos-self'  as const, label: 'pos / ich',    color: 'var(--valence-pos-mid)' },
+                ].map(({ key, label, color }) => (
+                  <div key={key}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                      <span>{label}</span><span>{qC[key]}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Body state patterns */}
-            {bodyPatterns.length > 0 && (
-              <div style={card}>
-                <p style={sectionLabel}>Muster</p>
-                {bodyPatterns.map((p, i) => (
-                  <p key={i} style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-display)', lineHeight: 1.5, marginBottom: i < bodyPatterns.length - 1 ? 10 : 0 }}>
-                    💭 {p}
-                  </p>
+                    <div style={{ height: 6, background: 'var(--bg-subtle)', borderRadius: 3 }}>
+                      <div style={{ height: '100%', width: `${(qC[key] / maxQ) * 100}%`, background: color, borderRadius: 3, opacity: 0.7 }} />
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
-          </>
-        )}
-      </div>
-    </main>
+            </div>
+          )}
+
+          {/* 4 — Body patterns */}
+          {bodyPatterns.length > 0 && (
+            <div style={card}>
+              <p style={lbl}>Körper-Muster</p>
+              {bodyPatterns.map((p, i) => (
+                <p key={i} style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-display)', lineHeight: 1.5, marginBottom: i < bodyPatterns.length - 1 ? 10 : 0 }}>
+                  💭 {p}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {/* 5 — Latest entries preview */}
+          <div style={card}>
+            <p style={lbl}>Letzte Einträge</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {latestEntries.map(entry => (
+                <div key={entry.id} style={{
+                  display: 'flex', gap: 10, alignItems: 'flex-start',
+                  padding: '8px 0',
+                  borderBottom: '1px solid var(--border)',
+                }}>
+                  <div style={{ width: 3, height: 36, borderRadius: 2, flexShrink: 0, background: `var(--valence-${entry.grid_x !== null && entry.grid_x >= 3 ? 'pos-strong' : entry.grid_x !== null && entry.grid_x >= 1 ? 'pos-mid' : entry.grid_x !== null && entry.grid_x >= -1 ? 'neutral' : entry.grid_x !== null && entry.grid_x >= -3 ? 'neg-mid' : 'neg-strong'})`, marginTop: 2 }} />
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                    {entry.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <Link href="/timeline" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+              Alle Einträge →
+            </Link>
+          </div>
+        </>
+      )}
+    </AppShell>
   )
 }

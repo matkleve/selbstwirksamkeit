@@ -73,6 +73,8 @@
   --valence-neg-weak:   #E0B09A;
   --valence-neutral:    #C4B9AE;
 
+  --grid-dot: rgba(0,0,0,0.11);
+
   --primary:    #1C1917;
   --primary-fg: #FAFAF8;
   --danger:     #C4603A;
@@ -99,6 +101,8 @@
   --valence-neg-mid:    #E09070;
   --valence-neg-weak:   #EAB89A;
   --valence-neutral:    #504840;
+
+  --grid-dot: rgba(255,255,255,0.09);
 
   --primary:    #F0EBE5;
   --primary-fg: #1C1917;
