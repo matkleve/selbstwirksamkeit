@@ -8,6 +8,7 @@ export interface GridPoint {
 export interface Entry {
   id: string
   user_id: string
+  title: string | null
   text: string
   grid_x: number | null
   grid_y: number | null

@@ -1,84 +1,181 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
+import { Users, User } from 'lucide-react'
 import type { GridPoint } from '@/lib/types'
-import { getValenceColor } from '@/lib/types'
+import { bilinearColor } from '@/lib/gridZones'
 
 interface EntryGridProps {
-  value: GridPoint | null
+  value: GridPoint
   onChange: (point: GridPoint) => void
-  size?: number
 }
 
-export default function EntryGrid({ value, onChange, size = 280 }: EntryGridProps) {
-  const ref = useRef<HTMLDivElement>(null)
+function snap(v: number): number {
+  return Math.max(-5, Math.min(5, Math.round(v * 10) / 10))
+}
 
-  const handlePointer = (e: React.MouseEvent) => {
-    if (!ref.current) return
-    const rect = ref.current.getBoundingClientRect()
-    const rawX = ((e.clientX - rect.left) / rect.width) * 10 - 5
-    const rawY = -(((e.clientY - rect.top) / rect.height) * 10 - 5)
-    const x = Math.max(-5, Math.min(5, Math.round(rawX * 2) / 2))
-    const y = Math.max(-5, Math.min(5, Math.round(rawY * 2) / 2))
-    onChange({ x, y })
+function toSvgPct(p: GridPoint) {
+  return { x: ((p.x + 5) / 10) * 100, y: ((5 - p.y) / 10) * 100 }
+}
+
+function catmullRomPath(points: GridPoint[]): string {
+  if (points.length < 2) return ''
+  const pts = points.map(toSvgPct)
+  if (pts.length === 2) return `M ${pts[0].x},${pts[0].y} L ${pts[1].x},${pts[1].y}`
+  let d = `M ${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[Math.max(i - 1, 0)]
+    const p1 = pts[i]
+    const p2 = pts[i + 1]
+    const p3 = pts[Math.min(i + 2, pts.length - 1)]
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x.toFixed(2)},${cp1y.toFixed(2)} ${cp2x.toFixed(2)},${cp2y.toFixed(2)} ${p2.x},${p2.y}`
+  }
+  return d
+}
+
+export default function EntryGrid({ value, onChange }: EntryGridProps) {
+  const gridRef = useRef<HTMLDivElement>(null)
+  const isDragging = useRef(false)
+  const [trail, setTrail] = useState<GridPoint[]>([])
+  const [trailFading, setTrailFading] = useState(false)
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const [r, g, b] = bilinearColor(value.x, value.y)
+  const dotColor = `rgb(${r},${g},${b})`
+  const dotLeft = `${((value.x + 5) / 10) * 100}%`
+  const dotTop  = `${((5 - value.y) / 10) * 100}%`
+
+  function readPos(e: React.PointerEvent): GridPoint {
+    const rect = gridRef.current!.getBoundingClientRect()
+    return {
+      x: snap(((e.clientX - rect.left) / rect.width) * 10 - 5),
+      y: snap(-((e.clientY - rect.top) / rect.height * 10 - 5)),
+    }
   }
 
-  const dotLeft = value !== null ? ((value.x + 5) / 10) * size : null
-  const dotTop  = value !== null ? ((5 - value.y) / 10) * size : null
-  const dotColor = value ? getValenceColor(value.x) : null
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    isDragging.current = true
+    clearTimeout(fadeTimer.current)
+    setTrailFading(false)
+    const pos = readPos(e)
+    onChange(pos)
+    setTrail([pos])
+  }
 
-  const labelStyle: React.CSSProperties = {
-    position: 'absolute',
-    fontSize: '0.6rem',
-    color: 'var(--text-muted)',
-    userSelect: 'none',
-    lineHeight: 1,
-    pointerEvents: 'none',
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!isDragging.current) return
+    const pos = readPos(e)
+    onChange(pos)
+    setTrail(prev => [...prev.slice(-11), pos])
+  }
+
+  function handlePointerUp() {
+    isDragging.current = false
+    setTrailFading(true)
+    fadeTimer.current = setTimeout(() => {
+      setTrail([])
+      setTrailFading(false)
+    }, 1500)
+  }
+
+  const axisLabel: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', gap: 4,
+    fontSize: '0.6875rem', color: 'var(--text-secondary)',
+    userSelect: 'none', whiteSpace: 'nowrap',
+  }
+  const sideLabel: React.CSSProperties = {
+    fontSize: '1rem', color: 'var(--text-muted)',
+    userSelect: 'none', lineHeight: 1,
   }
 
   return (
-    <div
-      ref={ref}
-      onClick={handlePointer}
-      style={{
-        width: size,
-        height: size,
-        background: 'var(--bg-subtle)',
-        borderRadius: 8,
-        position: 'relative',
-        cursor: 'crosshair',
-        overflow: 'hidden',
-        border: '1px solid var(--border)',
-        touchAction: 'none',
-      }}
-    >
-      {/* Midlines */}
-      <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'var(--border-focus)', opacity: 0.5 }} />
-      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'var(--border-focus)', opacity: 0.5 }} />
+    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gridTemplateRows: 'auto 1fr auto', gap: 0, width: '100%' }}>
+      {/* row 1 */}
+      <div />
+      <div style={{ ...axisLabel, justifyContent: 'center', paddingBottom: 8 }}>
+        <Users size={12} strokeWidth={1.5} /> <span>andere</span>
+      </div>
+      <div />
 
-      {/* Corner labels */}
-      <span style={{ ...labelStyle, top: 7, left: 7 }}>neg/andere</span>
-      <span style={{ ...labelStyle, top: 7, right: 7 }}>pos/andere</span>
-      <span style={{ ...labelStyle, bottom: 7, left: 7 }}>neg/ich</span>
-      <span style={{ ...labelStyle, bottom: 7, right: 7 }}>pos/ich</span>
+      {/* row 2 */}
+      <div style={{ ...sideLabel, display: 'flex', alignItems: 'center', paddingRight: 10 }}>−</div>
 
-      {/* Dot */}
-      {dotLeft !== null && dotTop !== null && dotColor && (
+      {/* The grid */}
+      <div
+        ref={gridRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          aspectRatio: '1',
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: 10,
+          cursor: 'crosshair',
+          touchAction: 'none',
+          userSelect: 'none',
+          background: 'var(--bg-subtle)',
+          backgroundImage: 'radial-gradient(circle, var(--grid-dot) 1px, transparent 0)',
+          backgroundSize: '28px 28px',
+          backgroundPosition: '0 0',
+          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04)',
+        }}
+      >
+        {/* SVG trail */}
+        {trail.length > 1 && (
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{
+              position: 'absolute', inset: 0,
+              width: '100%', height: '100%',
+              pointerEvents: 'none',
+              opacity: trailFading ? 0 : 0.5,
+              transition: trailFading ? 'opacity 1500ms ease' : 'none',
+            }}
+          >
+            <path
+              d={catmullRomPath(trail)}
+              fill="none"
+              stroke={dotColor}
+              strokeWidth={1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        )}
+
+        {/* Active dot */}
         <div
           style={{
             position: 'absolute',
-            left: dotLeft - 6,
-            top: dotTop - 6,
-            width: 12,
-            height: 12,
+            left: dotLeft, top: dotTop,
+            width: 10, height: 10,
             borderRadius: '50%',
             background: dotColor,
-            boxShadow: `0 0 0 3px ${dotColor}33`,
+            boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
+            transform: 'translate(-50%, -50%)',
             pointerEvents: 'none',
-            transition: 'left 80ms ease, top 80ms ease',
+            transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
           }}
         />
-      )}
+      </div>
+
+      <div style={{ ...sideLabel, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>+</div>
+
+      {/* row 3 */}
+      <div />
+      <div style={{ ...axisLabel, justifyContent: 'center', paddingTop: 8 }}>
+        <User size={12} strokeWidth={1.5} /> <span>ich</span>
+      </div>
+      <div />
     </div>
   )
 }
