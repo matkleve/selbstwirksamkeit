@@ -10,6 +10,7 @@ import { quadrantTexts } from '@/lib/quadrantTexts'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import BodyStateHint from './BodyStateHint'
+import { MapPin, User, Zap } from 'lucide-react'
 
 interface TimelineCardProps {
   entry: Entry
@@ -104,9 +105,21 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
 
         {/* Meta chips */}
         <div style={{ display: 'flex', gap: 8, fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
-          {entry.location && <span>📍 {entry.location}</span>}
-          {entry.person && <span>👤 {entry.person}</span>}
-          {entry.activity && <span>⚡ {entry.activity}</span>}
+          {entry.location && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <MapPin size={12} strokeWidth={1.75} aria-hidden /> {entry.location}
+            </span>
+          )}
+          {entry.person && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <User size={12} strokeWidth={1.75} aria-hidden /> {entry.person}
+            </span>
+          )}
+          {entry.activity && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <Zap size={12} strokeWidth={1.75} aria-hidden /> {entry.activity}
+            </span>
+          )}
           <span style={{ marginLeft: 'auto' }}>{timeAgo(entry.created_at)}</span>
         </div>
 

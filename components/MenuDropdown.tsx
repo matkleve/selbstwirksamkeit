@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Menu, User, Settings, LogOut, Moon, Sun } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Menu, User, Settings, LogOut, Moon } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { THEME_STORAGE_KEY } from '@/lib/theme'
+import { DropdownPanel, useClickOutside } from '@/components/DropdownPanel'
 
 export default function MenuDropdown() {
   const [open, setOpen] = useState(false)
@@ -12,16 +13,12 @@ export default function MenuDropdown() {
   const supabase = createClient()
   const router = useRouter()
 
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [])
+  useClickOutside(ref, () => setOpen(false), open)
+
+  const close = () => setOpen(false)
 
   const handleSignOut = async () => {
-    setOpen(false)
+    close()
     await supabase.auth.signOut()
     router.refresh()
   }
@@ -32,70 +29,38 @@ export default function MenuDropdown() {
     html.classList.toggle('dark', !isDark)
     html.classList.toggle('light', isDark)
     try { localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'light' : 'dark') } catch {}
-    setOpen(false)
-  }
-
-  const itemStyle: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 10,
-    width: '100%', padding: '10px 14px',
-    fontSize: '0.875rem', color: 'var(--text-primary)',
-    background: 'transparent', border: 'none',
-    cursor: 'pointer', textAlign: 'left',
-    fontFamily: 'inherit',
-    transition: 'background 100ms ease',
+    close()
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} className="relative">
       <button
+        type="button"
         onClick={() => setOpen(o => !o)}
-        style={{
-          width: 34, height: 34,
-          borderRadius: 8,
-          border: '1px solid var(--border)',
-          background: open ? 'var(--bg-subtle)' : 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          cursor: 'pointer',
-          color: 'var(--text-secondary)',
-          transition: 'all 150ms ease',
-        }}
+        className={[
+          'flex size-[34px] cursor-pointer items-center justify-center rounded-lg border border-edge',
+          'text-ink-2 transition-colors hover:bg-subtle',
+          open ? 'bg-subtle' : 'bg-transparent',
+        ].join(' ')}
         aria-label="Menü"
+        aria-expanded={open}
+        aria-haspopup="menu"
       >
         <Menu size={17} strokeWidth={1.75} />
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          right: 0,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border)',
-          borderRadius: 10,
-          boxShadow: 'var(--shadow-pop)',
-          minWidth: 190,
-          overflow: 'hidden',
-          zIndex: 200,
-        }}>
-          <button style={itemStyle} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')} onClick={() => setOpen(false)}>
-            <User size={15} strokeWidth={1.5} /> Profil
-          </button>
-          <button style={itemStyle} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')} onClick={() => setOpen(false)}>
-            <Settings size={15} strokeWidth={1.5} /> Einstellungen
-          </button>
-          <button style={itemStyle} onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-subtle)')} onMouseOut={e => (e.currentTarget.style.background = 'transparent')} onClick={toggleTheme}>
-            <span style={{ display: 'flex' }}><Moon size={15} strokeWidth={1.5} /></span> Theme wechseln
-          </button>
-          <div style={{ height: 1, background: 'var(--border)', margin: '3px 0' }} />
-          <button
-            style={{ ...itemStyle, color: 'var(--danger)' }}
-            onMouseOver={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
-            onMouseOut={e => (e.currentTarget.style.background = 'transparent')}
-            onClick={handleSignOut}
-          >
-            <LogOut size={15} strokeWidth={1.5} /> Abmelden
-          </button>
-        </div>
+        <DropdownPanel
+          align="right"
+          minWidth={190}
+          items={[
+            { type: 'item', id: 'profile', label: 'Profil', icon: User, onClick: close },
+            { type: 'item', id: 'settings', label: 'Einstellungen', icon: Settings, onClick: close },
+            { type: 'item', id: 'theme', label: 'Theme wechseln', icon: Moon, onClick: toggleTheme },
+            { type: 'separator' },
+            { type: 'item', id: 'signout', label: 'Abmelden', icon: LogOut, onClick: handleSignOut, destructive: true },
+          ]}
+        />
       )}
     </div>
   )

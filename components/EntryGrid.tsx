@@ -14,8 +14,29 @@ function snap(v: number): number {
   return Math.max(-5, Math.min(5, Math.round(v * 10) / 10))
 }
 
-function toSvgPct(p: GridPoint) {
+function gridToPct(p: GridPoint) {
   return { x: ((p.x + 5) / 10) * 100, y: ((5 - p.y) / 10) * 100 }
+}
+
+function toSvgPct(p: GridPoint) {
+  return gridToPct(p)
+}
+
+function readGridPoint(
+  clientX: number,
+  clientY: number,
+  rect: DOMRect,
+  padX: number,
+  padY: number,
+): GridPoint {
+  const innerW = rect.width - padX * 2
+  const innerH = rect.height - padY * 2
+  const nx = Math.max(0, Math.min(1, (clientX - rect.left - padX) / innerW))
+  const ny = Math.max(0, Math.min(1, (clientY - rect.top - padY) / innerH))
+  return {
+    x: snap(nx * 10 - 5),
+    y: snap(-(ny * 10 - 5)),
+  }
 }
 
 function catmullRomPath(points: GridPoint[]): string {
@@ -46,15 +67,15 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
 
   const [r, g, b] = bilinearColor(value.x, value.y)
   const dotColor = `rgb(${r},${g},${b})`
-  const dotLeft = `${((value.x + 5) / 10) * 100}%`
-  const dotTop  = `${((5 - value.y) / 10) * 100}%`
+  const dotPct = gridToPct(value)
 
   function readPos(e: React.PointerEvent): GridPoint {
-    const rect = gridRef.current!.getBoundingClientRect()
-    return {
-      x: snap(((e.clientX - rect.left) / rect.width) * 10 - 5),
-      y: snap(-((e.clientY - rect.top) / rect.height * 10 - 5)),
-    }
+    const el = gridRef.current!
+    const rect = el.getBoundingClientRect()
+    const s = getComputedStyle(el)
+    const padX = parseFloat(s.paddingLeft)
+    const padY = parseFloat(s.paddingTop)
+    return readGridPoint(e.clientX, e.clientY, rect, padX, padY)
   }
 
   function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -112,60 +133,45 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        style={{
-          aspectRatio: '1',
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: 10,
-          cursor: 'crosshair',
-          touchAction: 'none',
-          userSelect: 'none',
-          background: 'var(--bg-subtle)',
-          backgroundImage: 'radial-gradient(circle, var(--grid-dot) 1px, transparent 0)',
-          backgroundSize: '28px 28px',
-          backgroundPosition: '0 0',
-          boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.08), inset 0 0 0 1px rgba(0,0,0,0.04)',
-        }}
+        className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
       >
-        {/* SVG trail */}
-        {trail.length > 1 && (
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            style={{
-              position: 'absolute', inset: 0,
-              width: '100%', height: '100%',
-              pointerEvents: 'none',
-              opacity: trailFading ? 0 : 0.5,
-              transition: trailFading ? 'opacity 1500ms ease' : 'none',
-            }}
-          >
-            <path
-              d={catmullRomPath(trail)}
-              fill="none"
-              stroke={dotColor}
-              strokeWidth={1}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-        )}
-
-        {/* Active dot */}
         <div
-          style={{
-            position: 'absolute',
-            left: dotLeft, top: dotTop,
-            width: 10, height: 10,
-            borderRadius: '50%',
-            background: dotColor,
-            boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
-          }}
-        />
+          className="absolute inset-3 pointer-events-none bg-subtle bg-center [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px]"
+          aria-hidden
+        >
+          {trail.length > 1 && (
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="absolute inset-0 size-full"
+              style={{
+                opacity: trailFading ? 0 : 0.5,
+                transition: trailFading ? 'opacity 1500ms ease' : 'none',
+              }}
+            >
+              <path
+                d={catmullRomPath(trail)}
+                fill="none"
+                stroke={dotColor}
+                strokeWidth={1}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          )}
+
+          <div
+            className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${dotPct.x}%`,
+              top: `${dotPct.y}%`,
+              background: dotColor,
+              boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
+              transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
+            }}
+          />
+        </div>
       </div>
 
       <div style={{ ...sideLabel, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>+</div>

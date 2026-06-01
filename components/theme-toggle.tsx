@@ -55,7 +55,12 @@ function TriggerIcon({ resolved }: { resolved: 'light' | 'dark' }) {
 export function ThemeToggle({ className = '' }: { className?: string }) {
   const { theme, resolved, setTheme } = useTheme()
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -89,7 +94,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
           transition: 'background 120ms ease',
         }}
       >
-        <TriggerIcon resolved={resolved} />
+        {mounted ? <TriggerIcon resolved={resolved} /> : <span style={{ width: 15, height: 15 }} aria-hidden />}
       </button>
 
       {open && (

@@ -1,62 +1,63 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useTransition } from 'react'
 import { Plus, BarChart2, Sparkles, Bell } from 'lucide-react'
+import { cn } from '@/lib/cn'
 
 const TABS = [
   { href: '/',               label: 'Neu',       Icon: Plus },
   { href: '/dashboard',     label: 'Dashboard', Icon: BarChart2 },
   { href: '/motivation',    label: 'Stärke',    Icon: Sparkles },
   { href: '/notifications', label: 'Erinnern',  Icon: Bell },
-]
+] as const
 
 export default function BottomTabBar() {
   const path = usePathname()
+  const router = useRouter()
+  const [isPending, startTransition] = useTransition()
+
+  useEffect(() => {
+    TABS.forEach(({ href }) => router.prefetch(href))
+  }, [router])
 
   return (
-    <nav style={{
-      position: 'fixed',
-      bottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      zIndex: 50,
-      display: 'flex',
-      gap: 8,
-      padding: '6px 8px',
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border)',
-      borderRadius: 999,
-      boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
-    }}>
+    <nav
+      className={cn(
+        'fixed bottom-[max(20px,env(safe-area-inset-bottom,20px))] left-1/2 z-50 flex -translate-x-1/2 gap-2',
+        'rounded-full border border-edge bg-card p-1.5',
+        'shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)]',
+        'transition-opacity duration-150',
+        isPending && 'opacity-90',
+      )}
+      aria-label="Hauptnavigation"
+    >
       {TABS.map(({ href, label, Icon }) => {
         const active = path === href
         return (
           <Link
             key={href}
             href={href}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 3,
-              padding: '7px 14px',
-              borderRadius: 999,
-              color: active ? 'var(--text-primary)' : 'var(--text-muted)',
-              background: active ? 'var(--bg-subtle)' : 'transparent',
-              textDecoration: 'none',
-              transition: 'color 150ms ease, background 150ms ease',
-              minWidth: 56,
+            prefetch
+            onClick={e => {
+              if (href === path) return
+              e.preventDefault()
+              startTransition(() => router.push(href))
             }}
+            className={cn(
+              'flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-3.5 py-1.5',
+              'no-underline transition-[color,background-color] duration-150',
+              active ? 'bg-subtle text-ink' : 'bg-transparent text-ink-3',
+            )}
           >
             <Icon size={19} strokeWidth={active ? 2 : 1.5} />
-            <span style={{
-              fontSize: '0.5625rem',
-              fontWeight: active ? 600 : 400,
-              letterSpacing: '0.02em',
-              textTransform: 'uppercase',
-            }}>
+            <span
+              className={cn(
+                'text-[0.5625rem] uppercase tracking-wide',
+                active ? 'font-semibold' : 'font-normal',
+              )}
+            >
               {label}
             </span>
           </Link>

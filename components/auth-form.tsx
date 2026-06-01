@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
 import { cn } from '@/lib/cn'
+import { Sprout } from 'lucide-react'
 
 type Mode = 'login' | 'signup' | 'reset'
 
@@ -61,7 +62,8 @@ export function AuthForm() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-2xl text-ink leading-tight">
+          <h1 className="font-display text-2xl text-ink leading-tight flex items-center gap-2">
+            <Sprout size={22} strokeWidth={1.75} className="text-ink-2 shrink-0" aria-hidden />
             Selbstwirksamkeit
           </h1>
           <p className="text-sm text-ink-2">Dein persönliches Tagebuch</p>

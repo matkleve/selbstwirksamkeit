@@ -11,6 +11,11 @@ type ThemeContextValue = {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
+function readResolvedFromDom(): 'light' | 'dark' {
+  if (typeof document === 'undefined') return 'light'
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('system')
   const [resolved, setResolved] = useState<'light' | 'dark'>('light')
@@ -19,6 +24,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null
     if (stored === 'light' || stored === 'dark' || stored === 'system') {
       setThemeState(stored)
+    } else {
+      setResolved(readResolvedFromDom())
     }
   }, [])
 

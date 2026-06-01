@@ -1,6 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase-server'
 import { AuthForm } from '@/components/auth-form'
-import { AppShell } from '@/components/AppShell'
 import EntryCard from '@/components/EntryCard'
 import Banner from '@/components/Banner'
 
@@ -17,9 +16,9 @@ export default async function HomePage() {
   }
 
   return (
-    <AppShell>
+    <>
       <Banner />
       <EntryCard />
-    </AppShell>
+    </>
   )
 }

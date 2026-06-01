@@ -1,9 +1,6 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState } from 'react'
-import { AppShell } from '@/components/AppShell'
 import { Bell, BellOff, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -26,7 +23,7 @@ export default function NotificationsPage() {
   const sectionLabel: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
 
   return (
-    <AppShell>
+    <>
       {/* Daily reminder */}
       <div style={card}>
         <p style={sectionLabel}>Tägliche Erinnerung</p>
@@ -135,6 +132,6 @@ export default function NotificationsPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </>
   )
 }

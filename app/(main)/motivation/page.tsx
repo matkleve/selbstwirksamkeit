@@ -1,6 +1,5 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { AppShell } from '@/components/AppShell'
 import type { Entry, BodyState } from '@/lib/types'
 import Link from 'next/link'
 
@@ -122,7 +121,7 @@ export default async function MotivationPage() {
   const label: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
 
   return (
-    <AppShell>
+    <>
       {/* Bandura: Mastery Moments */}
       <div style={card}>
         <p style={label}>Deine Stärken · Diese Woche</p>
@@ -231,6 +230,6 @@ export default async function MotivationPage() {
           </p>
         </div>
       )}
-    </AppShell>
+    </>
   )
 }

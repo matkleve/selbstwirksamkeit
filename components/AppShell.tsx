@@ -1,3 +1,4 @@
+import { Sprout } from 'lucide-react'
 import BottomTabBar from './BottomTabBar'
 import MenuDropdown from './MenuDropdown'
 
@@ -7,40 +8,16 @@ interface Props {
 
 export function AppShell({ children }: Props) {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base)' }}>
-      {/* Header */}
-      <header style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 40,
-        background: 'var(--bg-base)',
-        borderBottom: '1px solid var(--border)',
-        padding: '0 20px',
-        height: 52,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-display), Georgia, serif',
-          fontSize: '1.0625rem',
-          fontWeight: 400,
-          color: 'var(--text-primary)',
-          fontStyle: 'italic',
-        }}>
+    <div className="min-h-screen bg-canvas">
+      <header className="sticky top-0 z-40 flex h-[52px] items-center justify-between border-b border-edge bg-canvas px-5">
+        <span className="inline-flex items-center gap-2 font-display text-[1.0625rem] font-normal italic text-ink">
+          <Sprout size={18} strokeWidth={1.75} className="shrink-0 text-ink-2" aria-hidden />
           Selbstwirksamkeit
         </span>
         <MenuDropdown />
       </header>
 
-      {/* Page content */}
-      <div style={{
-        maxWidth: 540,
-        width: '100%',
-        margin: '0 auto',
-        padding: '20px 16px',
-        paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
-      }}>
+      <div className="app-main">
         {children}
       </div>
 

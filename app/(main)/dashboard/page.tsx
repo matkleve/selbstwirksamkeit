@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createServerSupabaseClient } from '@/lib/supabase-server'
-import { AppShell } from '@/components/AppShell'
-import ValenceChart from '@/components/ValenceChart'
+import ValenceChartLazy from '@/components/ValenceChartLazy'
 import CalendarHeatmap from '@/components/CalendarHeatmap'
 import TimeOfDayBars from '@/components/TimeOfDayBars'
 import TimelineCard from '@/components/TimelineCard'
@@ -109,7 +108,7 @@ export default async function DashboardPage() {
   const lbl: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
 
   return (
-    <AppShell>
+    <>
       {entries.length === 0 ? (
         <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>Noch keine Einträge.</div>
       ) : (
@@ -133,7 +132,7 @@ export default async function DashboardPage() {
           {chartData.some(d => d.value !== null) && (
             <div style={card}>
               <p style={lbl}>Letzte 14 Tage</p>
-              <ValenceChart data={chartData} />
+              <ValenceChartLazy data={chartData} />
             </div>
           )}
 
@@ -208,6 +207,6 @@ export default async function DashboardPage() {
           </div>
         </>
       )}
-    </AppShell>
+    </>
   )
 }

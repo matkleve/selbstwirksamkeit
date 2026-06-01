@@ -196,6 +196,108 @@
   .btn-ghost:active { transform: scale(0.97); }
 }
 
+/* ── App shell + entry card (desktop) ── */
+.app-main {
+  width: 100%;
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+}
+
+.entry-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  transition: box-shadow 300ms ease;
+}
+
+.entry-card-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 14px;
+  justify-content: space-between;
+}
+
+.entry-card-quote {
+  height: 68px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.entry-card-quote p {
+  font-family: var(--font-display), Georgia, serif;
+  font-style: italic;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.entry-card-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.entry-card-valence {
+  min-width: 0;
+}
+
+.entry-card-compose {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.entry-card-compose .entry-textarea {
+  margin-bottom: 14px;
+}
+
+.entry-card-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    max-width: 880px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .entry-card-columns {
+    display: grid;
+    grid-template-columns: minmax(200px, 272px) minmax(0, 1fr);
+    gap: 28px;
+    align-items: start;
+  }
+
+  .entry-card-quote {
+    height: auto;
+    min-height: 52px;
+    margin-bottom: 14px;
+  }
+
+  .entry-card-valence .entry-grid-wrap {
+    max-width: 272px;
+  }
+
+  .entry-card-compose .entry-textarea textarea {
+    min-height: 132px;
+  }
+}
+
 /* ── Base — inside @layer so Tailwind utilities win ── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }
@@ -217,5 +319,23 @@
   input, textarea, button, select {
     font-family: inherit;
     font-size: inherit;
+  }
+}
+
+/* After preflight — interactive affordance for buttons & links */
+@layer components {
+  button:not(:disabled),
+  [type='button']:not(:disabled),
+  [type='submit']:not(:disabled),
+  [type='reset']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  a[href] {
+    cursor: pointer;
   }
 }

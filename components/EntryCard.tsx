@@ -8,13 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { getZone, zoneTexts, cardTintShadow } from '@/lib/gridZones'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
-import { formatDate, formatTime } from '@/lib/utils'
-
-const BODY_STATE_LABELS: Record<BodyState, string> = {
-  stressed: 'gestresst',
-  calm: 'ruhig',
-  tired: 'müde',
-}
+import { formatTime } from '@/lib/utils'
+import { User, MapPin, Zap } from 'lucide-react'
+import { AddChip, FilledChip, ChipInput } from '@/components/EntityChip'
+import FeelingChip from '@/components/FeelingChip'
 
 const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
@@ -28,13 +25,16 @@ export default function EntryCard() {
   const [location, setLocation] = useState('')
   const [activity, setActivity] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(null)
+  const [feelingLabel, setFeelingLabel] = useState<string | null>(null)
   const [openChip, setOpenChip] = useState<'person' | 'location' | 'activity' | null>(null)
   const [quote, setQuote] = useState('')
   const [quoteVisible, setQuoteVisible] = useState(true)
   const [lastZone, setLastZone] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
   const [savedEntry, setSavedEntry] = useState<Entry | null>(null)
-  const [now, setNow] = useState(() => new Date())
+  const [clock, setClock] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState({ person: [] as string[], location: [] as string[], activity: [] as string[] })
 
@@ -43,7 +43,9 @@ export default function EntryCard() {
   useEffect(() => {
     const initial = zoneTexts[getZone(0, 0)]
     setQuote(initial[Math.floor(Math.random() * initial.length)])
-    const id = setInterval(() => setNow(new Date()), 60_000)
+    const tick = () => setClock(formatTime(new Date()))
+    tick()
+    const id = setInterval(tick, 60_000)
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
     supabase.from('entries').select('id', { count: 'exact', head: true }).then(({ count }) => setEntryCount(count ?? 0))
     Promise.all([
@@ -80,46 +82,94 @@ export default function EntryCard() {
     if (activity.trim()) supabase.from('activities').upsert({ user_id: uid, name: activity.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
   }
 
+  const resetFormFields = () => {
+    setTitle('')
+    setEditingTitle(false)
+    setText('')
+    setPerson('')
+    setLocation('')
+    setActivity('')
+    setBodyState(null)
+    setFeelingLabel(null)
+    setOpenChip(null)
+    setGrid({ x: 0, y: 0 })
+  }
+
+  const finishAfterSave = () => {
+    resetFormFields()
+    setSavedEntry(null)
+    setSaveSuccess(false)
+    setSaveError(null)
+  }
+
   const handleSubmit = async () => {
     if (!text.trim()) return
     setSaving(true)
+    setSaveError(null)
+    setSaveSuccess(false)
+
+    let uid = userId
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser()
+      uid = user?.id ?? null
+      if (uid) setUserId(uid)
+    }
+    if (!uid) {
+      setSaving(false)
+      setSaveError('Nicht angemeldet. Bitte Seite neu laden.')
+      return
+    }
+
     const { data, error } = await supabase.from('entries').insert({
+      user_id: uid,
       title: title.trim() || null,
-      text: text.trim(), grid_x: grid.x, grid_y: grid.y,
-      person: person.trim() || null, location: location.trim() || null,
-      activity: activity.trim() || null, body_state: bodyState,
+      text: text.trim(),
+      grid_x: grid.x,
+      grid_y: grid.y,
+      person: person.trim() || null,
+      location: location.trim() || null,
+      activity: activity.trim() || null,
+      body_state: bodyState,
     }).select(CHIP_SELECT).single()
+
     setSaving(false)
-    if (error || !data) return
-    if (userId) saveEntityNames(userId)
-    setSavedEntry(data as Entry)
-    if (grid.x >= 0) reset()
+
+    if (error || !data) {
+      setSaveError(error?.message ?? 'Speichern fehlgeschlagen.')
+      return
+    }
+
+    saveEntityNames(uid)
+    setEntryCount(c => (c !== null ? c + 1 : 1))
+
+    const entry = data as Entry
+    const needsReframe = entry.grid_x !== null && entry.grid_x < 0
+
+    resetFormFields()
+
+    if (needsReframe) {
+      setSavedEntry(entry)
+    } else {
+      setSavedEntry(null)
+      setSaveSuccess(true)
+    }
   }
 
-  const reset = () => {
-    setTitle(''); setEditingTitle(false)
-    setText(''); setPerson(''); setLocation(''); setActivity('')
-    setBodyState(null); setOpenChip(null)
-    setGrid({ x: 0, y: 0 }); setSavedEntry(null)
-    setEntryCount(c => c !== null ? c + 1 : null)
-  }
+  useEffect(() => {
+    if (!saveSuccess) return
+    const t = setTimeout(() => setSaveSuccess(false), 3500)
+    return () => clearTimeout(t)
+  }, [saveSuccess])
 
   const chips = [
-    { key: 'person'   as const, icon: '👤', placeholder: 'z.B. Mama',    label: 'Person',    value: person,   setValue: setPerson },
-    { key: 'location' as const, icon: '📍', placeholder: 'z.B. Büro',    label: 'Ort',       value: location, setValue: setLocation },
-    { key: 'activity' as const, icon: '⚡', placeholder: 'z.B. Pendeln', label: 'Tätigkeit', value: activity, setValue: setActivity },
+    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    value: person,   setValue: setPerson },
+    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       value: location, setValue: setLocation },
+    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', value: activity, setValue: setActivity },
   ]
 
   return (
-    <div style={{
-      background: 'var(--bg-card)',
-      borderRadius: 'var(--radius-card)',
-      padding: 24,
-      boxShadow: cardShadow,
-      transition: 'box-shadow 300ms ease',
-    }}>
-      {/* Meta header */}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 14, justifyContent: 'space-between' }}>
+    <div className="entry-card" style={{ boxShadow: cardShadow }}>
+      <div className="entry-card-header">
         {editingTitle ? (
           <input
             autoFocus
@@ -149,80 +199,71 @@ export default function EntryCard() {
             {title || `Eintrag #${(entryCount ?? 0) + 1}`}
           </button>
         )}
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-          {location ? `📍 ${location} · ` : ''}{formatTime(now)}
+        <span style={{
+          fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0,
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+        }}>
+          {location && (
+            <>
+              <MapPin size={12} strokeWidth={1.75} aria-hidden />
+              <span>{location}</span>
+              <span aria-hidden>·</span>
+            </>
+          )}
+          <span suppressHydrationWarning>{clock || '\u00a0'}</span>
         </span>
       </div>
 
-      {/* Quote */}
-      <div style={{ height: 68, display: 'flex', alignItems: 'center', marginBottom: 20, overflow: 'hidden' }}>
-        <p style={{
-          fontFamily: 'var(--font-display), Georgia, serif',
-          fontStyle: 'italic',
-          fontSize: '1.0625rem',
-          lineHeight: 1.5,
-          color: 'var(--text-secondary)',
-          opacity: quoteVisible ? 1 : 0,
-          transition: quoteVisible ? 'opacity 350ms ease' : 'opacity 250ms ease',
-          margin: 0,
-          display: '-webkit-box',
-          WebkitLineClamp: 3,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}>
-          "{quote}"
-        </p>
-      </div>
+      <div className="entry-card-columns">
+        {/* Stimmungsfeld: quote + valence grid */}
+        <section className="entry-card-valence" aria-label="Stimmungsfeld">
+          <div className="entry-card-quote">
+            <p style={{
+              opacity: quoteVisible ? 1 : 0,
+              transition: quoteVisible ? 'opacity 350ms ease' : 'opacity 250ms ease',
+            }}>
+              &ldquo;{quote}&rdquo;
+            </p>
+          </div>
+          <div className="entry-grid-wrap">
+            <EntryGrid value={grid} onChange={setGrid} />
+          </div>
+        </section>
 
-      {/* Grid */}
-      <div style={{ marginBottom: 20 }}>
-        <EntryGrid value={grid} onChange={setGrid} />
-      </div>
+        {/* Compose: text + tags */}
+        <section className="entry-card-compose" aria-label="Eintrag">
+          <div className="entry-textarea">
+            <Textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Was geht dir durch den Kopf?"
+              rows={3}
+              style={{ minHeight: 84 }}
+            />
+          </div>
 
-      {/* Textarea */}
-      <div style={{ marginBottom: 14 }}>
-        <Textarea
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Was geht dir durch den Kopf?"
-          rows={3}
-          style={{ minHeight: 84 }}
-        />
-      </div>
-
-      {/* Chips */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div className="entry-card-chips">
         {chips.map(chip => {
-          if (chip.value) {
-            return (
-              <button key={chip.key} onClick={() => { chip.setValue(''); setOpenChip(null) }} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 5,
-                padding: '4px 10px', borderRadius: 20,
-                fontSize: '0.8125rem', fontFamily: 'inherit',
-                background: 'var(--text-primary)', color: 'var(--text-inverse)',
-                border: 'none', cursor: 'pointer',
-              }}>
-                {chip.icon} {chip.value} <span style={{ opacity: 0.5, fontSize: '0.6875rem' }}>✕</span>
-              </button>
-            )
-          }
           if (openChip === chip.key) {
+            const commitChip = () => {
+              if (!chip.value.trim()) chip.setValue('')
+              setOpenChip(null)
+            }
             return (
-              <div key={chip.key} style={{ position: 'relative' }}>
-                <input
-                  autoFocus
-                  list={`${chip.key}-list`}
+              <div
+                key={chip.key}
+                className="inline-flex"
+                onBlur={(e) => {
+                  if (e.currentTarget.contains(e.relatedTarget as Node)) return
+                  commitChip()
+                }}
+              >
+                <ChipInput
                   value={chip.value}
-                  onChange={e => chip.setValue(e.target.value.slice(0, 40))}
-                  onBlur={() => { if (!chip.value) setOpenChip(null) }}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setOpenChip(null) }}
+                  onChange={chip.setValue}
+                  onClose={commitChip}
                   placeholder={chip.placeholder}
-                  style={{
-                    width: 150, padding: '4px 10px', fontSize: '0.875rem',
-                    border: '1px solid var(--border-focus)', borderRadius: 20,
-                    background: 'var(--bg-card)', color: 'var(--text-primary)',
-                    outline: 'none', fontFamily: 'inherit',
-                  }}
+                  listId={`${chip.key}-list`}
                 />
                 <datalist id={`${chip.key}-list`}>
                   {suggestions[chip.key].map(s => <option key={s} value={s} />)}
@@ -230,38 +271,61 @@ export default function EntryCard() {
               </div>
             )
           }
+          if (chip.value) {
+            return (
+              <FilledChip
+                key={chip.key}
+                icon={chip.Icon}
+                value={chip.value}
+                onClear={() => { chip.setValue(''); setOpenChip(null) }}
+              />
+            )
+          }
           return (
-            <button key={chip.key} onClick={() => setOpenChip(chip.key)} className="btn-ghost" style={{ padding: '4px 11px', fontSize: '0.8125rem', height: 'auto' }}>
-              + {chip.label}
-            </button>
+            <AddChip
+              key={chip.key}
+              icon={chip.Icon}
+              label={chip.label}
+              onClick={() => setOpenChip(chip.key)}
+            />
           )
         })}
-      </div>
+        <FeelingChip
+          feelingLabel={feelingLabel}
+          bodyState={bodyState}
+          onSelect={(label, state) => { setFeelingLabel(label); setBodyState(state) }}
+          onClear={() => { setFeelingLabel(null); setBodyState(null) }}
+        />
+          </div>
 
-      {/* Body state */}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 22, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Zustand</span>
-        {(Object.keys(BODY_STATE_LABELS) as BodyState[]).map(state => (
-          <button key={state} onClick={() => setBodyState(bodyState === state ? null : state)} style={{
-            padding: '3px 11px', borderRadius: 20,
-            fontSize: '0.8125rem', fontFamily: 'inherit',
-            border: `1.5px solid ${bodyState === state ? 'var(--border-focus)' : 'var(--border)'}`,
-            background: bodyState === state ? 'var(--bg-subtle)' : 'transparent',
-            color: bodyState === state ? 'var(--text-primary)' : 'var(--text-muted)',
-            cursor: 'pointer', transition: 'all 120ms ease',
-          }}>
-            {BODY_STATE_LABELS[state]}
-          </button>
-        ))}
-      </div>
+          {saveSuccess && !savedEntry && (
+            <p
+              role="status"
+              className="mb-3 rounded-lg border border-edge bg-subtle px-3 py-2.5 text-sm text-ink"
+            >
+              ✓ Eintrag gespeichert.
+            </p>
+          )}
 
-      {!savedEntry ? (
-        <Button onClick={handleSubmit} disabled={!text.trim() || saving} size="lg" className="w-full">
-          {saving ? 'Speichern…' : 'Eintragen →'}
-        </Button>
-      ) : (
-        <ReframeFlow entry={savedEntry} onDone={reset} />
-      )}
+          {saveError && (
+            <p
+              role="alert"
+              className="mb-3 rounded-lg border border-[var(--danger)] px-3 py-2.5 text-sm text-danger"
+              style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}
+            >
+              {saveError}
+            </p>
+          )}
+
+          {!savedEntry ? (
+            <Button onClick={handleSubmit} disabled={!text.trim() || saving} size="lg" className="w-full">
+              {saving ? 'Speichern…' : 'Eintragen →'}
+            </Button>
+          ) : (
+            <ReframeFlow entry={savedEntry} onDone={finishAfterSave} />
+          )}
+        </section>
+      </div>
     </div>
   )
 }
