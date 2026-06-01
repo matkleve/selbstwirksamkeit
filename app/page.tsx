@@ -11,23 +11,20 @@ export default async function HomePage() {
 
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', background: 'var(--bg-base)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 20px', background: 'var(--bg-base)' }}>
         <AuthForm />
       </div>
     )
   }
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg-base)', padding: '24px 16px 48px' }}>
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, gap: 12, flexWrap: 'wrap' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 400 }}>
-            Selbstwirksamkeit
-          </h1>
+    <main className="page">
+      <div className="page-inner">
+        <header className="page-header">
+          <h1 className="page-title">Selbstwirksamkeit</h1>
           <Nav />
           <SignOut />
         </header>
-
         <Banner />
         <EntryCard />
       </div>

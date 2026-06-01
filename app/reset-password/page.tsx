@@ -5,11 +5,10 @@ export const dynamic = 'force-dynamic'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Button } from '@/components/button'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
-
-const inputClass =
-  'w-full border border-border rounded-lg px-3 py-2.5 text-[15px] font-inherit outline-none bg-surface text-foreground'
+import { cn } from '@/lib/cn'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -48,38 +47,48 @@ export default function ResetPasswordPage() {
   if (!ready) return null
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px', background: 'var(--bg-base)' }}>
-      <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
-        <h1 className="text-xl font-medium mb-1">Neues Passwort</h1>
-        <p className="text-sm text-muted mb-6">Wähle ein neues Passwort für dein Konto.</p>
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-5 py-12">
+      <div className="w-full max-w-sm rounded-form bg-card border border-edge shadow-pop p-8">
+        <div className="mb-8">
+          <h1 className="font-display text-2xl text-ink leading-tight mb-1">
+            Neues Passwort
+          </h1>
+          <p className="text-sm text-ink-2">Wähle ein neues Passwort für dein Konto.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <Input
             type="password"
             placeholder="Neues Passwort"
             value={password}
             onChange={e => { setPassword(e.target.value); setError('') }}
-            className={inputClass}
+            error={showHints && !passwordOk}
             autoFocus
+            autoComplete="new-password"
           />
 
           {showHints && (
-            <ul className="m-0 p-0 list-none flex flex-col gap-1">
+            <ul className="flex flex-col gap-1.5 -mt-1">
               {checks.map(rule => (
                 <li
                   key={rule.id}
-                  className={`text-xs flex items-center gap-1.5 ${rule.met ? 'text-hint-ok' : 'text-muted'}`}
+                  className={cn('text-xs flex items-center gap-2', rule.met ? 'text-ok' : 'text-ink-3')}
                 >
-                  <span aria-hidden className="text-[11px]">{rule.met ? '✓' : '○'}</span>
+                  <span className="text-[10px]">{rule.met ? '✓' : '○'}</span>
                   {rule.label}
                 </li>
               ))}
             </ul>
           )}
 
-          {error && <p className="text-[13px] text-danger">{error}</p>}
+          {error && <p className="text-sm text-err">{error}</p>}
 
-          <Button type="submit" disabled={!passwordOk || saving} className="w-full">
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full mt-1"
+            disabled={!passwordOk || saving}
+          >
             {saving ? 'Speichern…' : 'Passwort speichern'}
           </Button>
         </form>

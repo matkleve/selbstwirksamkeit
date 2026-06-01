@@ -2,47 +2,67 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── Design tokens → Tailwind utilities ── */
 @theme inline {
-  /* New design system */
-  --color-bg-base: var(--bg-base);
-  --color-bg-card: var(--bg-card);
-  --color-bg-subtle: var(--bg-subtle);
-  --color-border-focus: var(--border-focus);
-  --color-text-primary: var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted: var(--text-muted);
-  --color-text-inverse: var(--text-inverse);
-  /* Auth-form / button Tailwind compatibility aliases */
-  --color-card: var(--bg-card);
-  --color-surface: var(--bg-subtle);
-  --color-border: var(--border);
-  --color-foreground: var(--text-primary);
-  --color-muted: var(--text-secondary);
+  /* Fonts */
+  --font-body:    var(--font-body);
+  --font-display: var(--font-display);
+
+  /* Surfaces */
+  --color-canvas: var(--bg-base);
+  --color-card:   var(--bg-card);
+  --color-subtle: var(--bg-subtle);
+
+  /* Content */
+  --color-ink:     var(--text-primary);
+  --color-ink-2:   var(--text-secondary);
+  --color-ink-3:   var(--text-muted);
+  --color-ink-inv: var(--text-inverse);
+
+  /* Borders */
+  --color-edge:    var(--border);
+  --color-ring:    var(--border-focus);
+
+  /* Feedback */
+  --color-err: var(--danger);
+  --color-ok:  var(--hint-ok);
+
+  /* ── Auth/button compat aliases ── */
+  --color-surface:     var(--bg-subtle);
+  --color-border:      var(--border);
+  --color-foreground:  var(--text-primary);
+  --color-muted:       var(--text-secondary);
   --color-muted-light: var(--text-muted);
-  --color-primary: var(--primary);
-  --color-primary-fg: var(--primary-fg);
-  --color-danger: var(--danger);
-  --color-hint-ok: var(--hint-ok);
-  --color-accent: var(--accent);
-  --color-accent-light: var(--bg-subtle);
+  --color-primary:     var(--primary);
+  --color-primary-fg:  var(--primary-fg);
+  --color-danger:      var(--danger);
+  --color-hint-ok:     var(--hint-ok);
 }
 
-:root,
-.light {
-  /* ── New design system ── */
-  --bg-base:      #F7F6F3;
-  --bg-card:      #FFFFFF;
-  --bg-subtle:    #EFEDE9;
-  --border:       #E2DDD8;
-  --border-focus: #C4B9AE;
-  --shadow-card:  0 1px 4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.04);
+@theme {
+  /* Radius */
+  --radius-form:  1.125rem;
+  --radius-card:  0.875rem;
+  --radius-field: 0.5625rem;
+  --radius-chip:  62.5rem;
 
-  --font-body:    'DM Sans', sans-serif;
-  --font-display: 'DM Serif Display', serif;
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-pop:  0 8px 24px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);
+}
+
+/* ── Per-theme CSS properties ── */
+:root, .light {
+  --bg-base:   #F7F6F3;
+  --bg-card:   #FFFFFF;
+  --bg-subtle: #F0EDE8;
+
+  --border:       #E4DDD7;
+  --border-focus: #C4B9AE;
 
   --text-primary:   #1C1917;
-  --text-secondary: #78716C;
-  --text-muted:     #A8A29E;
+  --text-secondary: #6B6460;
+  --text-muted:     #A09890;
   --text-inverse:   #FAFAF8;
 
   --valence-pos-strong: #3B7DD8;
@@ -53,100 +73,51 @@
   --valence-neg-weak:   #E0B09A;
   --valence-neutral:    #C4B9AE;
 
-  /* ── Auth-form / button compatibility aliases ── */
-  --primary:     #1C1917;
-  --primary-fg:  #FAFAF8;
-  --danger:      #C4603A;
-  --hint-ok:     #5A8A6A;
-  --accent:      #C4B9AE;
+  --primary:    #1C1917;
+  --primary-fg: #FAFAF8;
+  --danger:     #C4603A;
+  --hint-ok:    #5A8A6A;
 }
 
 .dark {
-  --bg-base:      #1C1917;
-  --bg-card:      #242019;
-  --bg-subtle:    #2C2822;
-  --border:       #3A3530;
-  --border-focus: #5A524A;
-  --shadow-card:  0 1px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.2);
+  --bg-base:   #1A1816;
+  --bg-card:   #221F1C;
+  --bg-subtle: #2A2724;
 
-  --text-primary:   #F5F0EB;
-  --text-secondary: #A89A90;
-  --text-muted:     #6E6058;
+  --border:       #38332E;
+  --border-focus: #5A524A;
+
+  --text-primary:   #F0EBE5;
+  --text-secondary: #9C9088;
+  --text-muted:     #605850;
   --text-inverse:   #1C1917;
 
-  --primary:     #F5F0EB;
-  --primary-fg:  #1C1917;
-  --danger:      #D4886A;
-  --hint-ok:     #7AB890;
-  --accent:      #5A524A;
+  --primary:    #F0EBE5;
+  --primary-fg: #1C1917;
+  --danger:     #D4886A;
+  --hint-ok:    #7AB890;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+/* ── Base — inside @layer so Tailwind utilities win ── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
 
-html, body {
-  overflow-x: hidden;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-}
+  html { -webkit-text-size-adjust: 100%; }
 
-.card {
-  background: var(--bg-card);
-  border-radius: 12px;
-  box-shadow: var(--shadow-card);
-  padding: 20px;
-}
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
 
-.btn-primary {
-  background: var(--text-primary);
-  color: var(--text-inverse);
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 500;
-  font-size: 0.9375rem;
-  font-family: var(--font-body);
-  cursor: pointer;
-  border: none;
-  transition: opacity 150ms ease;
-}
-.btn-primary:hover:not(:disabled) { opacity: 0.85; }
-.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
-
-.btn-ghost {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease;
-}
-.btn-ghost:hover {
-  border-color: var(--border-focus);
-  color: var(--text-primary);
-}
-
-input, textarea {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 400;
-}
-input:focus, textarea:focus {
-  border-color: var(--border-focus);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(196,185,174,0.2);
+  input, textarea, button, select {
+    font-family: inherit;
+    font-size: inherit;
+  }
 }

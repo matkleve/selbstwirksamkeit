@@ -77,8 +77,7 @@ export default function EntryCard() {
     setSaving(false)
     if (error || !data) return
     setSavedEntry(data as Entry)
-    if (grid.x < 0) return  // show ReframeFlow, don't reset yet
-    reset()
+    if (grid.x >= 0) reset()
   }
 
   const reset = () => {
@@ -92,48 +91,35 @@ export default function EntryCard() {
     setSavedEntry(null)
   }
 
-  const chipFilledStyle: React.CSSProperties = {
-    padding: '4px 10px',
-    borderRadius: 20,
-    fontSize: '0.8125rem',
-    background: 'var(--text-primary)',
-    color: 'var(--text-inverse)',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: 'var(--font-body)',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 4,
-  }
-
   const chips: Array<{
     key: 'person' | 'location' | 'activity'
     icon: string
     placeholder: string
+    label: string
     value: string
     setValue: (v: string) => void
   }> = [
-    { key: 'person',   icon: '👤', placeholder: 'z.B. Mama',    value: person,   setValue: setPerson },
-    { key: 'location', icon: '📍', placeholder: 'z.B. Büro',   value: location, setValue: setLocation },
-    { key: 'activity', icon: '⚡', placeholder: 'z.B. Pendeln', value: activity, setValue: setActivity },
+    { key: 'person',   icon: '👤', placeholder: 'z.B. Mama',    label: 'Person',     value: person,   setValue: setPerson },
+    { key: 'location', icon: '📍', placeholder: 'z.B. Büro',   label: 'Ort',        value: location, setValue: setLocation },
+    { key: 'activity', icon: '⚡', placeholder: 'z.B. Pendeln', label: 'Tätigkeit',  value: activity, setValue: setActivity },
   ]
 
   return (
-    <div className="card">
-      {/* Header */}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-        {location && <><span>📍 {location}</span><span>·</span></>}
+    <div className="card" style={{ padding: 28 }}>
+      {/* Meta header */}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 20, color: 'var(--text-muted)', fontSize: '0.8125rem', letterSpacing: '0.01em' }}>
+        {location && <><span>📍 {location}</span><span style={{ opacity: 0.4 }}>·</span></>}
         <span>{formatDate(now)} · {formatTime(now)}</span>
       </div>
 
       {/* Quote */}
-      <div style={{ minHeight: 52, display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ minHeight: 60, display: 'flex', alignItems: 'center', marginBottom: 24 }}>
         <p style={{
-          fontFamily: 'var(--font-display)',
+          fontFamily: 'var(--font-display), Georgia, serif',
           fontStyle: 'italic',
-          fontSize: '1.125rem',
+          fontSize: '1.1875rem',
+          lineHeight: 1.55,
           color: 'var(--text-secondary)',
-          lineHeight: 1.5,
           opacity: quoteVisible ? 1 : 0,
           transition: 'opacity 200ms ease',
         }}>
@@ -142,30 +128,43 @@ export default function EntryCard() {
       </div>
 
       {/* Grid */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, marginBottom: 20 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 24 }}>
         <EntryGrid value={grid} onChange={setGrid} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: 280, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          <span>schwierig ←</span>
-          <span>→ gut</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: 280, fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.01em' }}>
+          <span>← schwierig</span>
+          <span>gut →</span>
         </div>
       </div>
 
       {/* Textarea */}
-      <textarea
-        value={text}
-        onChange={e => setText(e.target.value)}
-        placeholder="Was geht dir durch den Kopf?"
-        rows={3}
-        style={{ width: '100%', padding: '10px 12px', marginBottom: 12, resize: 'vertical', minHeight: 80 }}
-      />
+      <div style={{ marginBottom: 16 }}>
+        <textarea
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder="Was geht dir durch den Kopf?"
+          rows={3}
+          style={{ minHeight: 88 }}
+        />
+      </div>
 
-      {/* Chips */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+      {/* Optional chips */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         {chips.map(chip => {
           if (chip.value) {
             return (
-              <button key={chip.key} onClick={() => { chip.setValue(''); setOpenChip(null) }} style={chipFilledStyle}>
-                {chip.icon} {chip.value} <span style={{ opacity: 0.6 }}>✕</span>
+              <button
+                key={chip.key}
+                onClick={() => { chip.setValue(''); setOpenChip(null) }}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                  padding: '5px 11px', borderRadius: 20,
+                  fontSize: '0.8125rem', fontFamily: 'inherit',
+                  background: 'var(--text-primary)', color: 'var(--text-inverse)',
+                  border: 'none', cursor: 'pointer',
+                }}
+              >
+                {chip.icon} {chip.value}
+                <span style={{ opacity: 0.55, fontSize: '0.75rem' }}>✕</span>
               </button>
             )
           }
@@ -179,34 +178,37 @@ export default function EntryCard() {
                 onBlur={() => { if (!chip.value) setOpenChip(null) }}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setOpenChip(null) }}
                 placeholder={chip.placeholder}
-                style={{ padding: '4px 10px', width: 150, fontSize: '0.875rem' }}
+                style={{ width: 160, padding: '5px 11px', fontSize: '0.875rem' }}
               />
             )
           }
           return (
-            <button key={chip.key} onClick={() => setOpenChip(chip.key)} className="btn-ghost" style={{ padding: '4px 12px', fontSize: '0.8125rem' }}>
-              + {chip.key === 'person' ? 'Person' : chip.key === 'location' ? 'Ort' : 'Tätigkeit'}
+            <button
+              key={chip.key}
+              onClick={() => setOpenChip(chip.key)}
+              className="btn-ghost"
+              style={{ padding: '5px 12px', fontSize: '0.8125rem' }}
+            >
+              + {chip.label}
             </button>
           )
         })}
       </div>
 
       {/* Body state */}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 20, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Zustand:</span>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 24, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginRight: 2 }}>Zustand</span>
         {(Object.keys(BODY_STATE_LABELS) as BodyState[]).map(state => (
           <button
             key={state}
             onClick={() => setBodyState(bodyState === state ? null : state)}
             style={{
-              padding: '3px 10px',
-              borderRadius: 20,
-              fontSize: '0.75rem',
-              border: `1px solid ${bodyState === state ? 'var(--border-focus)' : 'var(--border)'}`,
+              padding: '4px 11px', borderRadius: 20,
+              fontSize: '0.8125rem', fontFamily: 'inherit',
+              border: `1.5px solid ${bodyState === state ? 'var(--border-focus)' : 'var(--border)'}`,
               background: bodyState === state ? 'var(--bg-subtle)' : 'transparent',
               color: bodyState === state ? 'var(--text-primary)' : 'var(--text-muted)',
               cursor: 'pointer',
-              fontFamily: 'var(--font-body)',
               transition: 'all 120ms ease',
             }}
           >

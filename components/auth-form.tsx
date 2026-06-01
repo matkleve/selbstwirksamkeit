@@ -4,11 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Button } from '@/components/button'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
-
-const inputClass =
-  'w-full border border-border rounded-lg px-3 py-2.5 text-[15px] font-inherit outline-none bg-surface text-foreground'
+import { cn } from '@/lib/cn'
 
 type Mode = 'login' | 'signup' | 'reset'
 
@@ -58,97 +57,99 @@ export function AuthForm() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px] relative">
-      <div className="absolute top-4 right-4">
+    <div className="w-full max-w-sm rounded-form bg-card border border-edge shadow-pop p-8">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-2xl text-ink leading-tight">
+            Selbstwirksamkeit
+          </h1>
+          <p className="text-sm text-ink-2">Dein persönliches Tagebuch</p>
+        </div>
         <ThemeToggle />
       </div>
-      <h1 className="text-xl font-medium mb-1 pr-24">Selbstwirksamkeit</h1>
-      <p className="text-sm text-muted mb-6">Dein persönliches Erfolgs-Journal</p>
 
       {mode === 'reset' && resetSent ? (
         <div className="flex flex-col gap-4">
-          <p className="text-[15px] text-foreground">
+          <p className="text-sm text-ink leading-relaxed">
             ✓ Link gesendet. Schau in dein Postfach und klicke auf den Link zum Zurücksetzen.
           </p>
-          <button
-            type="button"
-            onClick={() => switchMode('login')}
-            className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
-          >
+          <Button variant="link" size="sm" onClick={() => switchMode('login')}>
             ← Zurück zum Anmelden
-          </button>
+          </Button>
         </div>
       ) : (
-        <form onSubmit={handleAuth} className="flex flex-col gap-3">
-          <input
+        <form onSubmit={handleAuth} className="flex flex-col gap-4">
+          <Input
             type="email"
             placeholder="E-Mail"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className={inputClass}
+            autoComplete="email"
           />
 
           {mode !== 'reset' && (
-            <input
+            <Input
               type="password"
               placeholder="Passwort"
               value={password}
               onChange={e => { setPassword(e.target.value); setAuthError('') }}
-              className={`${inputClass} ${showPasswordHints && !passwordOk ? 'border-[var(--hint-warn-border)]' : ''}`}
-              aria-describedby={showPasswordHints ? 'password-hints' : undefined}
+              error={showPasswordHints && !passwordOk}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             />
           )}
 
           {showPasswordHints && (
-            <ul id="password-hints" className="m-0 p-0 list-none flex flex-col gap-1">
+            <ul className="flex flex-col gap-1.5 -mt-1">
               {passwordChecks.map(rule => (
                 <li
                   key={rule.id}
-                  className={`text-xs flex items-center gap-1.5 ${rule.met ? 'text-hint-ok' : 'text-muted'}`}
+                  className={cn(
+                    'text-xs flex items-center gap-2',
+                    rule.met ? 'text-ok' : 'text-ink-3'
+                  )}
                 >
-                  <span aria-hidden className="text-[11px]">{rule.met ? '✓' : '○'}</span>
+                  <span className="text-[10px]">{rule.met ? '✓' : '○'}</span>
                   {rule.label}
                 </li>
               ))}
             </ul>
           )}
 
-          {authError && <p className="text-[13px] text-danger">{authError}</p>}
+          {authError && (
+            <p className="text-sm text-err">{authError}</p>
+          )}
 
           <Button
             type="submit"
+            size="lg"
+            className="w-full mt-1"
             disabled={mode === 'signup' && !passwordOk}
-            className="w-full"
           >
             {mode === 'login' ? 'Anmelden' : mode === 'signup' ? 'Registrieren' : 'Reset-Link senden'}
           </Button>
 
-          <div className="flex flex-col gap-2 mt-1">
+          <div className="flex flex-col gap-2 pt-1">
             {mode === 'login' && (
-              <button
-                type="button"
-                onClick={() => switchMode('reset')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
-              >
+              <Button variant="link" size="sm" type="button" onClick={() => switchMode('reset')}>
                 Passwort vergessen?
-              </button>
+              </Button>
             )}
             {mode !== 'reset' ? (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
               >
-                {mode === 'login' ? 'Noch kein Konto? Registrieren →' : 'Bereits registriert? Anmelden →'}
-              </button>
+                {mode === 'login'
+                  ? 'Noch kein Konto? Registrieren →'
+                  : 'Bereits registriert? Anmelden →'}
+              </Button>
             ) : (
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
-              >
+              <Button variant="link" size="sm" type="button" onClick={() => switchMode('login')}>
                 ← Zurück zum Anmelden
-              </button>
+              </Button>
             )}
           </div>
         </form>
