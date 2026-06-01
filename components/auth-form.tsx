@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { Button } from '@/components/button'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
+import { cn } from '@/lib/cn'
 
 type Mode = 'login' | 'signup' | 'reset'
 
@@ -55,73 +57,59 @@ export function AuthForm() {
   }
 
   return (
-    <div style={{
-      background: 'var(--bg-card)',
-      border: '1px solid var(--border)',
-      borderRadius: 18,
-      padding: '32px 28px',
-      width: '100%',
-      maxWidth: 400,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
-    }}>
+    <div className="w-full max-w-sm rounded-form bg-card border border-edge shadow-pop p-8">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
-        <div>
-          <h1 style={{
-            fontFamily: 'var(--font-display), Georgia, serif',
-            fontSize: '1.625rem',
-            fontWeight: 400,
-            color: 'var(--text-primary)',
-            lineHeight: 1.2,
-            letterSpacing: '-0.01em',
-            marginBottom: 6,
-          }}>
+      <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex flex-col gap-1">
+          <h1 className="font-display text-2xl text-ink leading-tight">
             Selbstwirksamkeit
           </h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-            Dein persönliches Tagebuch
-          </p>
+          <p className="text-sm text-ink-2">Dein persönliches Tagebuch</p>
         </div>
         <ThemeToggle />
       </div>
 
       {mode === 'reset' && resetSent ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <p style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-ink leading-relaxed">
             ✓ Link gesendet. Schau in dein Postfach und klicke auf den Link zum Zurücksetzen.
           </p>
-          <button
-            type="button"
-            onClick={() => switchMode('login')}
-            style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
-          >
+          <Button variant="link" size="sm" onClick={() => switchMode('login')}>
             ← Zurück zum Anmelden
-          </button>
+          </Button>
         </div>
       ) : (
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
+        <form onSubmit={handleAuth} className="flex flex-col gap-4">
+          <Input
             type="email"
             placeholder="E-Mail"
             value={email}
             onChange={e => setEmail(e.target.value)}
+            autoComplete="email"
           />
 
           {mode !== 'reset' && (
-            <input
+            <Input
               type="password"
               placeholder="Passwort"
               value={password}
               onChange={e => { setPassword(e.target.value); setAuthError('') }}
-              style={showPasswordHints && !passwordOk ? { borderColor: 'var(--border-focus)' } : undefined}
+              error={showPasswordHints && !passwordOk}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
             />
           )}
 
           {showPasswordHints && (
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 5, padding: 0 }}>
+            <ul className="flex flex-col gap-1.5 -mt-1">
               {passwordChecks.map(rule => (
-                <li key={rule.id} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6, color: rule.met ? 'var(--hint-ok)' : 'var(--text-muted)' }}>
-                  <span style={{ fontSize: '0.6875rem' }}>{rule.met ? '✓' : '○'}</span>
+                <li
+                  key={rule.id}
+                  className={cn(
+                    'text-xs flex items-center gap-2',
+                    rule.met ? 'text-ok' : 'text-ink-3'
+                  )}
+                >
+                  <span className="text-[10px]">{rule.met ? '✓' : '○'}</span>
                   {rule.label}
                 </li>
               ))}
@@ -129,39 +117,39 @@ export function AuthForm() {
           )}
 
           {authError && (
-            <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>{authError}</p>
+            <p className="text-sm text-err">{authError}</p>
           )}
 
-          <Button type="submit" disabled={mode === 'signup' && !passwordOk} className="w-full" style={{ marginTop: 4 }}>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full mt-1"
+            disabled={mode === 'signup' && !passwordOk}
+          >
             {mode === 'login' ? 'Anmelden' : mode === 'signup' ? 'Registrieren' : 'Reset-Link senden'}
           </Button>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          <div className="flex flex-col gap-2 pt-1">
             {mode === 'login' && (
-              <button
-                type="button"
-                onClick={() => switchMode('reset')}
-                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
-              >
+              <Button variant="link" size="sm" type="button" onClick={() => switchMode('reset')}>
                 Passwort vergessen?
-              </button>
+              </Button>
             )}
             {mode !== 'reset' ? (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
               >
-                {mode === 'login' ? 'Noch kein Konto? Registrieren →' : 'Bereits registriert? Anmelden →'}
-              </button>
+                {mode === 'login'
+                  ? 'Noch kein Konto? Registrieren →'
+                  : 'Bereits registriert? Anmelden →'}
+              </Button>
             ) : (
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
-              >
+              <Button variant="link" size="sm" type="button" onClick={() => switchMode('login')}>
                 ← Zurück zum Anmelden
-              </button>
+              </Button>
             )}
           </div>
         </form>

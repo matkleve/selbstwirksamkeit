@@ -2,17 +2,32 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ── Design tokens → Tailwind utilities ── */
 @theme inline {
-  /* New design tokens */
-  --color-bg-base:      var(--bg-base);
-  --color-bg-card:      var(--bg-card);
-  --color-bg-subtle:    var(--bg-subtle);
-  --color-border-focus: var(--border-focus);
-  --color-text-primary:   var(--text-primary);
-  --color-text-secondary: var(--text-secondary);
-  --color-text-muted:     var(--text-muted);
-  /* Auth / Button Tailwind aliases */
-  --color-card:        var(--bg-card);
+  /* Fonts */
+  --font-body:    var(--font-body);
+  --font-display: var(--font-display);
+
+  /* Surfaces */
+  --color-canvas: var(--bg-base);
+  --color-card:   var(--bg-card);
+  --color-subtle: var(--bg-subtle);
+
+  /* Content */
+  --color-ink:     var(--text-primary);
+  --color-ink-2:   var(--text-secondary);
+  --color-ink-3:   var(--text-muted);
+  --color-ink-inv: var(--text-inverse);
+
+  /* Borders */
+  --color-edge:    var(--border);
+  --color-ring:    var(--border-focus);
+
+  /* Feedback */
+  --color-err: var(--danger);
+  --color-ok:  var(--hint-ok);
+
+  /* ── Auth/button compat aliases ── */
   --color-surface:     var(--bg-subtle);
   --color-border:      var(--border);
   --color-foreground:  var(--text-primary);
@@ -24,17 +39,26 @@
   --color-hint-ok:     var(--hint-ok);
 }
 
-:root,
-.light {
-  --bg-base:      #F7F6F3;
-  --bg-card:      #FFFFFF;
-  --bg-subtle:    #F0EDE8;
+@theme {
+  /* Radius */
+  --radius-form:  1.125rem;
+  --radius-card:  0.875rem;
+  --radius-field: 0.5625rem;
+  --radius-chip:  62.5rem;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05);
+  --shadow-pop:  0 8px 24px rgba(0,0,0,.10), 0 0 0 1px rgba(0,0,0,.06);
+}
+
+/* ── Per-theme CSS properties ── */
+:root, .light {
+  --bg-base:   #F7F6F3;
+  --bg-card:   #FFFFFF;
+  --bg-subtle: #F0EDE8;
 
   --border:       #E4DDD7;
   --border-focus: #C4B9AE;
-
-  --shadow-card:  0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.05);
-  --shadow-dropdown: 0 8px 24px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06);
 
   --text-primary:   #1C1917;
   --text-secondary: #6B6460;
@@ -56,15 +80,12 @@
 }
 
 .dark {
-  --bg-base:      #1A1816;
-  --bg-card:      #221F1C;
-  --bg-subtle:    #2A2724;
+  --bg-base:   #1A1816;
+  --bg-card:   #221F1C;
+  --bg-subtle: #2A2724;
 
   --border:       #38332E;
   --border-focus: #5A524A;
-
-  --shadow-card:     0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.2);
-  --shadow-dropdown: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(0,0,0,0.3);
 
   --text-primary:   #F0EBE5;
   --text-secondary: #9C9088;
@@ -77,140 +98,26 @@
   --hint-ok:    #7AB890;
 }
 
-/* ── Reset ── */
-*, *::before, *::after { box-sizing: border-box; }
-* { margin: 0; padding: 0; }
+/* ── Base — inside @layer so Tailwind utilities win ── */
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
 
-/* ── Base ── */
-html {
-  font-size: 16px;
-  -webkit-text-size-adjust: 100%;
-}
+  html { -webkit-text-size-adjust: 100%; }
 
-body {
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-}
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body), system-ui, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
 
-/* ── Typography scale ── */
-.display {
-  font-family: var(--font-display), Georgia, serif;
-  font-weight: 400;
+  input, textarea, button, select {
+    font-family: inherit;
+    font-size: inherit;
+  }
 }
-
-h1, h2, h3 {
-  font-family: var(--font-body), system-ui, sans-serif;
-  line-height: 1.3;
-}
-
-/* ── Layout primitives ── */
-.page {
-  min-height: 100vh;
-  background: var(--bg-base);
-  padding: 32px 20px 64px;
-}
-
-.page-inner {
-  max-width: 520px;
-  margin: 0 auto;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 32px;
-  flex-wrap: wrap;
-}
-
-.page-title {
-  font-family: var(--font-display), Georgia, serif;
-  font-size: 1.375rem;
-  font-weight: 400;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-}
-
-/* ── Card ── */
-.card {
-  background: var(--bg-card);
-  border-radius: 14px;
-  box-shadow: var(--shadow-card);
-  padding: 24px;
-}
-
-.card + .card,
-.card + * { margin-top: 12px; }
-
-/* ── Buttons ── */
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--text-primary);
-  color: var(--text-inverse);
-  border-radius: 9px;
-  padding: 11px 22px;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-weight: 500;
-  font-size: 0.9375rem;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  border: none;
-  transition: opacity 150ms ease;
-  white-space: nowrap;
-}
-.btn-primary:hover:not(:disabled) { opacity: 0.82; }
-.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-.btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  padding: 9px 16px;
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: border-color 150ms ease, color 150ms ease, background 150ms ease;
-  white-space: nowrap;
-}
-.btn-ghost:hover {
-  border-color: var(--border-focus);
-  color: var(--text-primary);
-  background: var(--bg-subtle);
-}
-
-/* ── Inputs ── */
-input, textarea {
-  width: 100%;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border);
-  border-radius: 9px;
-  color: var(--text-primary);
-  font-family: var(--font-body), system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  padding: 11px 14px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
-}
-input::placeholder, textarea::placeholder {
-  color: var(--text-muted);
-}
-input:focus, textarea:focus {
-  border-color: var(--border-focus);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(196,185,174,0.18);
-}
-textarea { resize: vertical; }
