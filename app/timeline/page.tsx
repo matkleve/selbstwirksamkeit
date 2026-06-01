@@ -21,22 +21,20 @@ export default async function TimelinePage() {
   const entries = (data ?? []) as Entry[]
 
   return (
-    <main style={{ minHeight: '100vh', background: 'var(--bg-base)', padding: '24px 16px 48px' }}>
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28, gap: 12, flexWrap: 'wrap' }}>
-          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 400 }}>
-            Selbstwirksamkeit
-          </h1>
+    <main className="page">
+      <div className="page-inner">
+        <header className="page-header">
+          <h1 className="page-title">Selbstwirksamkeit</h1>
           <Nav />
           <SignOut />
         </header>
 
         {entries.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9375rem', padding: 40 }}>
+          <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '48px 24px' }}>
             Noch keine Einträge.
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {entries.map(entry => (
               <TimelineCard key={entry.id} entry={entry} />
             ))}

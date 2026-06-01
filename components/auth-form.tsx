@@ -7,9 +7,6 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/button'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
 
-const inputClass =
-  'w-full border border-border rounded-lg px-3 py-2.5 text-[15px] font-inherit outline-none bg-surface text-foreground'
-
 type Mode = 'login' | 'signup' | 'reset'
 
 export function AuthForm() {
@@ -58,36 +55,56 @@ export function AuthForm() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
-      <div className="flex items-start justify-between gap-3 mb-6">
+    <div style={{
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 18,
+      padding: '32px 28px',
+      width: '100%',
+      maxWidth: 400,
+      boxShadow: '0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 28 }}>
         <div>
-          <h1 className="text-xl font-medium mb-1">Selbstwirksamkeit</h1>
-          <p className="text-sm text-muted">Dein persönliches Erfolgs-Journal</p>
+          <h1 style={{
+            fontFamily: 'var(--font-display), Georgia, serif',
+            fontSize: '1.625rem',
+            fontWeight: 400,
+            color: 'var(--text-primary)',
+            lineHeight: 1.2,
+            letterSpacing: '-0.01em',
+            marginBottom: 6,
+          }}>
+            Selbstwirksamkeit
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            Dein persönliches Tagebuch
+          </p>
         </div>
         <ThemeToggle />
       </div>
 
       {mode === 'reset' && resetSent ? (
-        <div className="flex flex-col gap-4">
-          <p className="text-[15px] text-foreground">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <p style={{ fontSize: '0.9375rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
             ✓ Link gesendet. Schau in dein Postfach und klicke auf den Link zum Zurücksetzen.
           </p>
           <button
             type="button"
             onClick={() => switchMode('login')}
-            className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
+            style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
           >
             ← Zurück zum Anmelden
           </button>
         </div>
       ) : (
-        <form onSubmit={handleAuth} className="flex flex-col gap-3">
+        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <input
             type="email"
             placeholder="E-Mail"
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className={inputClass}
           />
 
           {mode !== 'reset' && (
@@ -96,41 +113,35 @@ export function AuthForm() {
               placeholder="Passwort"
               value={password}
               onChange={e => { setPassword(e.target.value); setAuthError('') }}
-              className={`${inputClass} ${showPasswordHints && !passwordOk ? 'border-[var(--hint-warn-border)]' : ''}`}
-              aria-describedby={showPasswordHints ? 'password-hints' : undefined}
+              style={showPasswordHints && !passwordOk ? { borderColor: 'var(--border-focus)' } : undefined}
             />
           )}
 
           {showPasswordHints && (
-            <ul id="password-hints" className="m-0 p-0 list-none flex flex-col gap-1">
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 5, padding: 0 }}>
               {passwordChecks.map(rule => (
-                <li
-                  key={rule.id}
-                  className={`text-xs flex items-center gap-1.5 ${rule.met ? 'text-hint-ok' : 'text-muted'}`}
-                >
-                  <span aria-hidden className="text-[11px]">{rule.met ? '✓' : '○'}</span>
+                <li key={rule.id} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6, color: rule.met ? 'var(--hint-ok)' : 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.6875rem' }}>{rule.met ? '✓' : '○'}</span>
                   {rule.label}
                 </li>
               ))}
             </ul>
           )}
 
-          {authError && <p className="text-[13px] text-danger">{authError}</p>}
+          {authError && (
+            <p style={{ fontSize: '0.875rem', color: 'var(--danger)' }}>{authError}</p>
+          )}
 
-          <Button
-            type="submit"
-            disabled={mode === 'signup' && !passwordOk}
-            className="w-full"
-          >
+          <Button type="submit" disabled={mode === 'signup' && !passwordOk} className="w-full" style={{ marginTop: 4 }}>
             {mode === 'login' ? 'Anmelden' : mode === 'signup' ? 'Registrieren' : 'Reset-Link senden'}
           </Button>
 
-          <div className="flex flex-col gap-2 mt-1">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
             {mode === 'login' && (
               <button
                 type="button"
                 onClick={() => switchMode('reset')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
+                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
               >
                 Passwort vergessen?
               </button>
@@ -139,7 +150,7 @@ export function AuthForm() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
+                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
               >
                 {mode === 'login' ? 'Noch kein Konto? Registrieren →' : 'Bereits registriert? Anmelden →'}
               </button>
@@ -147,7 +158,7 @@ export function AuthForm() {
               <button
                 type="button"
                 onClick={() => switchMode('login')}
-                className="text-[13px] text-muted bg-transparent border-0 cursor-pointer p-0 text-left"
+                style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textAlign: 'left', fontFamily: 'inherit' }}
               >
                 ← Zurück zum Anmelden
               </button>
