@@ -58,12 +58,14 @@ export function AuthForm() {
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px] relative">
-      <div className="absolute top-4 right-4">
+    <div className="bg-card border border-border rounded-2xl p-8 w-full max-w-[380px]">
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-xl font-medium mb-1">Selbstwirksamkeit</h1>
+          <p className="text-sm text-muted">Dein persönliches Erfolgs-Journal</p>
+        </div>
         <ThemeToggle />
       </div>
-      <h1 className="text-xl font-medium mb-1 pr-24">Selbstwirksamkeit</h1>
-      <p className="text-sm text-muted mb-6">Dein persönliches Erfolgs-Journal</p>
 
       {mode === 'reset' && resetSent ? (
         <div className="flex flex-col gap-4">
