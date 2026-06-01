@@ -5,10 +5,10 @@ import { usePathname } from 'next/navigation'
 import { Plus, BarChart2, Sparkles, Bell } from 'lucide-react'
 
 const TABS = [
-  { href: '/',             label: 'Neu',       Icon: Plus },
-  { href: '/dashboard',   label: 'Dashboard', Icon: BarChart2 },
-  { href: '/motivation',  label: 'Stärke',    Icon: Sparkles },
-  { href: '/notifications', label: 'Erinnern', Icon: Bell },
+  { href: '/',               label: 'Neu',       Icon: Plus },
+  { href: '/dashboard',     label: 'Dashboard', Icon: BarChart2 },
+  { href: '/motivation',    label: 'Stärke',    Icon: Sparkles },
+  { href: '/notifications', label: 'Erinnern',  Icon: Bell },
 ]
 
 export default function BottomTabBar() {
@@ -17,14 +17,17 @@ export default function BottomTabBar() {
   return (
     <nav style={{
       position: 'fixed',
-      bottom: 0,
-      left: 0,
-      right: 0,
+      bottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
+      left: '50%',
+      transform: 'translateX(-50%)',
       zIndex: 50,
-      background: 'var(--bg-card)',
-      borderTop: '1px solid var(--border)',
       display: 'flex',
-      paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      gap: 8,
+      padding: '6px 8px',
+      background: 'var(--bg-card)',
+      border: '1px solid var(--border)',
+      borderRadius: 999,
+      boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.08)',
     }}>
       {TABS.map(({ href, label, Icon }) => {
         const active = path === href
@@ -33,23 +36,26 @@ export default function BottomTabBar() {
             key={href}
             href={href}
             style={{
-              flex: 1,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 3,
-              padding: '9px 4px 10px',
+              padding: '7px 14px',
+              borderRadius: 999,
               color: active ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: active ? 'var(--bg-subtle)' : 'transparent',
               textDecoration: 'none',
-              transition: 'color 150ms ease',
+              transition: 'color 150ms ease, background 150ms ease',
+              minWidth: 56,
             }}
           >
-            <Icon size={21} strokeWidth={active ? 2 : 1.5} />
+            <Icon size={19} strokeWidth={active ? 2 : 1.5} />
             <span style={{
-              fontSize: '0.625rem',
-              fontWeight: active ? 500 : 400,
-              letterSpacing: '0.01em',
+              fontSize: '0.5625rem',
+              fontWeight: active ? 600 : 400,
+              letterSpacing: '0.02em',
+              textTransform: 'uppercase',
             }}>
               {label}
             </span>

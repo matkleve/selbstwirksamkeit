@@ -39,7 +39,7 @@ export function AppShell({ children }: Props) {
         width: '100%',
         margin: '0 auto',
         padding: '20px 16px',
-        paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
       }}>
         {children}
       </div>

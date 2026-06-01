@@ -16,10 +16,13 @@ const BODY_STATE_LABELS: Record<BodyState, string> = {
   tired: 'müde',
 }
 
-const CHIP_SELECT = 'id,user_id,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
+const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
 export default function EntryCard() {
   const [grid, setGrid] = useState<GridPoint>({ x: 0, y: 0 })
+  const [title, setTitle] = useState('')
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [entryCount, setEntryCount] = useState<number | null>(null)
   const [text, setText] = useState('')
   const [person, setPerson] = useState('')
   const [location, setLocation] = useState('')
@@ -42,6 +45,7 @@ export default function EntryCard() {
     setQuote(initial[Math.floor(Math.random() * initial.length)])
     const id = setInterval(() => setNow(new Date()), 60_000)
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    supabase.from('entries').select('id', { count: 'exact', head: true }).then(({ count }) => setEntryCount(count ?? 0))
     Promise.all([
       supabase.from('persons').select('name').order('name'),
       supabase.from('locations').select('name').order('name'),
@@ -63,7 +67,7 @@ export default function EntryCard() {
       setQuote(texts[Math.floor(Math.random() * texts.length)])
       setLastZone(zone)
       setQuoteVisible(true)
-    }, 200)
+    }, 280)
     return () => clearTimeout(t)
   }, [grid, lastZone])
 
@@ -80,6 +84,7 @@ export default function EntryCard() {
     if (!text.trim()) return
     setSaving(true)
     const { data, error } = await supabase.from('entries').insert({
+      title: title.trim() || null,
       text: text.trim(), grid_x: grid.x, grid_y: grid.y,
       person: person.trim() || null, location: location.trim() || null,
       activity: activity.trim() || null, body_state: bodyState,
@@ -92,9 +97,11 @@ export default function EntryCard() {
   }
 
   const reset = () => {
+    setTitle(''); setEditingTitle(false)
     setText(''); setPerson(''); setLocation(''); setActivity('')
     setBodyState(null); setOpenChip(null)
     setGrid({ x: 0, y: 0 }); setSavedEntry(null)
+    setEntryCount(c => c !== null ? c + 1 : null)
   }
 
   const chips = [
@@ -112,22 +119,56 @@ export default function EntryCard() {
       transition: 'box-shadow 300ms ease',
     }}>
       {/* Meta header */}
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 16, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-        {location && <><span>📍 {location}</span><span style={{ opacity: 0.4 }}>·</span></>}
-        <span>{formatDate(now)} · {formatTime(now)}</span>
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 14, justifyContent: 'space-between' }}>
+        {editingTitle ? (
+          <input
+            autoFocus
+            value={title}
+            onChange={e => setTitle(e.target.value.slice(0, 60))}
+            onBlur={() => setEditingTitle(false)}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditingTitle(false) }}
+            placeholder={`Eintrag #${(entryCount ?? 0) + 1}`}
+            style={{
+              fontSize: '0.875rem', fontFamily: 'inherit',
+              fontWeight: 500, color: 'var(--text-primary)',
+              background: 'transparent', border: 'none',
+              borderBottom: '1px solid var(--border-focus)',
+              outline: 'none', padding: '1px 0', width: '100%',
+            }}
+          />
+        ) : (
+          <button
+            onClick={() => setEditingTitle(true)}
+            style={{
+              fontSize: '0.875rem', fontWeight: 500,
+              color: title ? 'var(--text-primary)' : 'var(--text-muted)',
+              background: 'none', border: 'none', padding: 0,
+              cursor: 'text', fontFamily: 'inherit', textAlign: 'left',
+            }}
+          >
+            {title || `Eintrag #${(entryCount ?? 0) + 1}`}
+          </button>
+        )}
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          {location ? `📍 ${location} · ` : ''}{formatTime(now)}
+        </span>
       </div>
 
       {/* Quote */}
-      <div style={{ minHeight: 52, display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+      <div style={{ height: 68, display: 'flex', alignItems: 'center', marginBottom: 20, overflow: 'hidden' }}>
         <p style={{
           fontFamily: 'var(--font-display), Georgia, serif',
           fontStyle: 'italic',
-          fontSize: '1.125rem',
+          fontSize: '1.0625rem',
           lineHeight: 1.5,
           color: 'var(--text-secondary)',
           opacity: quoteVisible ? 1 : 0,
-          transition: 'opacity 200ms ease',
+          transition: quoteVisible ? 'opacity 350ms ease' : 'opacity 250ms ease',
           margin: 0,
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
         }}>
           "{quote}"
         </p>

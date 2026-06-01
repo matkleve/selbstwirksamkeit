@@ -140,7 +140,7 @@ export function bilinearColor(x: number, y: number): [number, number, number] {
   return lerpRgb(bottom, top, ty)
 }
 
-export function cardTintShadow(x: number, y: number, opacity = 0.10): string {
+export function cardTintShadow(x: number, y: number, opacity = 0.22): string {
   const [r, g, b] = bilinearColor(x, y)
   return `inset 0 0 0 1000px rgba(${r},${g},${b},${opacity})`
 }
