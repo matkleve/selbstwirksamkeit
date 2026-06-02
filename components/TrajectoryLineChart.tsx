@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
@@ -60,7 +61,7 @@ function CustomTooltip(props: {
   )
 }
 
-export default function TrajectoryLineChart({ data, mode }: Props) {
+function TrajectoryLineChart({ data, mode }: Props) {
   const gradId = `traj-y-${mode}`
   const yStops =
     mode === 'valence'
@@ -112,8 +113,11 @@ export default function TrajectoryLineChart({ data, mode }: Props) {
           dot={<CustomDot mode={mode} />}
           activeDot={false}
           connectNulls={false}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>
   )
 }
+
+export default memo(TrajectoryLineChart)

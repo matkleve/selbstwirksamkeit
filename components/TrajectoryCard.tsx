@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useDeferredValue, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Minus, Plus, User, Users, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/cn'
@@ -10,7 +10,20 @@ import { sliderToTime } from '@/lib/trajectoryTime'
 import type { Entry } from '@/lib/types'
 import type { TrajectoryPoint } from '@/components/TrajectoryLineChart'
 
-const TrajectoryLineChart = dynamic(() => import('@/components/TrajectoryLineChart'), { ssr: false })
+const TrajectoryLineChart = dynamic(
+  () => import('@/components/TrajectoryLineChart'),
+  { ssr: false },
+)
+
+const TrajectoryLinePane = memo(function TrajectoryLinePane({
+  data,
+  mode,
+}: {
+  data: TrajectoryPoint[]
+  mode: 'valence' | 'referenz'
+}) {
+  return <TrajectoryLineChart data={data} mode={mode} />
+})
 
 type AxisMode = 'valence' | 'referenz' | 'both'
 
@@ -42,11 +55,13 @@ export default function TrajectoryCard({ entries }: Props) {
   }, [entries])
 
   const [range, setRange] = useState({ start: 0, end: 1 })
+  // Slider updates `range` every pointermove; chart uses deferred value to avoid Recharts lag.
+  const chartRange = useDeferredValue(range)
 
   const windowEntries = useMemo(() => {
     if (!timeBounds) return []
-    const from = sliderToTime(range.start, timeBounds.first, timeBounds.last)
-    const to = sliderToTime(range.end, timeBounds.first, timeBounds.last)
+    const from = sliderToTime(chartRange.start, timeBounds.first, timeBounds.last)
+    const to = sliderToTime(chartRange.end, timeBounds.first, timeBounds.last)
     return entries
       .filter(e => {
         const t = new Date(e.created_at).getTime()
@@ -57,7 +72,7 @@ export default function TrajectoryCard({ entries }: Props) {
         return true
       })
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-  }, [entries, timeBounds, range, mode])
+  }, [entries, timeBounds, chartRange, mode])
 
   const lineData = useMemo((): TrajectoryPoint[] => {
     if (mode === 'both') return []
@@ -144,7 +159,7 @@ export default function TrajectoryCard({ entries }: Props) {
       ) : mode === 'both' ? (
         <TrajectoryGridChart entries={windowEntries} />
       ) : lineData.length > 0 ? (
-        <TrajectoryLineChart data={lineData} mode={mode} />
+        <TrajectoryLinePane data={lineData} mode={mode} />
       ) : null}
     </div>
   )

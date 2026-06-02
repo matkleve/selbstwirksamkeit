@@ -67,63 +67,69 @@ export default function CalendarHeatmap({ weeks }: Props) {
       className="w-full overflow-hidden"
       style={{ minHeight: monthH + 4 + gridH }}
     >
-      <div
-        ref={scrollRef}
-        className="w-full overflow-x-auto overflow-y-hidden overscroll-x-contain"
-        style={{ touchAction: 'pan-x' }}
-      >
-        <div className="inline-flex min-w-full flex-col" style={{ width: contentW }}>
-          <div className="mb-1 flex gap-[3px]" style={{ marginLeft: LABEL_W + 4 }}>
-            {weeks.map((week, wi) => {
-              const d = new Date(week[0].dateStr + 'T12:00:00')
-              const prev = wi > 0 ? new Date(weeks[wi - 1][0].dateStr + 'T12:00:00') : null
-              const show = wi === 0 || (prev && d.getMonth() !== prev.getMonth())
-              return (
-                <div
-                  key={wi}
-                  className="shrink-0 text-[9px] text-ink-3"
-                  style={{ width: cell }}
-                >
-                  {show ? MONTH_ABBR[d.getMonth()] : ''}
-                </div>
-              )
-            })}
+      <div className="flex w-full">
+        {/* Day labels stay fixed while the week grid scrolls */}
+        <div className="mr-1 shrink-0 bg-card" style={{ width: LABEL_W }}>
+          <div style={{ height: monthH + 4 }} />
+          <div className="flex flex-col gap-[3px]">
+            {DAY_LABELS.map((label, i) => (
+              <div
+                key={i}
+                className="flex items-center text-[9px] text-ink-3"
+                style={{ height: cell }}
+              >
+                {label}
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="flex gap-[3px]">
-            <div className="mr-1 flex shrink-0 flex-col gap-[3px]" style={{ width: LABEL_W }}>
-              {DAY_LABELS.map((label, i) => (
-                <div
-                  key={i}
-                  className="flex items-center text-[9px] text-ink-3"
-                  style={{ height: cell }}
-                >
-                  {label}
+        <div
+          ref={scrollRef}
+          className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden overscroll-x-contain"
+          style={{ touchAction: 'pan-x' }}
+        >
+          <div className="inline-flex flex-col" style={{ width: contentW }}>
+            <div className="mb-1 flex gap-[3px]">
+              {weeks.map((week, wi) => {
+                const d = new Date(week[0].dateStr + 'T12:00:00')
+                const prev = wi > 0 ? new Date(weeks[wi - 1][0].dateStr + 'T12:00:00') : null
+                const show = wi === 0 || (prev && d.getMonth() !== prev.getMonth())
+                return (
+                  <div
+                    key={wi}
+                    className="shrink-0 text-[9px] text-ink-3"
+                    style={{ width: cell }}
+                  >
+                    {show ? MONTH_ABBR[d.getMonth()] : ''}
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="flex gap-[3px]">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex shrink-0 flex-col gap-[3px]">
+                  {week.map((day, di) => {
+                    const pct = day.count === 0 ? 0 : Math.min(45 + (day.count - 1) * 15, 80)
+                    const bg = day.count === 0
+                      ? 'var(--bg-subtle)'
+                      : `color-mix(in srgb, ${getValenceColor(day.avgValence)} ${pct}%, var(--bg-subtle))`
+                    const title = day.count > 0
+                      ? `${day.dateStr}: ${day.count} Eintrag${day.count > 1 ? 'e' : ''}, Ø ${day.avgValence?.toFixed(1) ?? '–'}`
+                      : day.dateStr
+                    return (
+                      <div
+                        key={di}
+                        title={title}
+                        className="shrink-0 rounded-[2px]"
+                        style={{ width: cell, height: cell, background: bg }}
+                      />
+                    )
+                  })}
                 </div>
               ))}
             </div>
-
-            {weeks.map((week, wi) => (
-              <div key={wi} className="flex shrink-0 flex-col gap-[3px]">
-                {week.map((day, di) => {
-                  const pct = day.count === 0 ? 0 : Math.min(45 + (day.count - 1) * 15, 80)
-                  const bg = day.count === 0
-                    ? 'var(--bg-subtle)'
-                    : `color-mix(in srgb, ${getValenceColor(day.avgValence)} ${pct}%, var(--bg-subtle))`
-                  const title = day.count > 0
-                    ? `${day.dateStr}: ${day.count} Eintrag${day.count > 1 ? 'e' : ''}, Ø ${day.avgValence?.toFixed(1) ?? '–'}`
-                    : day.dateStr
-                  return (
-                    <div
-                      key={di}
-                      title={title}
-                      className="shrink-0 rounded-[2px]"
-                      style={{ width: cell, height: cell, background: bg }}
-                    />
-                  )
-                })}
-              </div>
-            ))}
           </div>
         </div>
       </div>
