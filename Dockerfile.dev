@@ -5,15 +5,13 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci \
+  && mkdir -p .next \
+  && chown -R node:node /app/node_modules /app/.next
 
-COPY . .
-
-# Match typical host UID so bind-mounted .next stays writable on the host
-RUN chown -R node:node /app
 USER node
 
 EXPOSE 3000
 
-# Bind on all interfaces so port mapping from Docker works
+# Source is bind-mounted at runtime; deps + cache use anonymous volumes (see compose).
 CMD ["npm", "run", "dev", "--", "-H", "0.0.0.0", "-p", "3000"]

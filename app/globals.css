@@ -12,6 +12,7 @@
   --color-canvas: var(--bg-base);
   --color-card:   var(--bg-card);
   --color-subtle: var(--bg-subtle);
+  --color-field:  var(--bg-field);
 
   /* Content */
   --color-ink:     var(--text-primary);
@@ -61,9 +62,11 @@
 
 /* ── Per-theme CSS properties ── */
 :root, .light {
+  color-scheme: light;
   --bg-base:   #F7F6F3;
   --bg-card:   #FFFFFF;
   --bg-subtle: #F0EDE8;
+  --bg-field:  #FFFFFF;
 
   --border:       #E4DDD7;
   --border-focus: #C4B9AE;
@@ -83,23 +86,30 @@
 
   --grid-dot: rgba(0,0,0,0.11);
 
-  --primary:    #1C1917;
-  --primary-fg: #FAFAF8;
-  --danger:     #C4603A;
-  --hint-ok:    #5A8A6A;
+  --field-bg:        var(--bg-field);
+  --field-bg-hover:  #F0EDE8;
+  --field-border-hover: #D4CCC4;
+
+  --primary:         #1C1917;
+  --primary-fg:      #FAFAF8;
+  --primary-hover:   #35302C;
+  --danger:          #C4603A;
+  --hint-ok:         #5A8A6A;
 }
 
 .dark {
+  color-scheme: dark;
   --bg-base:   #1A1816;
   --bg-card:   #221F1C;
   --bg-subtle: #2A2724;
+  --bg-field:  #2A2724;
 
   --border:       #38332E;
   --border-focus: #5A524A;
 
-  --text-primary:   #F0EBE5;
-  --text-secondary: #C0B4AC;
-  --text-muted:     #8A7E78;
+  --text-primary:   #E8E2DC;
+  --text-secondary: #A89F96;
+  --text-muted:     #7A726A;
   --text-inverse:   #1C1917;
 
   --valence-pos-strong: #5B9AE8;
@@ -112,10 +122,19 @@
 
   --grid-dot: rgba(255,255,255,0.09);
 
-  --primary:    #F0EBE5;
-  --primary-fg: #1C1917;
-  --danger:     #D4886A;
-  --hint-ok:    #7AB890;
+  --field-bg:           #2A2724;
+  --field-bg-hover:     #322E2A;
+  --field-border-hover: #4A4540;
+
+  /* Primary = einziger klarer Akzent (Felder bleiben dunkel) */
+  --primary:         #C4B8A8;
+  --primary-fg:      #1A1816;
+  --primary-hover:   #D4CBC0;
+  --danger:          #D4886A;
+  --hint-ok:         #7AB890;
+
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ── Layout + component helpers ── */
@@ -166,14 +185,14 @@
     border-radius: var(--radius-field, 0.5625rem);
     font-size: 1rem;
     font-family: inherit;
-    background: var(--text-primary);
-    color: var(--text-inverse);
-    border: none;
+    background: var(--primary);
+    color: var(--primary-fg);
+    border: 1px solid transparent;
     cursor: pointer;
-    transition: opacity 150ms ease, transform 100ms ease;
+    transition: background-color 150ms ease, transform 100ms ease;
   }
 
-  .btn-primary:hover:not(:disabled) { opacity: 0.85; }
+  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
   .btn-primary:active:not(:disabled) { transform: scale(0.97); }
   .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -196,12 +215,64 @@
   }
 
   .btn-ghost:hover {
-    border-color: var(--border-focus);
+    border-color: var(--field-border-hover);
     color: var(--text-primary);
     background: var(--bg-subtle);
   }
 
   .btn-ghost:active { transform: scale(0.97); }
+
+  /* Feld: Shell trägt Border/Fläche; Input transparent (Autofill-safe) */
+  .field-shell {
+    display: flex;
+    width: 100%;
+    border-radius: var(--radius-field, 0.5625rem);
+    border: 1px solid var(--border);
+    background-color: var(--field-bg);
+    transition:
+      border-color 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .field-shell:hover {
+    border-color: var(--field-border-hover);
+    background-color: var(--field-bg-hover);
+  }
+
+  .field-shell:focus-within {
+    border-color: var(--border-focus);
+    background-color: var(--field-bg-hover);
+  }
+
+  .field-shell--error {
+    border-color: var(--danger);
+  }
+
+  .field-shell--error:focus-within {
+    border-color: var(--danger);
+  }
+
+  .field-input {
+    width: 100%;
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.25;
+    outline: none;
+  }
+
+  .field-input::placeholder {
+    color: var(--text-muted);
+  }
+
+  .field-input--textarea {
+    resize: none;
+    line-height: 1.5;
+  }
 }
 
 /* ── App shell + entry card (desktop) ── */
@@ -333,6 +404,23 @@
 
   button, select {
     font-family: inherit;
+  }
+
+  /* Autofill nur auf .field-input — inset auf Shell-Farbe, kein Browser-Gelb */
+  .field-input:-webkit-autofill,
+  .field-input:-webkit-autofill:hover,
+  .field-input:-webkit-autofill:focus,
+  .field-input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--text-primary) !important;
+    caret-color: var(--text-primary);
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg) inset !important;
+    box-shadow: 0 0 0 1000px var(--field-bg) inset !important;
+    transition: background-color 99999s ease-out, color 99999s ease-out;
+  }
+
+  .field-shell:focus-within .field-input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px var(--field-bg-hover) inset !important;
+    box-shadow: 0 0 0 1000px var(--field-bg-hover) inset !important;
   }
 }
 

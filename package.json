@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "local:up": "bash scripts/local-dev.sh",
     "docker:up": "bash scripts/docker-dev.sh",
     "docker:down": "docker compose down",
     "docker:env": "bash scripts/docker-env.sh",

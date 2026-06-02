@@ -23,6 +23,15 @@ export function formatDate(date: Date): string {
   })
 }
 
+/** z. B. „25. März 2026“ */
+export function formatEntryDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('de-DE', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }

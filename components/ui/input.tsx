@@ -7,19 +7,19 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ error, className, ...props }, ref) => (
-    <input
-      ref={ref}
+    <div
       className={cn(
-        'w-full rounded-field border bg-card text-ink placeholder:text-ink-3',
-        'px-4 py-3 text-base leading-none',
-        'transition-all duration-150 outline-none',
-        error
-          ? 'border-err focus:border-err focus:ring-2 focus:ring-err/20'
-          : 'border-edge focus:border-ring focus:ring-2 focus:ring-ring/15',
-        className
+        'field-shell',
+        error && 'field-shell--error',
+        className,
       )}
-      {...props}
-    />
+    >
+      <input
+        ref={ref}
+        className="field-input px-4 py-3"
+        {...props}
+      />
+    </div>
   )
 )
 Input.displayName = 'Input'

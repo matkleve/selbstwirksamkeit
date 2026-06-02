@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Button } from '@/components/ui/button'
@@ -12,8 +11,13 @@ import { Sprout } from 'lucide-react'
 
 type Mode = 'login' | 'signup' | 'reset'
 
+function finishAuth(session: { user: { id: string } } | null): boolean {
+  if (!session) return false
+  window.location.assign('/')
+  return true
+}
+
 export function AuthForm() {
-  const router = useRouter()
   const supabase = createClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -48,13 +52,34 @@ export function AuthForm() {
       return
     }
 
-    const fn =
-      mode === 'login'
-        ? supabase.auth.signInWithPassword({ email, password })
-        : supabase.auth.signUp({ email, password })
-    const { error } = await fn
-    if (error) setAuthError(error.message)
-    else router.refresh()
+    if (mode === 'signup') {
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) {
+        setAuthError(error.message)
+        return
+      }
+      if (finishAuth(data.session)) return
+      // Local Supabase: confirmations off — fall back to sign-in if no session returned
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        setAuthError(signInError.message)
+        return
+      }
+      if (!finishAuth(signInData.session)) {
+        setAuthError('Registrierung ok. Bitte melde dich an.')
+      }
+      return
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      setAuthError(error.message)
+      return
+    }
+    if (!finishAuth(data.session)) {
+      setAuthError('Anmeldung fehlgeschlagen. Bitte erneut versuchen.')
+    }
   }
 
   return (

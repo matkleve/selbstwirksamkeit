@@ -1,17 +1,20 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getSupabaseCookieOptions, type SupabaseCookieToSet } from '@/lib/supabase-cookies'
+import { getServerSupabaseUrl } from '@/lib/supabase-url'
 
 export async function createServerSupabaseClient() {
   const cookieStore = await cookies()
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    getServerSupabaseUrl(),
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll()
         },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
+        setAll(cookiesToSet: SupabaseCookieToSet[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               // CookieOptions (from @supabase/ssr) and ResponseCookieInit (Next.js) are compatible

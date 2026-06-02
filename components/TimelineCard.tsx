@@ -4,13 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import type { Entry } from '@/lib/types'
-import { getValenceColor, getQuadrant } from '@/lib/types'
-import { getBodyStateHint, timeAgo } from '@/lib/utils'
+import { getQuadrant, getValenceColor } from '@/lib/types'
+import { getBodyStateHint } from '@/lib/utils'
 import { quadrantTexts } from '@/lib/quadrantTexts'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import BodyStateHint from './BodyStateHint'
-import { MapPin, User, Zap } from 'lucide-react'
+import { EntryDisplay } from '@/components/entry'
 
 interface TimelineCardProps {
   entry: Entry
@@ -23,7 +23,6 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
   const router = useRouter()
   const supabase = createClient()
 
-  const valenceColor = getValenceColor(entry.grid_x)
   const quadrant = getQuadrant(entry)
   const quadrantText = quadrant
     ? quadrantTexts[quadrant][entry.id.charCodeAt(0) % quadrantTexts[quadrant].length]
@@ -52,87 +51,37 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
     router.refresh()
   }
 
-  const tintBg = `color-mix(in srgb, ${valenceColor} 6%, var(--bg-card))`
+  const tintBg = `color-mix(in srgb, ${getValenceColor(entry.grid_x)} 6%, var(--bg-card))`
 
   return (
-    <div style={{
-      background: tintBg,
-      borderRadius: 'var(--radius-card, 0.875rem)',
-      boxShadow: 'var(--shadow-card)',
-      border: '1px solid var(--border)',
-      overflow: 'hidden',
-      display: 'flex',
-    }}>
-      {/* Valence border */}
-      <div style={{ width: 3, background: valenceColor, flexShrink: 0 }} />
-
-      <div style={{ padding: '16px 18px', flex: 1, minWidth: 0 }}>
-        {/* Text */}
-        <p style={{ fontSize: '1rem', color: 'var(--text-primary)', lineHeight: 1.6, marginBottom: 8 }}>
-          "{entry.text}"
-        </p>
-
-        {/* Grid position */}
-        {gridLabel && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
-            ({gridLabel})
-          </p>
-        )}
-
-        {/* Quadrant text */}
-        {quadrantText && (
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: 8 }}>
-            💭 {quadrantText}
-          </p>
-        )}
-
-        {/* Reframe */}
-        {entry.reframe && (
-          <div style={{
-            padding: '8px 12px',
-            background: 'var(--bg-subtle)',
-            borderRadius: 8,
-            marginBottom: 8,
-            fontSize: '0.875rem',
-            color: 'var(--text-secondary)',
-          }}>
-            → {entry.reframe}
-          </div>
-        )}
-
-        {/* Body state hint */}
-        {bodyHint && <BodyStateHint hint={bodyHint} />}
-
-        {/* Meta chips */}
-        <div style={{ display: 'flex', gap: 8, fontSize: '0.75rem', color: 'var(--text-muted)', flexWrap: 'wrap', alignItems: 'center', marginBottom: 6 }}>
-          {entry.location && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <MapPin size={12} strokeWidth={1.75} aria-hidden /> {entry.location}
-            </span>
+    <div
+      className="overflow-hidden rounded-card border border-edge shadow-card"
+      style={{ background: tintBg }}
+    >
+      <div className="p-4 md:p-[18px]">
+        <EntryDisplay entry={entry} variant="full" size="md" lines="none" showDate>
+          {gridLabel && (
+            <p className="mb-1 text-xs text-ink-3">({gridLabel})</p>
           )}
-          {entry.person && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <User size={12} strokeWidth={1.75} aria-hidden /> {entry.person}
-            </span>
+          {quadrantText && (
+            <p className="mb-2 text-sm italic text-ink-3">💭 {quadrantText}</p>
           )}
-          {entry.activity && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <Zap size={12} strokeWidth={1.75} aria-hidden /> {entry.activity}
-            </span>
+          {entry.reframe && (
+            <div className="mb-2 rounded-lg bg-subtle px-3 py-2 text-sm text-ink-2">
+              → {entry.reframe}
+            </div>
           )}
-          <span style={{ marginLeft: 'auto' }}>{timeAgo(entry.created_at)}</span>
-        </div>
+          {bodyHint && <BodyStateHint hint={bodyHint} />}
+        </EntryDisplay>
 
-        {/* Reframe invite for negative entries without reframe */}
         {entry.grid_x !== null && entry.grid_x < 0 && !entry.reframe && !showReframe && (
-          <Button variant="link" size="sm" onClick={() => setShowReframe(true)}>
+          <Button variant="link" size="sm" className="mt-2" onClick={() => setShowReframe(true)}>
             → Wie siehst du das heute?
           </Button>
         )}
 
-        {/* Inline reframe input */}
         {showReframe && (
-          <div style={{ marginTop: 10 }}>
+          <div className="mt-3 border-t border-edge pt-3">
             <Textarea
               value={reframeText}
               onChange={e => setReframeText(e.target.value)}
@@ -141,7 +90,7 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
               className="mb-2"
               autoFocus
             />
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <div className="flex justify-end gap-2">
               <Button variant="ghost" size="sm" onClick={() => setShowReframe(false)}>
                 Abbrechen
               </Button>
@@ -156,8 +105,7 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
           </div>
         )}
 
-        {/* Delete */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+        <div className="mt-2 flex justify-end">
           <Button variant="link" size="sm" onClick={handleDelete}>
             löschen
           </Button>

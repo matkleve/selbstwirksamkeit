@@ -13,9 +13,17 @@ const base =
   'inline-flex items-center justify-center gap-2 font-body font-medium rounded-field transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed select-none shrink-0'
 
 const variants: Record<ButtonVariant, string> = {
-  primary: 'bg-ink text-ink-inv hover:opacity-85 active:scale-[0.97]',
-  ghost:   'bg-transparent text-ink-2 border border-edge hover:border-ring hover:text-ink hover:bg-subtle active:scale-[0.97]',
-  link:    'bg-transparent text-ink-2 hover:text-ink underline-offset-2 hover:underline p-0 h-auto',
+  primary: [
+    'bg-primary text-primary-fg border border-transparent',
+    'hover:bg-[var(--primary-hover)]',
+    'active:scale-[0.97]',
+  ].join(' '),
+  ghost: [
+    'bg-transparent text-ink-2 border border-edge',
+    'hover:border-[var(--field-border-hover)] hover:bg-subtle hover:text-ink',
+    'active:scale-[0.97]',
+  ].join(' '),
+  link: 'bg-transparent text-ink-2 hover:text-ink underline-offset-2 hover:underline p-0 h-auto',
 }
 
 const sizes: Record<ButtonSize, string> = {

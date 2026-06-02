@@ -16,6 +16,7 @@ public/workbox-*.js.map
 .env.local
 .env
 .env.docker
+.env.docker.sync
 .supabase-db-password
 
 # supabase local

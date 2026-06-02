@@ -34,9 +34,10 @@ Wenn `production` lokal fehlt: `git switch -c production origin/production` oder
 ## Lokales Docker
 
 ```bash
-npm run docker:up    # supabase start + Next.js im Container
+npm run local:up     # empfohlen: supabase start + Next.js auf dem Host
+npm run docker:up    # optional: Next.js im Container
 npm run docker:down
-npm run fix:next     # .next-Rechte nach Docker-Konflikt
+npm run fix:next     # .next-Rechte nach Docker-Konflikt (Host)
 ```
 
 Details: `docker/README.md`

@@ -4,27 +4,45 @@ import {
   LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { bilinearColor } from '@/lib/gridZones'
 
 export interface TrajectoryPoint {
   label: string
   value: number
   text?: string
+  gridX?: number
+  gridY?: number
 }
+
+export type TrajectoryChartMode = 'valence' | 'referenz'
 
 interface Props {
   data: TrajectoryPoint[]
-  positiveColor?: string
-  negativeColor?: string
+  mode: TrajectoryChartMode
 }
 
-function CustomDot(props: { cx?: number; cy?: number; payload?: TrajectoryPoint }) {
-  const { cx, cy, payload } = props
+function dotRgb(mode: TrajectoryChartMode, p: TrajectoryPoint): string {
+  const x = mode === 'valence' ? p.value : (p.gridX ?? 0)
+  const y = mode === 'referenz' ? p.value : (p.gridY ?? 0)
+  const [r, g, b] = bilinearColor(x, y)
+  return `rgb(${r},${g},${b})`
+}
+
+function CustomDot(props: {
+  cx?: number
+  cy?: number
+  payload?: TrajectoryPoint
+  mode: TrajectoryChartMode
+}) {
+  const { cx, cy, payload, mode } = props
   if (!cx || !cy || payload?.value == null) return null
-  const color = payload.value >= 0 ? '#3B7DD8' : '#C4603A'
-  return <circle cx={cx} cy={cy} r={3.5} fill={color} stroke="none" />
+  return <circle cx={cx} cy={cy} r={3.5} fill={dotRgb(mode, payload)} stroke="none" />
 }
 
-function CustomTooltip(props: { active?: boolean; payload?: Array<{ payload: TrajectoryPoint }> }) {
+function CustomTooltip(props: {
+  active?: boolean
+  payload?: Array<{ payload: TrajectoryPoint }>
+}) {
   const { active, payload } = props
   if (!active || !payload?.length) return null
   const d = payload[0].payload
@@ -42,14 +60,31 @@ function CustomTooltip(props: { active?: boolean; payload?: Array<{ payload: Tra
   )
 }
 
-export default function TrajectoryLineChart({ data }: Props) {
+export default function TrajectoryLineChart({ data, mode }: Props) {
+  const gradId = `traj-y-${mode}`
+  const yStops =
+    mode === 'valence'
+      ? (
+        <>
+          <stop offset="0%" stopColor="var(--valence-neg-strong)" />
+          <stop offset="50%" stopColor="var(--valence-neutral)" />
+          <stop offset="100%" stopColor="var(--valence-pos-strong)" />
+        </>
+      )
+      : (
+        <>
+          <stop offset="0%" stopColor="rgb(186, 144, 82)" />
+          <stop offset="50%" stopColor="var(--valence-neutral)" />
+          <stop offset="100%" stopColor="rgb(140, 120, 188)" />
+        </>
+      )
+
   return (
-    <ResponsiveContainer width="100%" height={130}>
+    <ResponsiveContainer width="100%" height={140}>
       <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 24 }}>
         <defs>
-          <linearGradient id="trajGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="50%" stopColor="#3B7DD8" />
-            <stop offset="50%" stopColor="#C4603A" />
+          <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+            {yStops}
           </linearGradient>
         </defs>
         <XAxis
@@ -72,9 +107,9 @@ export default function TrajectoryLineChart({ data }: Props) {
         <Line
           type="monotone"
           dataKey="value"
-          stroke="url(#trajGrad)"
+          stroke={`url(#${gradId})`}
           strokeWidth={2}
-          dot={<CustomDot />}
+          dot={<CustomDot mode={mode} />}
           activeDot={false}
           connectNulls={false}
         />

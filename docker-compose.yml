@@ -1,10 +1,9 @@
 # Local development: Next.js in Docker + Supabase via CLI on the host.
 #
-#   npm run docker:up      # starts Supabase (migrations) + web container
-#   npm run docker:down    # stops web container only
-#   supabase stop          # stops local Supabase stack
+# Prefer host dev (simpler): npm run local:up
+# Optional containerized Next.js: npm run docker:up
 #
-# Requires: Docker, Docker Compose v2, Supabase CLI (https://supabase.com/docs/guides/cli)
+# Requires: Docker, Docker Compose v2, Supabase CLI
 
 name: selbstwirksamkeit
 
@@ -21,12 +20,12 @@ services:
     user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
     volumes:
       - .:/app
-      - web_node_modules:/app/node_modules
-      - web_next:/app/.next
+      # Mask host .env.local (often production) so Next uses local Supabase keys.
+      - ./.env.docker.sync:/app/.env.local:ro
+      # Anonymous volumes (not named): inherit node_modules + .next from the image
+      # on first use, avoiding root-owned named volumes. See docker/README.md.
+      - /app/node_modules
+      - /app/.next
     extra_hosts:
       - "host.docker.internal:host-gateway"
     init: true
-
-volumes:
-  web_node_modules:
-  web_next:
