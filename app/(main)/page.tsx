@@ -1,6 +1,5 @@
 import { AuthForm } from '@/components/auth-form'
 import EntryCard from '@/components/EntryCard'
-import Banner from '@/components/Banner'
 import { getServerUser } from '@/lib/server-entries'
 
 export default async function HomePage() {
@@ -14,10 +13,5 @@ export default async function HomePage() {
     )
   }
 
-  return (
-    <>
-      <Banner />
-      <EntryCard />
-    </>
-  )
+  return <EntryCard />
 }

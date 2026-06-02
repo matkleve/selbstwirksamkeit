@@ -55,7 +55,7 @@ export function DropdownPanel({
             value={search.value}
             onChange={e => search.onChange(e.target.value)}
             placeholder={search.placeholder}
-            className="min-w-0 flex-1 border-0 bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
+            className="min-w-0 flex-1 border-0 bg-transparent text-base text-ink outline-none placeholder:text-ink-3"
           />
         </div>
       )}

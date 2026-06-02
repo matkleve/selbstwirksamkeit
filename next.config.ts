@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next'
 import withPWA from '@ducanh2912/next-pwa'
 
-const nextConfig: NextConfig = {}
+const nextConfig: NextConfig = {
+  output: 'standalone',
+}
 
 export default withPWA({
   dest: 'public',

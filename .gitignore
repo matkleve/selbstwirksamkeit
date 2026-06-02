@@ -15,6 +15,7 @@ public/workbox-*.js.map
 # env — NEVER commit real credentials
 .env.local
 .env
+.env.docker
 .supabase-db-password
 
 # supabase local

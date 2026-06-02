@@ -1,0 +1,30 @@
+# Local development: Next.js in Docker + Supabase via CLI on the host.
+#
+#   npm run docker:up      # starts Supabase (migrations) + web container
+#   npm run docker:down    # stops web container only
+#   supabase stop          # stops local Supabase stack
+#
+# Requires: Docker, Docker Compose v2, Supabase CLI (https://supabase.com/docs/guides/cli)
+
+name: selbstwirksamkeit
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    env_file:
+      - path: .env.docker
+        required: true
+    user: "${DOCKER_UID:-1000}:${DOCKER_GID:-1000}"
+    volumes:
+      - .:/app
+      - web_node_modules:/app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    init: true
+
+volumes:
+  web_node_modules:

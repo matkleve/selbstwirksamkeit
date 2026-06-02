@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "docker:up": "bash scripts/docker-dev.sh",
+    "docker:down": "docker compose down",
+    "docker:env": "bash scripts/docker-env.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",

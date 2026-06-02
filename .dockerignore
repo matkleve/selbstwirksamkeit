@@ -1,0 +1,17 @@
+node_modules
+.next
+out
+dist
+.git
+.env
+.env.local
+.env.docker
+.supabase-db-password
+*.md
+!docker/README.md
+.vercel
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+supabase/.temp

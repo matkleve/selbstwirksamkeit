@@ -2,25 +2,33 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import ValenceChartLazy from '@/components/ValenceChartLazy'
+import TrajectoryCard from '@/components/TrajectoryCard'
 import CalendarHeatmap from '@/components/CalendarHeatmap'
 import TimeOfDayBars from '@/components/TimeOfDayBars'
+import { Card } from '@/components/ui/card'
 import { useEntries } from '@/components/EntriesProvider'
 import type { BodyState } from '@/lib/types'
 import type { CalDay } from '@/components/CalendarHeatmap'
 import type { DayPeriod } from '@/components/TimeOfDayBars'
-import type { ChartPoint } from '@/components/ValenceChart'
+import { cn } from '@/lib/cn'
 
-const card: React.CSSProperties = { background: 'var(--bg-card)', borderRadius: 12, boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 14 }
-const lbl: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
+const sectionLabel = 'mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-3'
+
+const QUADRANT_META = [
+  { key: 'neg-other' as const, label: '− / andere', bar: 'bg-v-neg-mid' },
+  { key: 'pos-other' as const, label: '+ / andere', bar: 'bg-v-pos-mid' },
+  { key: 'neg-self' as const, label: '− / ich', bar: 'bg-v-neg-mid' },
+  { key: 'pos-self' as const, label: '+ / ich', bar: 'bg-v-pos-mid' },
+]
 
 export default function DashboardView() {
   const { entries } = useEntries()
 
   const {
-    posCount,
-    negCount,
-    chartData,
+    weekCount,
+    weekDays,
+    weekQC,
+    maxWeekQ,
     calWeeks,
     periodData,
     ge,
@@ -31,22 +39,20 @@ export default function DashboardView() {
   } = useMemo(() => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const thisWeek = entries.filter(e => new Date(e.created_at) >= weekAgo)
-    const posCount = thisWeek.filter(e => e.grid_x !== null && e.grid_x > 0).length
-    const negCount = thisWeek.filter(e => e.grid_x !== null && e.grid_x < 0).length
+    const weekCount = thisWeek.length
+    const weekDays = new Set(thisWeek.map(e => e.created_at.slice(0, 10))).size
+
+    const weekQC = { 'pos-other': 0, 'pos-self': 0, 'neg-other': 0, 'neg-self': 0 }
+    thisWeek.forEach(e => {
+      if (e.grid_x === null || e.grid_y === null) return
+      if (e.grid_x >= 0 && e.grid_y >= 0) weekQC['pos-other']++
+      else if (e.grid_x >= 0) weekQC['pos-self']++
+      else if (e.grid_y >= 0) weekQC['neg-other']++
+      else weekQC['neg-self']++
+    })
+    const maxWeekQ = Math.max(...Object.values(weekQC), 1)
 
     const now = new Date()
-    const chartData: ChartPoint[] = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date(now)
-      d.setDate(d.getDate() - (13 - i))
-      const ds = d.toDateString()
-      const de = entries.filter(e => new Date(e.created_at).toDateString() === ds && e.grid_x !== null)
-      const label = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' })
-      if (!de.length) return { label, value: null }
-      const value = de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length
-      const latest = de[de.length - 1]
-      return { label, value, text: latest.text }
-    })
-
     const todayDow = now.getDay()
     const daysToMonday = todayDow === 0 ? 6 : todayDow - 1
     const thisMonday = new Date(now)
@@ -105,104 +111,126 @@ export default function DashboardView() {
 
     const latestEntries = [...entries].reverse().slice(0, 3)
 
-    return { posCount, negCount, chartData, calWeeks, periodData, ge, qC, maxQ, bodyPatterns, latestEntries }
+    return { weekCount, weekDays, weekQC, maxWeekQ, calWeeks, periodData, ge, qC, maxQ, bodyPatterns, latestEntries }
   }, [entries])
 
   if (entries.length === 0) {
     return (
-      <div style={{ ...card, textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
+      <Card className="mb-3.5 py-10 text-center text-ink-3">
         Noch keine Einträge.
-      </div>
+      </Card>
     )
   }
 
   return (
     <>
-      <div style={card}>
-        <p style={lbl}>Diese Woche</p>
-        <div style={{ display: 'flex', gap: 24 }}>
-          <div>
-            <div style={{ fontSize: '2.25rem', fontFamily: 'var(--font-display)', color: 'var(--valence-pos-strong)', lineHeight: 1 }}>{posCount}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>positiv</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '2.25rem', fontFamily: 'var(--font-display)', color: 'var(--valence-neg-strong)', lineHeight: 1 }}>{negCount}</div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 3 }}>schwierig</div>
-          </div>
+      <Card className="mb-3.5 p-5">
+        <p className={sectionLabel}>Diese Woche</p>
+        <div className="flex items-baseline gap-3">
+          <span className="font-display text-4xl leading-none text-ink">{weekCount}</span>
+          <span className="text-sm text-ink-2">
+            {weekCount === 1 ? 'Eintrag' : 'Einträge'}
+            {weekDays > 0 && (
+              <> · {weekDays} {weekDays === 1 ? 'Tag' : 'Tage'} mit Spur</>
+            )}
+          </span>
         </div>
-      </div>
-
-      {chartData.some(d => d.value !== null) && (
-        <div style={card}>
-          <p style={lbl}>Letzte 14 Tage</p>
-          <ValenceChartLazy data={chartData} />
-        </div>
-      )}
-
-      <div style={card}>
-        <p style={lbl}>Kalender · 16 Wochen</p>
-        <CalendarHeatmap weeks={calWeeks} />
-      </div>
-
-      <div style={card}>
-        <p style={lbl}>Tageszeit</p>
-        <TimeOfDayBars periods={periodData} />
-      </div>
-
-      {ge.length >= 5 && (
-        <div style={card}>
-          <p style={lbl}>Quadranten</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
-            {[
-              { key: 'neg-other' as const, label: 'neg / andere', color: 'var(--valence-neg-mid)' },
-              { key: 'pos-other' as const, label: 'pos / andere', color: 'var(--valence-pos-mid)' },
-              { key: 'neg-self' as const, label: 'neg / ich', color: 'var(--valence-neg-mid)' },
-              { key: 'pos-self' as const, label: 'pos / ich', color: 'var(--valence-pos-mid)' },
-            ].map(({ key, label, color }) => (
+        {weekCount > 0 && (
+          <div className="mt-4 grid grid-cols-2 gap-x-5 gap-y-2.5">
+            {QUADRANT_META.map(({ key, label, bar }) => (
               <div key={key}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-                  <span>{label}</span><span>{qC[key]}</span>
+                <div className="mb-1 flex justify-between text-xs text-ink-3">
+                  <span>{label}</span>
+                  <span>{weekQC[key]}</span>
                 </div>
-                <div style={{ height: 6, background: 'var(--bg-subtle)', borderRadius: 3 }}>
-                  <div style={{ height: '100%', width: `${(qC[key] / maxQ) * 100}%`, background: color, borderRadius: 3, opacity: 0.7 }} />
+                <div className="h-1.5 rounded-sm bg-subtle">
+                  <div
+                    className={cn('h-full rounded-sm opacity-70', bar)}
+                    style={{ width: `${(weekQC[key] / maxWeekQ) * 100}%` }}
+                  />
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        )}
+      </Card>
+
+      <TrajectoryCard entries={entries} />
+
+      <Card className="mb-3.5 p-5">
+        <p className={sectionLabel}>Kalender · 16 Wochen</p>
+        <CalendarHeatmap weeks={calWeeks} />
+      </Card>
+
+      <Card className="mb-3.5 p-5">
+        <p className={sectionLabel}>Tageszeit</p>
+        <TimeOfDayBars periods={periodData} />
+      </Card>
+
+      {ge.length >= 5 && (
+        <Card className="mb-3.5 p-5">
+          <p className={sectionLabel}>Quadranten</p>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-2.5">
+            {QUADRANT_META.map(({ key, label, bar }) => (
+              <div key={key}>
+                <div className="mb-1 flex justify-between text-xs text-ink-3">
+                  <span>{label}</span>
+                  <span>{qC[key]}</span>
+                </div>
+                <div className="h-1.5 rounded-sm bg-subtle">
+                  <div
+                    className={cn('h-full rounded-sm opacity-70', bar)}
+                    style={{ width: `${(qC[key] / maxQ) * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       )}
 
       {bodyPatterns.length > 0 && (
-        <div style={card}>
-          <p style={lbl}>Körper-Muster</p>
+        <Card className="mb-3.5 p-5">
+          <p className={sectionLabel}>Körper-Muster</p>
           {bodyPatterns.map((p, i) => (
-            <p key={i} style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', fontStyle: 'italic', fontFamily: 'var(--font-display)', lineHeight: 1.5, marginBottom: i < bodyPatterns.length - 1 ? 10 : 0 }}>
+            <p
+              key={i}
+              className={cn(
+                'font-display text-[0.9375rem] italic leading-snug text-ink-2',
+                i < bodyPatterns.length - 1 && 'mb-2.5',
+              )}
+            >
               💭 {p}
             </p>
           ))}
-        </div>
+        </Card>
       )}
 
-      <div style={card}>
-        <p style={lbl}>Letzte Einträge</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+      <Card className="mb-3.5 p-5">
+        <p className={sectionLabel}>Letzte Einträge</p>
+        <div className="mb-3.5 flex flex-col gap-2">
           {latestEntries.map(entry => (
-            <div key={entry.id} style={{
-              display: 'flex', gap: 10, alignItems: 'flex-start',
-              padding: '8px 0',
-              borderBottom: '1px solid var(--border)',
-            }}>
-              <div style={{ width: 3, height: 36, borderRadius: 2, flexShrink: 0, background: `var(--valence-${entry.grid_x !== null && entry.grid_x >= 3 ? 'pos-strong' : entry.grid_x !== null && entry.grid_x >= 1 ? 'pos-mid' : entry.grid_x !== null && entry.grid_x >= -1 ? 'neutral' : entry.grid_x !== null && entry.grid_x >= -3 ? 'neg-mid' : 'neg-strong'})`, marginTop: 2 }} />
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            <div
+              key={entry.id}
+              className="flex items-start gap-2.5 border-b border-edge py-2 last:border-b-0"
+            >
+              <div
+                className="mt-0.5 h-9 w-0.5 shrink-0 rounded-sm"
+                style={{ background: `var(--valence-${entry.grid_x !== null && entry.grid_x >= 3 ? 'pos-strong' : entry.grid_x !== null && entry.grid_x >= 1 ? 'pos-mid' : entry.grid_x !== null && entry.grid_x >= -1 ? 'neutral' : entry.grid_x !== null && entry.grid_x >= -3 ? 'neg-mid' : 'neg-strong'})` }}
+              />
+              <p className="m-0 line-clamp-2 text-sm leading-snug text-ink-2">
                 {entry.text}
               </p>
             </div>
           ))}
         </div>
-        <Link href="/timeline" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+        <Link
+          href="/timeline"
+          className="text-sm text-ink-2 underline underline-offset-[3px] hover:text-ink"
+        >
           Alle Einträge →
         </Link>
-      </div>
+      </Card>
     </>
   )
 }

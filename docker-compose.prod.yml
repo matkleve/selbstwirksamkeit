@@ -1,0 +1,22 @@
+# Production-like image (build-time env for NEXT_PUBLIC_* required).
+#
+#   docker compose -f docker-compose.prod.yml build \
+#     --build-arg NEXT_PUBLIC_SUPABASE_URL=... \
+#     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+#   docker compose -f docker-compose.prod.yml up
+
+name: selbstwirksamkeit
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped

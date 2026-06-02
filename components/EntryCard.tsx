@@ -181,13 +181,7 @@ export default function EntryCard() {
             onBlur={() => setEditingTitle(false)}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditingTitle(false) }}
             placeholder={`Eintrag #${(entryCount ?? 0) + 1}`}
-            style={{
-              fontSize: '0.875rem', fontFamily: 'inherit',
-              fontWeight: 500, color: 'var(--text-primary)',
-              background: 'transparent', border: 'none',
-              borderBottom: '1px solid var(--border-focus)',
-              outline: 'none', padding: '1px 0', width: '100%',
-            }}
+            className="w-full border-0 border-b border-ring bg-transparent py-px text-base font-medium text-ink outline-none"
           />
         ) : (
           <button

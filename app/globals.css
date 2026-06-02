@@ -37,6 +37,14 @@
   --color-primary-fg:  var(--primary-fg);
   --color-danger:      var(--danger);
   --color-hint-ok:     var(--hint-ok);
+
+  /* Valence (charts, bars) */
+  --color-v-pos-strong: var(--valence-pos-strong);
+  --color-v-pos-mid:    var(--valence-pos-mid);
+  --color-v-pos-weak:   var(--valence-pos-weak);
+  --color-v-neg-strong: var(--valence-neg-strong);
+  --color-v-neg-mid:    var(--valence-neg-mid);
+  --color-v-neutral:    var(--valence-neutral);
 }
 
 @theme {
@@ -316,9 +324,15 @@
     overflow-x: hidden;
   }
 
-  input, textarea, button, select {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea,
+  select {
     font-family: inherit;
-    font-size: inherit;
+    font-size: 1rem; /* 16px — prevents iOS focus zoom */
+  }
+
+  button, select {
+    font-family: inherit;
   }
 }
 
