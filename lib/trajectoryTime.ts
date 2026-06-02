@@ -1,3 +1,5 @@
+import { formatDateEuropean } from '@/lib/utils'
+
 /** Exponential time scale: slider right = recent (fine), left = distant past (coarse). */
 const K = 2.6
 
@@ -17,5 +19,5 @@ export function timeToSlider(ms: number, firstMs: number, lastMs: number): numbe
 }
 
 export function formatRangeLabel(ms: number): string {
-  return new Date(ms).toLocaleDateString('de-DE', { day: 'numeric', month: 'short' })
+  return formatDateEuropean(ms)
 }

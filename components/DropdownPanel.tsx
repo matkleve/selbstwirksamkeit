@@ -21,6 +21,8 @@ interface Props {
   align?: 'left' | 'right'
   minWidth?: number
   role?: 'menu' | 'listbox'
+  /** When false, parent handles position (e.g. fixed portal) */
+  anchored?: boolean
   /** Prefer over `item.icon` when Lucide refs must render in the parent module */
   renderIcon?: (item: Extract<DropdownMenuItem, { type: 'item' }>) => ReactNode
 }
@@ -33,6 +35,7 @@ export function DropdownPanel({
   minWidth = 220,
   role = 'menu',
   renderIcon,
+  anchored = true,
 }: Props) {
   const optionItems = items.filter((i): i is Extract<DropdownMenuItem, { type: 'item' }> => i.type === 'item')
   const showEmpty = search && optionItems.length === 0
@@ -41,9 +44,9 @@ export function DropdownPanel({
     <div
       role={role}
       className={[
-        'absolute top-[calc(100%+6px)] z-50 overflow-hidden',
-        'rounded-xl border border-edge bg-card shadow-[var(--shadow-card)]',
-        align === 'right' ? 'right-0' : 'left-0',
+        'z-50 overflow-hidden rounded-xl border border-edge bg-card shadow-[var(--shadow-card)]',
+        anchored && 'absolute top-[calc(100%+6px)]',
+        anchored && (align === 'right' ? 'right-0' : 'left-0'),
       ].join(' ')}
       style={{ minWidth, maxWidth: 280 }}
     >

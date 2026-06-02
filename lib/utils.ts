@@ -23,6 +23,26 @@ export function formatDate(date: Date): string {
   })
 }
 
+/** European numeric date, e.g. 25.03.2026 */
+export function formatDateEuropean(
+  input: Date | number | string,
+  options?: { year?: boolean },
+): string {
+  let d: Date
+  if (typeof input === 'number') d = new Date(input)
+  else if (typeof input === 'string') {
+    d = new Date(input.length === 10 ? `${input}T12:00:00` : input)
+  } else {
+    d = input
+  }
+  const year = options?.year ?? true
+  return d.toLocaleDateString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    ...(year ? { year: 'numeric' } : {}),
+  })
+}
+
 /** z. B. „25. März 2026“ */
 export function formatEntryDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('de-DE', {

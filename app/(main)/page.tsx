@@ -1,4 +1,5 @@
 import { AuthForm } from '@/components/auth-form'
+import { EntriesLoadingGate } from '@/components/EntriesLoadingGate'
 import EntryCard from '@/components/EntryCard'
 import { getServerUser } from '@/lib/server-entries'
 
@@ -13,5 +14,9 @@ export default async function HomePage() {
     )
   }
 
-  return <EntryCard />
+  return (
+    <EntriesLoadingGate>
+      <EntryCard />
+    </EntriesLoadingGate>
+  )
 }

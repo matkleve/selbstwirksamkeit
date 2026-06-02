@@ -2,10 +2,11 @@
 
 import { useMemo } from 'react'
 import Link from 'next/link'
-import TrajectoryCard from '@/components/TrajectoryCard'
+import TrajectoryPatternCard from '@/components/TrajectoryPatternCard'
 import CalendarHeatmap from '@/components/CalendarHeatmap'
 import { buildCalendarWeeks } from '@/lib/calendarWeeks'
 import TimeOfDayBars from '@/components/TimeOfDayBars'
+import WeekPositiveSpotlight from '@/components/WeekPositiveSpotlight'
 import { Card } from '@/components/ui/card'
 import { useEntries } from '@/components/EntriesProvider'
 import type { BodyState } from '@/lib/types'
@@ -30,6 +31,7 @@ export default function DashboardView() {
     weekDays,
     weekQC,
     maxWeekQ,
+    weekPositive,
     calWeeks,
     periodData,
     bodyPatterns,
@@ -49,6 +51,10 @@ export default function DashboardView() {
       else weekQC['neg-self']++
     })
     const maxWeekQ = Math.max(...Object.values(weekQC), 1)
+
+    const weekPositive = thisWeek.filter(
+      e => e.grid_x !== null && e.grid_y !== null && e.grid_x >= 0,
+    )
 
     const calWeeks = buildCalendarWeeks(entries)
 
@@ -79,20 +85,30 @@ export default function DashboardView() {
 
     const latestEntries = [...entries].reverse().slice(0, 3)
 
-    return { weekCount, weekDays, weekQC, maxWeekQ, calWeeks, periodData, bodyPatterns, latestEntries }
+    return {
+      weekCount,
+      weekDays,
+      weekQC,
+      maxWeekQ,
+      weekPositive,
+      calWeeks,
+      periodData,
+      bodyPatterns,
+      latestEntries,
+    }
   }, [entries])
 
   if (entries.length === 0) {
     return (
-      <Card className="mb-3.5 py-10 text-center text-ink-3">
+      <Card className="py-10 text-center text-ink-3">
         Noch keine Einträge.
       </Card>
     )
   }
 
   return (
-    <>
-      <Card className="mb-3.5 p-5">
+    <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+      <Card className="min-w-0 p-5">
         <p className={sectionLabel}>Diese Woche</p>
         <div className="flex items-baseline gap-3">
           <span className="font-display text-4xl leading-none text-ink">{weekCount}</span>
@@ -121,22 +137,40 @@ export default function DashboardView() {
             ))}
           </div>
         )}
+        {weekPositive.length > 0 && <WeekPositiveSpotlight entries={weekPositive} />}
       </Card>
 
-      <TrajectoryCard entries={entries} />
+      <Card className="min-w-0 p-5">
+        <p className={sectionLabel}>Letzte Einträge</p>
+        <div className="mb-3.5 flex flex-col gap-2">
+          {latestEntries.map(entry => (
+            <EntryDisplay key={entry.id} entry={entry} variant="text" size="sm" lines={2} />
+          ))}
+        </div>
+        <div className="flex justify-end">
+          <Link
+            href="/timeline"
+            className="text-sm text-ink-2 underline underline-offset-[3px] hover:text-ink"
+          >
+            Alle Einträge →
+          </Link>
+        </div>
+      </Card>
 
-      <Card className="mb-3.5 p-5">
+      <TrajectoryPatternCard entries={entries} className="min-w-0" />
+
+      <Card className="min-w-0 p-5">
         <p className={sectionLabel}>Kalender</p>
         <CalendarHeatmap weeks={calWeeks} />
       </Card>
 
-      <Card className="mb-3.5 p-5">
+      <Card className="min-w-0 p-5">
         <p className={sectionLabel}>Tageszeit</p>
         <TimeOfDayBars periods={periodData} />
       </Card>
 
       {bodyPatterns.length > 0 && (
-        <Card className="mb-3.5 p-5">
+        <Card className="min-w-0 p-5">
           <p className={sectionLabel}>Körper-Muster</p>
           {bodyPatterns.map((p, i) => (
             <p
@@ -151,23 +185,6 @@ export default function DashboardView() {
           ))}
         </Card>
       )}
-
-      <Card className="mb-3.5 p-5">
-        <p className={sectionLabel}>Letzte Einträge</p>
-        <div className="mb-3.5 flex flex-col gap-2">
-          {latestEntries.map(entry => (
-            <div key={entry.id} className="border-b border-edge py-2 last:border-b-0">
-              <EntryDisplay entry={entry} variant="compact" size="sm" lines={2} />
-            </div>
-          ))}
-        </div>
-        <Link
-          href="/timeline"
-          className="text-sm text-ink-2 underline underline-offset-[3px] hover:text-ink"
-        >
-          Alle Einträge →
-        </Link>
-      </Card>
-    </>
+    </div>
   )
 }

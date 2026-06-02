@@ -4,16 +4,13 @@ import { Sprout } from 'lucide-react'
 import BottomTabBar from './BottomTabBar'
 import MenuDropdown from './MenuDropdown'
 import { EntriesProvider } from '@/components/EntriesProvider'
-import type { Entry } from '@/lib/types'
-
 interface Props {
   children: React.ReactNode
-  initialEntries?: Entry[]
 }
 
-export function AppShell({ children, initialEntries = [] }: Props) {
+export function AppShell({ children }: Props) {
   return (
-    <EntriesProvider initialEntries={initialEntries}>
+    <EntriesProvider>
       <div className="min-h-screen bg-canvas">
         <header className="sticky top-0 z-40 flex h-[52px] items-center justify-between border-b border-edge bg-canvas px-5">
           <span className="inline-flex items-center gap-2 font-display text-[1.0625rem] font-normal italic text-ink">

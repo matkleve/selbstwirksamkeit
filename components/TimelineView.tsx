@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowDownAZ, SlidersHorizontal } from 'lucide-react'
 import TimelineCard from '@/components/TimelineCard'
+import { useEntries } from '@/components/EntriesProvider'
 import { EntryDisplay } from '@/components/entry'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/cn'
@@ -18,7 +19,6 @@ import {
   type TimelineFilter,
   type TimelineSort,
 } from '@/lib/timelineView'
-import type { Entry } from '@/lib/types'
 import { getValenceColor } from '@/lib/types'
 
 const STORAGE_KEY = 'selbstwirksamkeit-timeline-view'
@@ -67,11 +67,13 @@ function ToolbarChip({
   )
 }
 
-interface Props {
-  entries: Entry[]
-}
+export default function TimelineView() {
+  const { entries: entriesAsc } = useEntries()
+  const entries = useMemo(
+    () => [...entriesAsc].sort((a, b) => b.created_at.localeCompare(a.created_at)),
+    [entriesAsc],
+  )
 
-export default function TimelineView({ entries }: Props) {
   const [density, setDensity] = useState<TimelineDensity>('text')
   const [sort, setSort] = useState<TimelineSort>('date-desc')
   const [filter, setFilter] = useState<TimelineFilter>('all')
@@ -225,15 +227,9 @@ export default function TimelineView({ entries }: Props) {
           ))}
         </div>
       ) : (
-        <Card className="divide-y divide-edge overflow-hidden">
+        <div className="flex flex-col gap-2">
           {filtered.map(entry => (
-            <div
-              key={entry.id}
-              className={cn(
-                'px-4',
-                density === 'text' ? 'py-2' : 'py-3',
-              )}
-            >
+            <div key={entry.id}>
               {density === 'text' && (
                 <EntryDisplay
                   entry={entry}
@@ -257,7 +253,7 @@ export default function TimelineView({ entries }: Props) {
               )}
             </div>
           ))}
-        </Card>
+        </div>
       )}
     </>
   )

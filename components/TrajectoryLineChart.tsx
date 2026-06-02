@@ -6,6 +6,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { bilinearColor } from '@/lib/gridZones'
+import { TRAJECTORY_CHART_H } from '@/lib/trajectoryChartLayout'
 
 export interface TrajectoryPoint {
   label: string
@@ -81,8 +82,8 @@ function TrajectoryLineChart({ data, mode }: Props) {
       )
 
   return (
-    <ResponsiveContainer width="100%" height={140}>
-      <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 24 }}>
+    <ResponsiveContainer width="100%" height={TRAJECTORY_CHART_H}>
+      <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 4 }}>
         <defs>
           <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
             {yStops}
@@ -99,9 +100,10 @@ function TrajectoryLineChart({ data, mode }: Props) {
           domain={[-5, 5]}
           ticks={[-5, 0, 5]}
           tick={{ fontSize: 9, fill: 'var(--text-muted)' }}
+          tickFormatter={(v: number) => (v > 0 ? `+${v}` : String(v))}
           axisLine={false}
           tickLine={false}
-          width={22}
+          width={28}
         />
         <ReferenceLine y={0} stroke="var(--border-focus)" strokeDasharray="4 3" strokeWidth={1} />
         <Tooltip content={<CustomTooltip />} cursor={false} />

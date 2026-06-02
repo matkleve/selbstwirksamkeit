@@ -6,7 +6,9 @@ import { Minus, Plus, User, Users, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import TrajectoryRangeSlider from '@/components/TrajectoryRangeSlider'
 import TrajectoryGridChart from '@/components/TrajectoryGridChart'
+import { TRAJECTORY_CHART_BLOCK_MIN_H } from '@/lib/trajectoryChartLayout'
 import { sliderToTime } from '@/lib/trajectoryTime'
+import { formatDateEuropean } from '@/lib/utils'
 import type { Entry } from '@/lib/types'
 import type { TrajectoryPoint } from '@/components/TrajectoryLineChart'
 
@@ -40,9 +42,10 @@ const MODES: {
 
 interface Props {
   entries: Entry[]
+  className?: string
 }
 
-export default function TrajectoryCard({ entries }: Props) {
+export default function TrajectoryCard({ entries, className }: Props) {
   const [mode, setMode] = useState<AxisMode>('valence')
 
   const timeBounds = useMemo(() => {
@@ -78,7 +81,7 @@ export default function TrajectoryCard({ entries }: Props) {
     if (mode === 'both') return []
     return windowEntries.map(e => {
       const d = new Date(e.created_at)
-      const label = d.toLocaleDateString('de-DE', { day: 'numeric', month: 'numeric' })
+      const label = formatDateEuropean(d, { year: false })
       const value = mode === 'valence' ? (e.grid_x ?? 0) : (e.grid_y ?? 0)
       return {
         label,
@@ -92,7 +95,7 @@ export default function TrajectoryCard({ entries }: Props) {
 
   if (!timeBounds) {
     return (
-      <div className="mb-3.5 rounded-card border border-edge bg-card p-5 shadow-card">
+      <div className={cn('rounded-card border border-edge bg-card p-5 shadow-card', className)}>
         <p className="mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-3">
           Zeitspur
         </p>
@@ -104,7 +107,7 @@ export default function TrajectoryCard({ entries }: Props) {
   }
 
   return (
-    <div className="mb-3.5 rounded-card border border-edge bg-card p-5 shadow-card">
+    <div className={cn('rounded-card border border-edge bg-card p-5 shadow-card', className)}>
       <p className="mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-3">
         Zeitspur
       </p>
@@ -152,15 +155,20 @@ export default function TrajectoryCard({ entries }: Props) {
         onChange={(start, end) => setRange({ start, end })}
       />
 
-      {windowEntries.length === 0 ? (
-        <p className="py-6 text-center text-sm text-ink-3">
-          Keine Einträge in diesem Zeitfenster.
-        </p>
-      ) : mode === 'both' ? (
-        <TrajectoryGridChart entries={windowEntries} />
-      ) : lineData.length > 0 ? (
-        <TrajectoryLinePane data={lineData} mode={mode} />
-      ) : null}
+      <div
+        className="flex flex-col justify-center"
+        style={{ minHeight: TRAJECTORY_CHART_BLOCK_MIN_H }}
+      >
+        {windowEntries.length === 0 ? (
+          <p className="py-6 text-center text-sm text-ink-3">
+            Keine Einträge in diesem Zeitfenster.
+          </p>
+        ) : mode === 'both' ? (
+          <TrajectoryGridChart entries={windowEntries} />
+        ) : lineData.length > 0 ? (
+          <TrajectoryLinePane data={lineData} mode={mode} />
+        ) : null}
+      </div>
     </div>
   )
 }

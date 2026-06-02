@@ -1,13 +1,10 @@
 'use client'
 
 import { Users, User, Minus, Plus } from 'lucide-react'
+import { gridPct } from '@/lib/gridCoords'
 import { catmullRomPath } from '@/lib/trailPath'
 import { bilinearColor } from '@/lib/gridZones'
 import type { Entry } from '@/lib/types'
-
-function gridPct(x: number, y: number) {
-  return { left: ((x + 5) / 10) * 100, top: ((5 - y) / 10) * 100 }
-}
 
 function entryOpacity(createdAt: string, newestMs: number, oldestMs: number): number {
   const t = new Date(createdAt).getTime()

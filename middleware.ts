@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSupabaseCookieOptions } from '@/lib/supabase-cookies'
 import { getServerSupabaseUrl } from '@/lib/supabase-url'
@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -26,8 +26,10 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // Refreshes session cookies when near expiry (single auth touchpoint per navigation).
   await supabase.auth.getUser()
 
+  supabaseResponse.headers.set('Cache-Control', 'private, no-store')
   return supabaseResponse
 }
 

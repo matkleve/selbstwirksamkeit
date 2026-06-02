@@ -1,26 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useTransition } from 'react'
+import { usePathname } from 'next/navigation'
 import { Plus, BarChart2, Sparkles, Bell } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 const TABS = [
-  { href: '/',               label: 'Neu',       Icon: Plus },
-  { href: '/dashboard',     label: 'Dashboard', Icon: BarChart2 },
-  { href: '/motivation',    label: 'Stärke',    Icon: Sparkles },
-  { href: '/notifications', label: 'Erinnern',  Icon: Bell },
+  { href: '/', label: 'Neu', Icon: Plus },
+  { href: '/dashboard', label: 'Dashboard', Icon: BarChart2 },
+  { href: '/motivation', label: 'Stärke', Icon: Sparkles },
+  { href: '/notifications', label: 'Erinnern', Icon: Bell },
 ] as const
 
 export default function BottomTabBar() {
   const path = usePathname()
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-
-  useEffect(() => {
-    TABS.forEach(({ href }) => router.prefetch(href))
-  }, [router])
 
   return (
     <nav
@@ -28,8 +21,6 @@ export default function BottomTabBar() {
         'fixed bottom-[max(20px,env(safe-area-inset-bottom,20px))] left-1/2 z-50 flex -translate-x-1/2 gap-2',
         'rounded-full border border-edge bg-card p-1.5',
         'shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)]',
-        'transition-opacity duration-150',
-        isPending && 'opacity-90',
       )}
       aria-label="Hauptnavigation"
     >
@@ -39,12 +30,7 @@ export default function BottomTabBar() {
           <Link
             key={href}
             href={href}
-            prefetch
-            onClick={e => {
-              if (href === path) return
-              e.preventDefault()
-              startTransition(() => router.push(href))
-            }}
+            prefetch={false}
             className={cn(
               'flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-3.5 py-1.5',
               'no-underline transition-[color,background-color] duration-150',

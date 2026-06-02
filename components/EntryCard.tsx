@@ -48,18 +48,27 @@ export default function EntryCard() {
     const tick = () => setClock(formatTime(new Date()))
     tick()
     const id = setInterval(tick, 60_000)
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
-    supabase.from('entries').select('id', { count: 'exact', head: true }).then(({ count }) => setEntryCount(count ?? 0))
-    Promise.all([
-      supabase.from('persons').select('name').order('name'),
-      supabase.from('locations').select('name').order('name'),
-      supabase.from('activities').select('name').order('name'),
-    ]).then(([p, l, a]) => setSuggestions({
-      person: p.data?.map(r => r.name) ?? [],
-      location: l.data?.map(r => r.name) ?? [],
-      activity: a.data?.map(r => r.name) ?? [],
-    }))
-    return () => clearInterval(id)
+
+    const loadExtras = () => {
+      supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+      supabase.from('entries').select('id', { count: 'exact', head: true }).then(({ count }) => setEntryCount(count ?? 0))
+      Promise.all([
+        supabase.from('persons').select('name').order('name'),
+        supabase.from('locations').select('name').order('name'),
+        supabase.from('activities').select('name').order('name'),
+      ]).then(([p, l, a]) => setSuggestions({
+        person: p.data?.map(r => r.name) ?? [],
+        location: l.data?.map(r => r.name) ?? [],
+        activity: a.data?.map(r => r.name) ?? [],
+      }))
+    }
+    const extrasTimer = window.setTimeout(loadExtras, 0)
+
+    return () => {
+      clearInterval(id)
+      clearTimeout(extrasTimer)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once; supabase client is a singleton
   }, [])
 
   useEffect(() => {
