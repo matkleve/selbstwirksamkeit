@@ -11,7 +11,8 @@
     "docker:up": "bash scripts/docker-dev.sh",
     "docker:down": "docker compose down",
     "docker:env": "bash scripts/docker-env.sh",
-    "fix:next": "bash scripts/fix-next-perms.sh"
+    "fix:next": "bash scripts/fix-next-perms.sh",
+    "seed:entries": "node scripts/seed-entries.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",
