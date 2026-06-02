@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Git Workflow
 
-**Default branch: `master`** — commit and push here unless the user says otherwise.
+**Default branch: `production`** — commit and push here unless the user says otherwise.
 
 ```bash
-git switch master
-git pull origin master
+git switch production
+git pull origin production
 # ... make changes ...
 git add <files>
 git commit -m "feat: …"
-git push origin master
+git push origin production
 ```
 
 ## Commands

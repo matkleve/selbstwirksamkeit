@@ -2,42 +2,44 @@
 
 ## Git-Branch
 
-**Standard: `master`** — alle Arbeit und Commits hier (Stand: Nutzerwunsch, ein Deploy-Branch).
+**Standard: `production`** — alle Arbeit und Commits hier (Deploy-Branch, Vercel).
 
 ```bash
 git fetch origin
-git switch master
-git pull origin master
+git switch production
+git pull origin production
 # … Änderungen …
 git add <relevante Dateien>
 git commit -m "feat: …"
-git push origin master
+git push origin production
 ```
 
-`features` nur nutzen, wenn der Nutzer das ausdrücklich verlangt.
+- `master` — historisch/parallel; nicht für neue Arbeit, außer der Nutzer verlangt es.
+- `features` — alter Feature-Branch; nicht mehr Standard.
+
+Wenn `production` lokal fehlt: `git switch -c production origin/production` oder `git switch -c production master`
 
 ## Projekt-Kurzinfo
 
 - Next.js 15 + Supabase (Erfolgs-Journal „Selbstwirksamkeit“)
 - UI: Tailwind v4 (keine separate UI-Library)
+- Production: https://selbstwirksamkeit.vercel.app
+- Einträge: `categories text[]` (Mehrfach-Tags), RLS aktiv
 
 ### Styling
 
-- **Tailwind-Token statt Ad-hoc-CSS:** Farben/Schriften/Radien über Utilities aus `app/globals.css` (`@theme inline`) — z. B. `text-ink`, `bg-card`, `border-edge`, `text-ink-3`, `rounded-card`, `shadow-card`, Valenz: `bg-v-pos-mid`, `text-v-neg-strong`.
-- Keine `fontSize`/`color` in `style={{}}`, außer dynamische Werte (Grid-Farben, Chart-Breiten, bilineare RGB).
-- Wiederverwendbare Flächen: `components/ui/card.tsx`, `button`, `input`, `textarea`.
-- Inputs/Textareas: mindestens `text-base` (16px), damit iOS beim Fokus nicht zoomt.
-- Production: https://selbstwirksamkeit.vercel.app
-- Einträge: `categories text[]` (Mehrfach-Tags), RLS aktiv
+- **Tailwind-Token** aus `app/globals.css` (`text-ink`, `bg-card`, `border-edge`, …)
+- Inputs mindestens `text-base` (16px) — kein iOS-Zoom
 
 ## Lokales Docker
 
 ```bash
-npm run docker:up    # supabase start + Next.js in Container (Port 3000)
-npm run docker:down  # nur Web-Container stoppen
+npm run docker:up    # supabase start + Next.js im Container
+npm run docker:down
+npm run fix:next     # .next-Rechte nach Docker-Konflikt
 ```
 
-Details: `docker/README.md`. Supabase-Stack läuft über die CLI (`supabase start`), nicht im App-`docker-compose.yml`.
+Details: `docker/README.md`
 
 ## Nicht committen
 

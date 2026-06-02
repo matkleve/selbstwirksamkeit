@@ -1,0 +1,12 @@
+---
+description: Default git branch is production for all work
+alwaysApply: true
+---
+
+# Production-Branch
+
+- **Default branch: `production`** — commit and push feature work here unless the user says otherwise.
+- Before editing: `git switch production` (or `git pull origin production`).
+- After commits: `git push origin production`.
+- Do not switch to `features` unless the user explicitly asks.
+- See `AGENTS.md` for full workflow.
