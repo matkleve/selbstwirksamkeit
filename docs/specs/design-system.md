@@ -70,6 +70,32 @@ the 2D grid. Very desaturated — only 10% opacity over card white.
 | `.text-quote` | Grid quote, entry excerpts, hints — display italic |
 
 Local overrides (Tailwind utilities, inline layout) are fine on top of the base tags.
+
+### Page layout
+
+Every authenticated main route MUST use `PageHeader` above its content:
+
+| Route | Title |
+|---|---|
+| `/` | Neu |
+| `/dashboard` | Dashboard |
+| `/mirror` | Spiegel |
+| `/motivation` | Stärke |
+| `/timeline` | Verlauf |
+
+Reminders live on `/mirror` (bell action in `PageHeader`), not a separate tab.
+
+### Navigation stability
+
+Bottom-tab labels MUST NOT change layout width on active state:
+
+- Use `NavTabLabel` (invisible semibold duplicate reserves max width).
+- Tab icons keep constant `strokeWidth` — colour/background only for active state.
+
+### Form fields
+
+- `.field-shell` uses `overflow: hidden` so autofill inset shadows respect border radius.
+- Trailing controls (password toggle) MUST be absolutely positioned inside the shell, not a flex sibling column (avoids two-tone autofill split).
 | Token | Value |
 |---|---|
 | `--radius-form` | `1.125rem` |
@@ -78,14 +104,16 @@ Local overrides (Tailwind utilities, inline layout) are fine on top of the base 
 | `--radius-chip` | `62.5rem` (pill) |
 
 ## Component Catalogue
+- `components/PageHeader.tsx` — page title (`h1`) + intro paragraph; optional top-right action slot
+- `components/NavTabLabel.tsx` — bottom-tab label with reserved semibold width (no layout shift)
 - `components/ui/button.tsx` — variants: primary, ghost, link; sizes: sm, md, lg
-- `components/ui/input.tsx` — with error state
+- `components/ui/input.tsx` — shell wrapper, error state, optional `trailing` slot (absolute inline, e.g. password toggle)
 - `components/ui/textarea.tsx` — with error state
 - `components/ui/card.tsx` — base card wrapper
 - `components/ui/badge.tsx` — variants: default, filled
 - `components/ui/label.tsx`
 - `components/EntryGrid.tsx` — interactive 2D grid with drag, trail, bilinear colour
-- `components/BottomTabBar.tsx` — 4-tab fixed bottom navigation
+- `components/BottomTabBar.tsx` — 4-tab fixed bottom navigation (`NavTabLabel`, constant icon stroke)
 - `components/MenuDropdown.tsx` — menu icon + sign-out dropdown
 - `components/AppShell.tsx` — page wrapper (header + tab bar)
 - `components/ValenceChart.tsx` — recharts line chart with gradient colour

@@ -32,6 +32,7 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
   const [sessions, setSessions] = useState(initialSessions)
   const [opening, setOpening] = useState(false)
   const [remindersOpen, setRemindersOpen] = useState(false)
+  const [openError, setOpenError] = useState<string | null>(null)
 
   const returnToLanding = useCallback(() => {
     setView('landing')
@@ -42,22 +43,34 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
   const handleOpen = async () => {
     if (opening) return
     setOpening(true)
+    setOpenError(null)
     setView('loading')
 
-    const [next] = await Promise.all([
-      openMirrorCandidate(),
-      new Promise<void>(resolve => setTimeout(resolve, MIRROR_LOADER_MIN_MS)),
-    ])
+    try {
+      const [result] = await Promise.all([
+        openMirrorCandidate(),
+        new Promise<void>(resolve => setTimeout(resolve, MIRROR_LOADER_MIN_MS)),
+      ])
 
-    if (!next) {
-      setView('exhausted')
+      if (!result.ok) {
+        setOpenError(result.message)
+        setView('landing')
+        return
+      }
+
+      if (!result.candidate) {
+        setView('exhausted')
+        return
+      }
+
+      setCandidate(result.candidate)
+      setView('flow')
+    } catch {
+      setOpenError('Verbindung unterbrochen. Bitte erneut versuchen.')
+      setView('landing')
+    } finally {
       setOpening(false)
-      return
     }
-
-    setCandidate(next)
-    setView('flow')
-    setOpening(false)
   }
 
   if (view === 'loading') {
@@ -104,6 +117,11 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
         />
 
         <div className="mb-10">
+          {openError && (
+            <p role="alert" className="mb-4 text-sm text-err">
+              {openError}
+            </p>
+          )}
           <Button
             type="button"
             variant="primary"

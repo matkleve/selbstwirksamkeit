@@ -65,18 +65,20 @@ async function candidateFromStoredRow(
   stored: StoredCandidate,
   markShown: boolean,
 ): Promise<MirrorCandidate | null> {
-  const { data: entryRows } = await supabase
+  const { data: entryRows, error: entriesError } = await supabase
     .from('entries')
     .select('*')
     .in('id', stored.entry_ids)
 
+  if (entriesError) throw new Error(entriesError.message)
   if (!entryRows?.length) return null
 
   if (markShown) {
-    await supabase
+    const { error: updateError } = await supabase
       .from('mirror_candidates')
       .update({ shown: true, shown_at: new Date().toISOString() })
       .eq('id', stored.id)
+    if (updateError) throw new Error(updateError.message)
   }
 
   return candidateFromStored(stored, entryRows as Entry[])
@@ -105,11 +107,13 @@ async function resolveDevMode(
 async function fetchProductionCandidate(
   supabase: SupabaseClient,
 ): Promise<MirrorCandidate | null> {
-  const { data: rows } = await supabase
+  const { data: rows, error } = await supabase
     .from('mirror_candidates')
     .select('*')
     .eq('shown', false)
     .in('signal_strength', ['strong', 'moderate'])
+
+  if (error) throw new Error(error.message)
 
   const stored = pickBestUnshown((rows ?? []) as StoredCandidate[])
   if (!stored) return null

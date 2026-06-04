@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Plus, BarChart2, Sparkles, Eye } from 'lucide-react'
+import { NavTabLabel } from '@/components/NavTabLabel'
 import { cn } from '@/lib/cn'
 
 const TABS = [
@@ -38,15 +39,8 @@ export default function BottomTabBar() {
               'no-underline',
             )}
           >
-            <Icon size={19} strokeWidth={active ? 2 : 1.5} />
-            <span
-              className={cn(
-                'text-[0.5625rem] uppercase tracking-wide',
-                active ? 'font-semibold' : 'font-normal',
-              )}
-            >
-              {label}
-            </span>
+            <Icon size={19} strokeWidth={1.75} />
+            <NavTabLabel label={label} active={active} />
           </Link>
         )
       })}
