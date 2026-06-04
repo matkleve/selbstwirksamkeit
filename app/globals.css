@@ -451,10 +451,31 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: auto;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
     /* Scrollbar sits in app-main right padding — content width unchanged */
     width: calc(100% + 16px);
     margin-right: -16px;
     padding-right: 16px;
+  }
+
+  .mirror-chat-viewport::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .mirror-chat-viewport::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .mirror-chat-viewport::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .mirror-chat-viewport::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--text-muted) 65%, transparent);
   }
 
   @media (min-width: 768px) {

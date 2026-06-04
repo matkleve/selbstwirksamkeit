@@ -1,6 +1,7 @@
 'use client'
 
 import { memo } from 'react'
+import { User, Users } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
@@ -39,6 +40,43 @@ function CustomDot(props: {
   const { cx, cy, payload, mode } = props
   if (!cx || !cy || payload?.value == null) return null
   return <circle cx={cx} cy={cy} r={3.5} fill={dotRgb(mode, payload)} stroke="none" />
+}
+
+function YAxisTick(props: {
+  x?: number
+  y?: number
+  payload?: { value: number }
+  mode: TrajectoryChartMode
+}) {
+  const { x = 0, y = 0, payload, mode } = props
+  const v = payload?.value ?? 0
+  if (mode === 'referenz' && (v === 5 || v === -5)) {
+    const Icon = v > 0 ? Users : User
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <foreignObject x={-24} y={-6} width={22} height={12}>
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            className="flex h-full items-center justify-end text-ink-3"
+          >
+            <Icon size={10} strokeWidth={1.5} aria-hidden />
+          </div>
+        </foreignObject>
+      </g>
+    )
+  }
+  return (
+    <text
+      x={x}
+      y={y}
+      dy={4}
+      textAnchor="end"
+      fill="var(--text-muted)"
+      fontSize={9}
+    >
+      {v === 0 ? '0' : v > 0 ? '+' : '−'}
+    </text>
+  )
 }
 
 function CustomTooltip(props: {
@@ -99,8 +137,7 @@ function TrajectoryLineChart({ data, mode }: Props) {
         <YAxis
           domain={[-5, 5]}
           ticks={[-5, 0, 5]}
-          tick={{ fontSize: 9, fill: 'var(--text-muted)' }}
-          tickFormatter={(v: number) => (v > 0 ? `+${v}` : String(v))}
+          tick={<YAxisTick mode={mode} />}
           axisLine={false}
           tickLine={false}
           width={28}

@@ -5,10 +5,10 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
 import { MirrorRevealWords } from '@/components/mirror/MirrorRevealWords'
 import { MirrorTimelineRow } from '@/components/mirror/MirrorFlow.timeline'
-import { MIRROR_REMINDER_OPTIONS, MIRROR_SUMMARY_TEXT } from '@/components/mirror/MirrorFlow.constants'
+import { MIRROR_SUMMARY_TEXT } from '@/components/mirror/MirrorFlow.constants'
+import { MirrorReminderChips } from '@/components/mirror/MirrorFlow.reminder'
 import { MirrorExpandShell } from '@/components/mirror/MirrorExpandShell'
 import { splitRevealWords } from '@/lib/mirrorReveal'
 import type { RefObject } from 'react'
@@ -117,18 +117,7 @@ export function MirrorIntentionSection({
 
       <MirrorExpandShell open={intentionComplete}>
         <MirrorTimelineRow markerType="reminder" markerIdx={blocksLength + 2}>
-          <div className="flex flex-wrap gap-1.5">
-            {MIRROR_REMINDER_OPTIONS.map(opt => (
-              <button
-                key={opt}
-                type="button"
-                onClick={() => setDuration(duration === opt ? null : opt)}
-                className="cursor-pointer rounded-chip border-0 bg-transparent p-0"
-              >
-                <Badge variant={duration === opt ? 'filled' : 'default'}>{opt}</Badge>
-              </button>
-            ))}
-          </div>
+          <MirrorReminderChips duration={duration} setDuration={setDuration} />
         </MirrorTimelineRow>
       </MirrorExpandShell>
     </>

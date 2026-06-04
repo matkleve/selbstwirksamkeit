@@ -33,8 +33,10 @@ export function wgarmToMirrorCandidate(
     source: 'wgarm_ec',
     signalStrength: wgarm.signal_strength,
     count: wgarm.pattern_metadata.occurrence_count,
-    introText: wgarm.template_text,
-    question: 'Was fällt dir daran auf?',
+    introText: '',
+    closingText: wgarm.template_text,
+    entriesFirst: true,
+    question: 'Erkennst du das?',
     relevantMeta: metaLabelsFromAntecedent(wgarm.pattern_metadata.antecedent),
   }
 }
@@ -43,9 +45,11 @@ const STRENGTH_RANK = { strong: 3, moderate: 2, weak: 1 } as const
 const SOURCE_RANK: Record<string, number> = {
   wgarm_ec: 10,
   valence_shift: 9,
+  temporal_echo: 8,
   tag_frequency: 5,
   grid_cluster: 4,
-  embedding_temporal: 3,
+  time_correlation: 3,
+  weekday_pattern: 2,
 }
 
 export function pickBestMirrorCandidate(

@@ -45,24 +45,24 @@ console.log('\n── detectTagFrequency ──')
 
 test('gibt null zurück wenn kein Tag 3× vorkommt', () => {
   const entries = [
-    makeEntry({ person: 'Mama', daysAgo: 1 }),
-    makeEntry({ person: 'Mama', daysAgo: 2 }),
-    makeEntry({ person: 'Papa', daysAgo: 3 }),
+    makeEntry({ person: 'Mama', daysAgo: 20 }),
+    makeEntry({ person: 'Mama', daysAgo: 25 }),
+    makeEntry({ person: 'Papa', daysAgo: 30 }),
   ]
   assert(detectTagFrequency(entries) === null, 'erwartete null')
 })
 
-test('gibt Kandidaten zurück wenn Tag 3× in History vorkommt', () => {
+test('gibt Kandidaten zurück wenn Tag 3× über ≥14 Tage', () => {
   const entries = [
-    makeEntry({ person: 'Mama', daysAgo: 1 }),
-    makeEntry({ person: 'Mama', daysAgo: 2 }),
-    makeEntry({ person: 'Mama', daysAgo: 3 }),
+    makeEntry({ person: 'Mama', daysAgo: 30 }),
+    makeEntry({ person: 'Mama', daysAgo: 20 }),
+    makeEntry({ person: 'Mama', daysAgo: 10 }),
   ]
   const r = detectTagFrequency(entries)
   assert(r !== null, 'erwartete Kandidaten, bekam null')
   assert(r!.source === 'tag_frequency', `source falsch: ${r!.source}`)
   assert(r!.count === 3, `count falsch: ${r!.count}`)
-  assert(r!.introText.includes('Mama'), `introText enthält nicht "Mama": ${r!.introText}`)
+  assert(!!(r!.introText.includes('Mama') || r!.summaryText), 'intro oder summary fehlt')
 })
 
 test('zählt Einträge über gesamte History — auch älter als 7 Tage', () => {
@@ -75,67 +75,64 @@ test('zählt Einträge über gesamte History — auch älter als 7 Tage', () => 
   const r = detectTagFrequency(entries)
   assert(r !== null, 'sollte Kandidaten finden — 4× über 30 Tage')
   assert(r!.count === 4, `count soll 4 sein, bekam: ${r!.count}`)
-  assert(r!.introText.includes('seit'), `introText soll Zeitspanne nennen: ${r!.introText}`)
-  assert(!r!.introText.includes('7 Tagen'), `kein 7-Tage-Text: ${r!.introText}`)
+  assert(!!r!.summaryText?.includes('4×'), `summary fehlt count: ${r!.summaryText}`)
 })
 
-test('introText beschreibt Intervall statt Wochenzählung', () => {
+test('neutral template bei fehlender Valence', () => {
   const entries = Array.from({ length: 8 }, (_, i) =>
-    makeEntry({ body_state: 'tired', daysAgo: (7 - i) * 5 }),
+    makeEntry({ body_state: 'tired', daysAgo: 15 + i * 5 }),
   )
   const r = detectTagFrequency(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('~5 Tage'), `Intervall fehlt: ${r!.introText}`)
-  assert(r!.introText.includes('8×'), `count fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('müde'), `label fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('~'), `intervall fehlt: ${r!.introText}`)
+})
+
+test('positiv template mit summaryText', () => {
+  const entries = Array.from({ length: 5 }, (_, i) =>
+    makeEntry({ person: 'Mama', grid_x: 3, daysAgo: 15 + i * 5 }),
+  )
+  const r = detectTagFrequency(entries)
+  assert(r !== null, 'erwartete Kandidaten')
+  assert(!!r!.summaryText?.includes('5×'), `summary: ${r!.summaryText}`)
+  assert(r!.introText.includes('wieder'), `intensity fehlt: ${r!.introText}`)
 })
 
 test('wählt den häufigsten Tag wenn mehrere konkurrieren', () => {
   const entries = [
-    makeEntry({ person: 'Mama', daysAgo: 1 }),
-    makeEntry({ person: 'Mama', daysAgo: 2 }),
-    makeEntry({ person: 'Mama', daysAgo: 3 }),
-    makeEntry({ location: 'Büro', daysAgo: 1 }),
-    makeEntry({ location: 'Büro', daysAgo: 2 }),
-    makeEntry({ location: 'Büro', daysAgo: 3 }),
-    makeEntry({ location: 'Büro', daysAgo: 4 }),
+    ...Array.from({ length: 3 }, (_, i) => makeEntry({ person: 'Mama', daysAgo: 15 + i * 5 })),
+    ...Array.from({ length: 4 }, (_, i) => makeEntry({ location: 'Büro', daysAgo: 15 + i * 5 })),
   ]
   const r = detectTagFrequency(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('Büro'), `sollte Büro wählen (4×), bekam: ${r!.introText}`)
+  assert(r!.introText.includes('Büro'), `sollte Büro wählen: ${r!.introText}`)
 })
 
 test('signal_strength ist "strong" ab 5 Einträgen', () => {
-  const entries = Array.from({ length: 5 }, (_, i) => makeEntry({ person: 'Mama', daysAgo: (i + 1) * 7 }))
+  const entries = Array.from({ length: 5 }, (_, i) =>
+    makeEntry({ person: 'Mama', daysAgo: 15 + (i + 1) * 7 }),
+  )
   const r = detectTagFrequency(entries)
   assert(r?.signalStrength === 'strong', `erwartete strong, bekam: ${r?.signalStrength}`)
 })
 
 test('signal_strength ist "moderate" bei 3–4 Einträgen', () => {
   const entries = [
-    makeEntry({ person: 'Mama', daysAgo: 7 }),
-    makeEntry({ person: 'Mama', daysAgo: 14 }),
-    makeEntry({ person: 'Mama', daysAgo: 21 }),
+    makeEntry({ person: 'Mama', daysAgo: 15 }),
+    makeEntry({ person: 'Mama', daysAgo: 22 }),
+    makeEntry({ person: 'Mama', daysAgo: 29 }),
   ]
   const r = detectTagFrequency(entries)
   assert(r?.signalStrength === 'moderate', `erwartete moderate, bekam: ${r?.signalStrength}`)
 })
 
 test('zeigt maximal 3 Einträge auch wenn mehr vorhanden', () => {
-  const entries = Array.from({ length: 6 }, (_, i) => makeEntry({ person: 'Mama', daysAgo: (i + 1) * 10 }))
+  const entries = Array.from({ length: 6 }, (_, i) =>
+    makeEntry({ person: 'Mama', daysAgo: 15 + (i + 1) * 10 }),
+  )
   const r = detectTagFrequency(entries)
   assert(r!.entries.length === 3, `erwartet 3, bekam: ${r!.entries.length}`)
   assert(r!.count === 6, `count soll trotzdem 6 sein, bekam: ${r!.count}`)
-})
-
-test('funktioniert auch mit body_state statt person', () => {
-  const entries = [
-    makeEntry({ body_state: 'tired', daysAgo: 10 }),
-    makeEntry({ body_state: 'tired', daysAgo: 20 }),
-    makeEntry({ body_state: 'tired', daysAgo: 30 }),
-  ]
-  const r = detectTagFrequency(entries)
-  assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('müde'), `introText fehlt body_state: ${r!.introText}`)
 })
 
 test('gibt null zurück bei leerer Liste', () => {
@@ -144,60 +141,55 @@ test('gibt null zurück bei leerer Liste', () => {
 
 console.log('\n── detectGridCluster ──')
 
-test('gibt null zurück wenn keine 3 Einträge im selben Quadranten', () => {
+test('gibt null zurück wenn keine 5 Einträge im selben Quadranten', () => {
   const entries = [
-    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 1 }),
-    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 2 }),
-    makeEntry({ grid_x: -2, grid_y: 1, daysAgo: 3 }),
+    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 15 }),
+    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 20 }),
+    makeEntry({ grid_x: -2, grid_y: 1, daysAgo: 25 }),
   ]
   assert(detectGridCluster(entries) === null, 'erwartete null')
 })
 
 test('findet nx_ny Quadrant (schwer, selbstbezogen)', () => {
-  const entries = [
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 10 }),
-    makeEntry({ grid_x: -3, grid_y: -2, daysAgo: 20 }),
-    makeEntry({ grid_x: -1, grid_y: -3, daysAgo: 30 }),
-  ]
+  const entries = Array.from({ length: 5 }, (_, i) =>
+    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 15 + i * 10 }),
+  )
   const r = detectGridCluster(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('schwer und auf dich bezogen'), `falsches Label: ${r!.introText}`)
-  assert(r!.introText.includes('seit'), `Zeitspanne fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('schwer und auf dich gerichtet'), `falsches Label: ${r!.introText}`)
+  assert(!!r!.summaryText?.includes('5×'), `summary fehlt: ${r!.summaryText}`)
 })
 
 test('ignoriert Einträge ohne grid_x oder grid_y', () => {
   const entries = [
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 1 }),
-    makeEntry({ grid_x: -3, grid_y: -2, daysAgo: 2 }),
-    makeEntry({ grid_x: null, grid_y: null, daysAgo: 3 }),
-    makeEntry({ grid_x: null, grid_y: null, daysAgo: 4 }),
+    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 15 }),
+    makeEntry({ grid_x: -3, grid_y: -2, daysAgo: 20 }),
+    makeEntry({ grid_x: null, grid_y: null, daysAgo: 25 }),
+    makeEntry({ grid_x: null, grid_y: null, daysAgo: 30 }),
   ]
   assert(detectGridCluster(entries) === null, 'sollte null sein, nur 2 gültige nx_ny Einträge')
 })
 
 test('zählt Grid-Cluster über gesamte History', () => {
-  const entries = [
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 1 }),
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 15 }),
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 45 }),
-  ]
+  const entries = Array.from({ length: 5 }, (_, i) =>
+    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 15 + i * 10 }),
+  )
   const r = detectGridCluster(entries)
-  assert(r !== null, 'sollte 3 Einträge über 45 Tage finden')
-  assert(r!.count === 3, `count: ${r!.count}`)
-  assert(!r!.introText.includes('7 Tagen'), `kein 7-Tage-Text: ${r!.introText}`)
+  assert(r !== null, 'sollte 5 Einträge finden')
+  assert(r!.count === 5, `count: ${r!.count}`)
 })
 
 test('wählt Quadrant mit meisten Einträgen', () => {
   const entries = [
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 10 }),
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 20 }),
-    makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 30 }),
-    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 10 }),
+    ...Array.from({ length: 5 }, (_, i) =>
+      makeEntry({ grid_x: -2, grid_y: -1, daysAgo: 15 + i * 10 }),
+    ),
+    makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 15 }),
     makeEntry({ grid_x: 2, grid_y: 1, daysAgo: 20 }),
   ]
   const r = detectGridCluster(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('schwer und auf dich bezogen'), `sollte nx_ny wählen: ${r!.introText}`)
+  assert(r!.introText.includes('schwer und auf dich gerichtet'), `sollte nx_ny wählen: ${r!.introText}`)
 })
 
 console.log(`\n${'─'.repeat(40)}`)

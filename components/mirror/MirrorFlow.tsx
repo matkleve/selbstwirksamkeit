@@ -7,6 +7,7 @@ import { splitRevealWords } from '@/lib/mirrorReveal'
 import { buildNarrativeBlocks } from '@/components/mirror/MirrorFlow.blocks'
 import type { BlockState } from '@/components/mirror/MirrorFlow.types'
 import { useMirrorScroll } from '@/components/mirror/MirrorFlow.useScroll'
+import { useMirrorBlockAutoScroll } from '@/components/mirror/MirrorFlow.useBlockAutoScroll'
 import { useMirrorTimers } from '@/components/mirror/MirrorFlow.useTimers'
 import { useMirrorLoadingPhase, useMirrorSession } from '@/components/mirror/MirrorFlow.useLoading'
 import { useMirrorNarrativeSchedule } from '@/components/mirror/MirrorFlow.useNarrativeSchedule'
@@ -22,6 +23,7 @@ import {
   MirrorIntentionSection,
   MirrorSummarySection,
 } from '@/components/mirror/MirrorFlow.response'
+import { MirrorEmptyClose } from '@/components/mirror/MirrorFlow.emptyClose'
 
 export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate | null }) {
   const blocks = useMemo(() => buildNarrativeBlocks(candidate), [candidate])
@@ -40,7 +42,17 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
   const sessionIdRef = useRef<string | null>(null)
   const supabase = createClient()
   const { sched, clear } = useMirrorTimers()
-  const { scrollRef, scrollDown } = useMirrorScroll(phase)
+  const { scrollRef, scrollDown, scrollAfterExpand } = useMirrorScroll(phase)
+
+  useMirrorBlockAutoScroll(
+    phase,
+    blocks,
+    states,
+    narrativeDone,
+    pastReflection,
+    showSummary,
+    scrollAfterExpand,
+  )
 
   useMirrorLoadingPhase(
     blocks,
@@ -119,6 +131,12 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
             </MirrorExpandShell>
           ))}
 
+          {emptyState && narrativeDone && (
+            <MirrorExpandShell open>
+              <MirrorEmptyClose />
+            </MirrorExpandShell>
+          )}
+
           {!emptyState && (
             <>
               <MirrorExpandShell open={narrativeDone}>
@@ -148,9 +166,11 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
             </>
           )}
 
-          <MirrorExpandShell open={showSummary}>
-            <MirrorSummarySection blocksLength={blocks.length} summaryWords={summaryWords} />
-          </MirrorExpandShell>
+          {!emptyState && (
+            <MirrorExpandShell open={showSummary}>
+              <MirrorSummarySection blocksLength={blocks.length} summaryWords={summaryWords} />
+            </MirrorExpandShell>
+          )}
         </MirrorFlowChat>
       )}
     </>

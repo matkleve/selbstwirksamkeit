@@ -82,10 +82,6 @@ export function slotShortLabel(slot: PatternSlot): string {
     fr: 'Fr',
     sa: 'Sa',
     so: 'So',
-    fruehling: 'Frühj',
-    sommer: 'Som',
-    herbst: 'Herb',
-    winter: 'Win',
   }
   return short[slot.key] ?? slot.label
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { User, Users } from 'lucide-react'
 import { catmullRomPath } from '@/lib/trailPath'
 import {
   TRAJECTORY_CHART_ASPECT,
@@ -124,16 +125,36 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
                 stroke="var(--border)"
                 strokeWidth={1}
               />
-              <text
-                x={M.left - 4}
-                y={yPos(tick)}
-                textAnchor="end"
-                dominantBaseline="middle"
-                fill="var(--text-muted)"
-                fontSize={9}
-              >
-                {tick > 0 ? `+${tick}` : tick}
-              </text>
+              {mode === 'referenz' && tick !== 0 ? (
+                <foreignObject
+                  x={0}
+                  y={yPos(tick) - 6}
+                  width={M.left - 6}
+                  height={12}
+                >
+                  <div
+                    xmlns="http://www.w3.org/1999/xhtml"
+                    className="flex h-full items-center justify-end text-ink-3"
+                  >
+                    {tick > 0 ? (
+                      <Users size={10} strokeWidth={1.5} aria-hidden />
+                    ) : (
+                      <User size={10} strokeWidth={1.5} aria-hidden />
+                    )}
+                  </div>
+                </foreignObject>
+              ) : (
+                <text
+                  x={M.left - 4}
+                  y={yPos(tick)}
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                  fill="var(--text-muted)"
+                  fontSize={9}
+                >
+                  {tick === 0 ? '0' : tick > 0 ? '+' : '−'}
+                </text>
+              )}
             </g>
           ))}
 

@@ -1,8 +1,34 @@
 import { splitMetaValues } from './entryMeta'
 import { metaLabelsFromAntecedent } from './wgarmEc'
+import {
+  intensity,
+  timespan,
+  withStrongIntro,
+} from './insightText'
+import {
+  avgGridX,
+  avgIntervalDays,
+  pickBestCandidate,
+  pickDisplayEntries,
+  signalFromCount,
+  sortByDate,
+  spanDays,
+} from './mirrorPatternHelpers'
+import {
+  detectTemporalEcho,
+  detectTimeCorrelation,
+  detectWeekdayPattern,
+} from './mirrorDetectorsExtended'
 import type { Entry } from './types'
 
-export type MirrorSource = 'tag_frequency' | 'grid_cluster' | 'wgarm_ec' | 'embedding_temporal' | 'valence_shift'
+export type MirrorSource =
+  | 'tag_frequency'
+  | 'grid_cluster'
+  | 'wgarm_ec'
+  | 'valence_shift'
+  | 'time_correlation'
+  | 'weekday_pattern'
+  | 'temporal_echo'
 
 export interface MirrorCandidate {
   entryIds: string[]
@@ -10,18 +36,29 @@ export interface MirrorCandidate {
   source: MirrorSource
   signalStrength: 'weak' | 'moderate' | 'strong'
   count: number
+  /** Pattern text before entries (empty when entriesFirst). */
   introText: string
+  /** After entries, before question (Wiederholung). */
+  summaryText?: string
+  /** Pattern text after entries (wgarm, valence_shift). */
+  closingText?: string
+  /** Entries before pattern copy (Zusammenhang). */
+  entriesFirst?: boolean
   question: string
-  /** Chip labels to expand in the mirror timeline (person, place, mood, …). */
   relevantMeta?: string[]
 }
-
-const RECENT_MS = 7 * 24 * 60 * 60 * 1000
 
 const BODY_STATE_LABELS: Record<string, string> = {
   stressed: 'gestresst',
   calm: 'ruhig',
   tired: 'müde',
+}
+
+const QUADRANT_LABELS: Record<string, string> = {
+  px_py: 'positiv und anderen zugewandt',
+  px_ny: 'positiv und auf dich bezogen',
+  nx_py: 'schwer in Bezug auf andere',
+  nx_ny: 'schwer und auf dich gerichtet',
 }
 
 function relevantMetaFromField(field: keyof Entry, raw: string): string[] {
@@ -38,48 +75,12 @@ function tagLabel(field: keyof Entry, val: string): string {
   return val
 }
 
-function sortByDate(entries: Entry[]): Entry[] {
-  return [...entries].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-  )
-}
-
-function avgIntervalDays(entries: Entry[]): number {
-  if (entries.length < 2) return 0
-  const dates = entries.map(e => new Date(e.created_at).getTime())
-  const intervals: number[] = []
-  for (let i = 1; i < dates.length; i++) {
-    intervals.push((dates[i] - dates[i - 1]) / (24 * 60 * 60 * 1000))
-  }
-  return Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length)
-}
-
-function formatSince(first: Date): string {
-  const month = first.toLocaleDateString('de-DE', { month: 'long' })
-  const year = first.getFullYear()
-  return year === new Date().getFullYear() ? `seit ${month}` : `seit ${month} ${year}`
-}
-
-/** Prefer entries older than 7 days — recent week is context, not the insight. */
-function pickDisplayEntries(sorted: Entry[], max = 3): Entry[] {
-  if (sorted.length <= max) return sorted
-
-  const older = sorted.filter(e => Date.now() - new Date(e.created_at).getTime() > RECENT_MS)
-  const pool = older.length >= max ? older : sorted
-
-  if (pool.length <= max) return pool
-
-  const mid = Math.floor((pool.length - 1) / 2)
-  const indices = [...new Set([0, mid, pool.length - 1])].sort((a, b) => a - b)
-  return indices.map(i => pool[i])
-}
-
-function temporalIntro(label: string, sorted: Entry[]): string {
-  const count = sorted.length
-  const interval = avgIntervalDays(sorted)
-  const since = formatSince(new Date(sorted[0].created_at))
-  const intervalPart = interval > 0 ? `alle ~${interval} Tage` : 'wiederholt'
-  return `„${label}" kommt ${intervalPart} vor — ${count}× ${since}.`
+function bareLabel(field: keyof Entry, raw: string): string {
+  if (field === 'body_state') return BODY_STATE_LABELS[raw] ?? raw
+  if (field === 'person') return raw
+  if (field === 'location') return raw
+  if (field === 'activity') return raw
+  return raw
 }
 
 export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
@@ -89,13 +90,8 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
   >()
 
   for (const e of entries) {
-    const fields: [keyof Entry, string][] = [
-      ['person', 'mit'],
-      ['location', 'bei'],
-      ['activity', 'beim'],
-      ['body_state', ''],
-    ]
-    for (const [field] of fields) {
+    const fields: (keyof Entry)[] = ['person', 'location', 'activity', 'body_state']
+    for (const field of fields) {
       const val = e[field] as string | null
       if (!val) continue
       const key = `${field}:${val}`
@@ -116,29 +112,54 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
   if (!best) return null
 
   const sorted = sortByDate(best.hits)
+  if (spanDays(sorted) < 14) return null
+
   const count = sorted.length
-  const display = pickDisplayEntries(sorted)
+  const strength = signalFromCount(count)
+  const since = new Date(sorted[0]!.created_at)
+  const span = spanDays(sorted)
+  const valence = avgGridX(sorted)
+
+  let introText: string
+  let summaryText: string
+  let question: string
+
+  if (valence > 0.3) {
+    introText = withStrongIntro(
+      strength,
+      `${intensity(count)} ${timespan(span, since)}.`,
+    )
+    summaryText = `Du hast das ${count}× erlebt.`
+    question = 'Fällt dir auf, was diese Momente verbindet?'
+  } else if (valence < -0.3) {
+    introText = withStrongIntro(
+      strength,
+      `${intensity(count)} ${timespan(span, since)}.`,
+    )
+    summaryText = `Das ist ${count}× aufgetaucht.`
+    question = 'Fällt dir auf, was diese Momente verbindet?'
+  } else {
+    const interval = avgIntervalDays(sorted)
+    const label = bareLabel(best.field, best.raw)
+    introText = `In deinen Einträgen erscheint ${label} immer wieder — alle ~${interval || '?'} Tage.`
+    summaryText = `${timespan(span, since)}, ${count}×.`
+    question = 'Was bedeutet das für dich?'
+  }
 
   return {
     entryIds: sorted.map(e => e.id),
-    entries: display,
+    entries: pickDisplayEntries(sorted),
     source: 'tag_frequency',
-    signalStrength: count >= 5 ? 'strong' : 'moderate',
+    signalStrength: strength,
     count,
-    introText: temporalIntro(best.label, sorted),
-    question: 'Was verbindest du mit diesen Momenten?',
+    introText,
+    summaryText,
+    question,
     relevantMeta: relevantMetaFromField(best.field, best.raw),
   }
 }
 
 export function detectGridCluster(entries: Entry[]): MirrorCandidate | null {
-  const QUADRANT_LABELS: Record<string, string> = {
-    px_py: 'positiv und anderen zugewandt',
-    px_ny: 'positiv und auf dich bezogen',
-    nx_py: 'schwer und anderen zugewandt',
-    nx_ny: 'schwer und auf dich bezogen',
-  }
-
   const buckets = new Map<string, Entry[]>()
   for (const e of entries) {
     if (e.grid_x === null || e.grid_y === null) continue
@@ -147,46 +168,58 @@ export function detectGridCluster(entries: Entry[]): MirrorCandidate | null {
     buckets.get(key)!.push(e)
   }
 
-  let bestKey = ''
-  let bestHits: Entry[] = []
-  for (const [key, hits] of buckets) {
-    if (hits.length >= 3 && hits.length > bestHits.length) {
-      bestKey = key
-      bestHits = hits
-    }
-  }
+  const ranked = [...buckets.entries()].sort((a, b) => b[1].length - a[1].length)
+  const [bestKey, bestHits] = ranked[0] ?? ['', []]
+  const secondCount = ranked[1]?.[1].length ?? 0
 
-  if (!bestHits.length) return null
+  if (bestHits.length < 5) return null
+  if (secondCount > 0 && bestHits.length < secondCount * 1.5) return null
 
   const sorted = sortByDate(bestHits)
+  if (spanDays(sorted) < 14) return null
+
   const count = sorted.length
-  const label = QUADRANT_LABELS[bestKey] ?? 'ähnlichen Bereich'
-  const interval = avgIntervalDays(sorted)
-  const since = formatSince(new Date(sorted[0].created_at))
-  const intervalPart = interval > 0 ? `alle ~${interval} Tage` : 'wiederholt'
+  const strength = signalFromCount(count)
+  const label = QUADRANT_LABELS[bestKey] ?? 'ähnlich'
+  const since = new Date(sorted[0]!.created_at)
+  const span = spanDays(sorted)
 
   return {
     entryIds: sorted.map(e => e.id),
     entries: pickDisplayEntries(sorted),
     source: 'grid_cluster',
-    signalStrength: count >= 5 ? 'strong' : 'moderate',
+    signalStrength: strength,
     count,
-    introText: `Du kehrst immer wieder zu Momenten zurück, die sich ${label} anfühlen — ${count}×, ${intervalPart}, ${since}.`,
-    question: 'Was haben diese Momente gemeinsam?',
+    introText: withStrongIntro(
+      strength,
+      `Du kehrst immer wieder zu Momenten zurück, die sich ${label} anfühlen.`,
+    ),
+    summaryText: `${timespan(span, since)}, ${count}×.`,
+    question: 'Was verbindet diese Momente?',
   }
 }
 
 export function detectPattern(entries: Entry[]): MirrorCandidate | null {
-  return detectTagFrequency(entries) ?? detectGridCluster(entries)
+  return pickBestCandidate([
+    detectTagFrequency(entries),
+    detectGridCluster(entries),
+    detectTimeCorrelation(entries),
+    detectTemporalEcho(entries),
+    detectWeekdayPattern(entries),
+  ])
 }
 
-/** All Phase-1 candidates (tag + grid), both may be present. */
 export function detectAllPhase1(entries: Entry[]): MirrorCandidate[] {
   const out: MirrorCandidate[] = []
-  const tag = detectTagFrequency(entries)
-  const grid = detectGridCluster(entries)
-  if (tag) out.push(tag)
-  if (grid) out.push(grid)
+  for (const c of [
+    detectTagFrequency(entries),
+    detectGridCluster(entries),
+    detectTimeCorrelation(entries),
+    detectTemporalEcho(entries),
+    detectWeekdayPattern(entries),
+  ]) {
+    if (c) out.push(c)
+  }
   return out
 }
 
@@ -199,24 +232,60 @@ export function valenceShiftToMirrorCandidate(
     pattern_metadata: {
       entry_early: string
       entry_late: string
+      entry_middle?: string
       shift?: number
       occurrence_count?: number
+      span_days?: number
     }
   },
   entries: Entry[],
 ): MirrorCandidate | null {
   const byId = new Map(entries.map(e => [e.id, e]))
-  const early = byId.get(stored.pattern_metadata.entry_early)
-  const late = byId.get(stored.pattern_metadata.entry_late)
+  const meta = stored.pattern_metadata
+  const early = byId.get(meta.entry_early)
+  const late = byId.get(meta.entry_late)
   if (!early || !late) return null
+
+  const n = meta.occurrence_count ?? stored.entry_ids.length
+  const clusterEntries = stored.entry_ids
+    .map(id => byId.get(id))
+    .filter((e): e is Entry => !!e)
+  const span = meta.span_days ?? spanDays(clusterEntries)
+  const shift = meta.shift ?? 0
+  const strength = stored.signal_strength as MirrorCandidate['signalStrength']
+  const extended = n >= 6 && span >= 60
+
+  let displayEntries: Entry[]
+  if (extended) {
+    const sorted = sortByDate(
+      stored.entry_ids.map(id => byId.get(id)).filter((e): e is Entry => !!e),
+    )
+    const mid = sorted[Math.floor(sorted.length / 2)]!
+    displayEntries = [sorted[0]!, mid, sorted[sorted.length - 1]!]
+  } else {
+    displayEntries = [early, late]
+  }
+
+  const positive = shift > 0
+  const introText = positive
+    ? 'Früher klang das so:'
+    : 'In ähnlichen Momenten klang das früher so:'
+  const closingText = positive
+    ? withStrongIntro(strength, 'Etwas hat sich verändert.')
+    : undefined
+  const question = positive
+    ? stored.question || 'Was war das?'
+    : stored.question || 'Was ist passiert?'
+
   return {
     entryIds: stored.entry_ids,
-    entries: [early, late],
+    entries: displayEntries,
     source: 'valence_shift',
-    signalStrength: stored.signal_strength as MirrorCandidate['signalStrength'],
-    count: stored.pattern_metadata.occurrence_count ?? stored.entry_ids.length,
-    introText: stored.template_text,
-    question: stored.question,
+    signalStrength: strength,
+    count: n,
+    introText,
+    closingText,
+    question,
   }
 }
 
@@ -245,6 +314,8 @@ export function candidateFromStored(
           entry_early: string
           entry_late: string
           occurrence_count?: number
+          span_days?: number
+          shift?: number
         },
       },
       entries,
@@ -252,8 +323,32 @@ export function candidateFromStored(
     if (vs) return vs
   }
 
-  if (stored.template_text) {
+  if (stored.template_text && stored.source === 'wgarm_ec') {
     const antecedent = stored.pattern_metadata?.antecedent
+    const anchorIds = (stored.pattern_metadata?.anchor_entry_ids as string[] | undefined) ?? []
+    const byId = new Map(entries.map(e => [e.id, e]))
+    const display =
+      anchorIds.length > 0
+        ? anchorIds.map(id => byId.get(id)).filter((e): e is Entry => !!e)
+        : pickDisplayEntries(sorted)
+
+    return {
+      entryIds: stored.entry_ids,
+      entries: display.length ? display : pickDisplayEntries(sorted),
+      source: 'wgarm_ec',
+      signalStrength: stored.signal_strength as MirrorCandidate['signalStrength'],
+      count: sorted.length,
+      introText: '',
+      closingText: stored.template_text,
+      entriesFirst: true,
+      question: stored.question ?? 'Erkennst du das?',
+      relevantMeta: Array.isArray(antecedent)
+        ? metaLabelsFromAntecedent(antecedent as string[])
+        : undefined,
+    }
+  }
+
+  if (stored.template_text) {
     return {
       entryIds: stored.entry_ids,
       entries: pickDisplayEntries(sorted),
@@ -262,9 +357,6 @@ export function candidateFromStored(
       count: sorted.length,
       introText: stored.template_text,
       question: stored.question ?? 'Was fällt dir daran auf?',
-      relevantMeta: Array.isArray(antecedent)
-        ? metaLabelsFromAntecedent(antecedent as string[])
-        : undefined,
     }
   }
 
