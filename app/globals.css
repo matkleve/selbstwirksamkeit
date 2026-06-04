@@ -447,6 +447,18 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: auto;
+    /* Scrollbar sits in app-main right padding — content width unchanged */
+    width: calc(100% + 16px);
+    margin-right: -16px;
+    padding-right: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .mirror-chat-viewport {
+      width: calc(100% + 24px);
+      margin-right: -24px;
+      padding-right: 24px;
+    }
   }
 
   .mirror-chat-stack {
@@ -466,6 +478,28 @@
     position: relative;
     flex-shrink: 0;
     width: 100%;
+  }
+
+  .mirror-expand {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.5s ease,
+      margin-bottom 0.62s cubic-bezier(0.22, 1, 0.36, 1);
+    margin-bottom: 0;
+  }
+
+  .mirror-expand--open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-bottom: 1.25rem;
+  }
+
+  .mirror-expand-inner {
+    overflow: hidden;
+    min-height: 0;
   }
 
   .mirror-slide-up {

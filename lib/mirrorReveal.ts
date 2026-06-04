@@ -5,7 +5,7 @@ import type { Entry } from '@/lib/types'
 export const MIRROR_REVEAL = {
   loadingStep: 1100,
   /** Pause after a block finishes before the next one starts typing */
-  blockGap: 280,
+  blockGap: 120,
   wordBase: 158,
   wordSlowEvery: 6,
   wordSlowExtra: 240,
