@@ -86,7 +86,7 @@ export default function Banner() {
               {timeAgo(successEntry.created_at)}:
             </p>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontStyle: 'italic', marginBottom: 4 }}>
-              "{successEntry.text.length > 120 ? successEntry.text.slice(0, 120) + '…' : successEntry.text}"
+              „{successEntry.text.length > 120 ? successEntry.text.slice(0, 120) + '…' : successEntry.text}"
             </p>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Das war erst {timeAgo(successEntry.created_at)}. Vertrau dir.
