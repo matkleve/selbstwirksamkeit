@@ -47,8 +47,8 @@ export interface ValenceShiftCandidate {
     entry_early: string
     entry_late: string
     shift: number
-    früh_avg: number
-    spät_avg: number
+    early_avg: number
+    late_avg: number
     cluster_id: string
     span_days: number
     occurrence_count: number
@@ -63,7 +63,7 @@ interface SemanticCluster {
   member_embeddings: number[][]
   label: string
   valence_sum: number
-  valenceBias: 'positiv' | 'negativ' | 'mixed'
+  valenceBias: 'positive' | 'negative' | 'mixed'
   timestamps: Date[]
 }
 
@@ -95,7 +95,7 @@ export interface WgarmResult {
   }
 }
 
-const VALENCE_ITEMS = new Set(['valence:negativ', 'valence:positiv', 'valence:neutral'])
+const VALENCE_ITEMS = new Set(['valence:negative', 'valence:positive', 'valence:neutral'])
 const MIN_SPAN_DAYS = 7
 const VALENCE_SHIFT_MIN_ENTRIES = 4
 const VALENCE_SHIFT_MIN_SPAN_DAYS = 30
@@ -109,16 +109,16 @@ const MOOD_LABELS: Record<string, string> = {
 }
 
 const TIME_LABELS: Record<string, string> = {
-  nacht: 'nachts',
-  morgen: 'morgens',
-  mittag: 'tagsüber',
-  abend: 'abends',
-  spaet: 'spät abends',
+  night: 'nachts',
+  morning: 'morgens',
+  midday: 'tagsüber',
+  evening: 'abends',
+  late_evening: 'spät abends',
 }
 
 const WEEKDAY_LABELS: Record<string, string> = {
   weekend: 'am Wochenende',
-  woche: 'unter der Woche',
+  midweek: 'unter der Woche',
 }
 
 function capitalize(s: string): string {
@@ -145,7 +145,7 @@ function formatItemLabel(item: string): string {
   return ''
 }
 
-function clusterValenceBias(cluster: SemanticCluster, entries: WgarmEntry[]): 'positiv' | 'negativ' | 'mixed' {
+function clusterValenceBias(cluster: SemanticCluster, entries: WgarmEntry[]): 'positive' | 'negative' | 'mixed' {
   const members = cluster.member_ids
     .map(id => entries.find(e => e.id === id))
     .filter((e): e is WgarmEntry => !!e)
@@ -153,8 +153,8 @@ function clusterValenceBias(cluster: SemanticCluster, entries: WgarmEntry[]): 'p
   const neg = members.filter(e => e.grid_x < -0.3).length
   if (pos > 0 && neg > 0) return 'mixed'
   const avg = cluster.valence_sum / cluster.member_ids.length
-  if (avg > 0.3) return 'positiv'
-  if (avg < -0.3) return 'negativ'
+  if (avg > 0.3) return 'positive'
+  if (avg < -0.3) return 'negative'
   return 'mixed'
 }
 
@@ -270,8 +270,8 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   const items: string[] = []
   if (clusterId) items.push(`cluster:${clusterId}`)
 
-  if (entry.grid_x < -0.3) items.push('valence:negativ')
-  else if (entry.grid_x > 0.3) items.push('valence:positiv')
+  if (entry.grid_x < -0.3) items.push('valence:negative')
+  else if (entry.grid_x > 0.3) items.push('valence:positive')
   else items.push('valence:neutral')
 
   if (entry.person) items.push(`tag:person:${entry.person.toLowerCase()}`)
@@ -280,13 +280,13 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   if (entry.activity) items.push(`tag:act:${entry.activity.toLowerCase()}`)
 
   const h = entry.hour_of_day
-  if (h < 6) items.push('time:nacht')
-  else if (h < 12) items.push('time:morgen')
-  else if (h < 17) items.push('time:mittag')
-  else if (h < 22) items.push('time:abend')
-  else items.push('time:spaet')
+  if (h < 6) items.push('time:night')
+  else if (h < 12) items.push('time:morning')
+  else if (h < 17) items.push('time:midday')
+  else if (h < 22) items.push('time:evening')
+  else items.push('time:late_evening')
 
-  items.push(entry.day_of_week >= 5 ? 'weekday:weekend' : 'weekday:woche')
+  items.push(entry.day_of_week >= 5 ? 'weekday:weekend' : 'weekday:midweek')
   return items
 }
 
@@ -450,43 +450,43 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
   const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.slice(5)!)
   const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.slice(8)!)
 
-  if (label && clusterBias === 'negativ' && cons === 'valence:negativ') {
+  if (label && clusterBias === 'negative' && cons === 'valence:negative') {
     return `Das Thema „${label}" taucht seit ${weeksStr} regelmäßig auf — ${count}× beschrieben.${escalationNote}`
   }
-  if (label && clusterBias === 'positiv' && cons === 'valence:positiv') {
+  if (label && clusterBias === 'positive' && cons === 'valence:positive') {
     return `„${label}" erscheint als wiederkehrende positive Kraft — ${count}× in ${weeksStr}.`
   }
-  if (persons.length && cons === 'valence:negativ') {
+  if (persons.length && cons === 'valence:negative') {
     return `Wenn du mit ${persons.join(', ')} zusammen bist, fühlst du dich in ${confPct}% der Fälle unwohl.`
   }
-  if (persons.length && cons === 'valence:positiv') {
+  if (persons.length && cons === 'valence:positive') {
     return `Einträge mit ${persons.join(', ')} sind in ${confPct}% der Fälle positiv.`
   }
-  if (moods.length && cons === 'valence:negativ') {
+  if (moods.length && cons === 'valence:negative') {
     return `Wenn du ${moods.join(' oder ')} fühlst, sind deine Einträge in ${confPct}% der Fälle negativ.`
   }
-  if (moods.length && cons === 'valence:positiv') {
+  if (moods.length && cons === 'valence:positive') {
     return `Wenn du ${moods.join(' oder ')} fühlst, sind deine Einträge in ${confPct}% der Fälle positiv.`
   }
-  if (locations.length && cons === 'valence:negativ') {
+  if (locations.length && cons === 'valence:negative') {
     return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle negativere Zustände.`
   }
-  if (locations.length && cons === 'valence:positiv') {
+  if (locations.length && cons === 'valence:positive') {
     return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle positivere Zustände.`
   }
-  if (timeItems.length && cons === 'valence:negativ') {
+  if (timeItems.length && cons === 'valence:negative') {
     const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
     return `Deine Einträge ${t} zeigen systematisch negativere Zustände als zu anderen Tageszeiten.`
   }
-  if (timeItems.length && cons === 'valence:positiv') {
+  if (timeItems.length && cons === 'valence:positive') {
     const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
     return `Deine Einträge ${t} hängen in ${confPct}% der Fälle mit positiveren Zuständen zusammen.`
   }
-  if (weekdayItems.length && cons === 'valence:negativ') {
+  if (weekdayItems.length && cons === 'valence:negative') {
     const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
     return `Du notierst ${w} häufiger negative Zustände (${confPct}% der Fälle).`
   }
-  if (weekdayItems.length && cons === 'valence:positiv') {
+  if (weekdayItems.length && cons === 'valence:positive') {
     const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
     return `Du notierst ${w} häufiger positive Zustände (${confPct}% der Fälle).`
   }
@@ -495,7 +495,7 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
   if (!antLabels.length) return null
 
   const valenceStr =
-    cons === 'valence:negativ' ? 'negativeren'
+    cons === 'valence:negative' ? 'negativeren'
     : cons === 'valence:neutral' ? 'neutraleren'
     : 'positiveren'
   return `Mir ist aufgefallen: ${antLabels.join(', ')} hängt in ${confPct}% der Fälle mit ${valenceStr} Zuständen zusammen.`
@@ -592,9 +592,9 @@ export function detectValenceShifts(
     const lateIds = sorted.slice(mid)
     if (!earlyIds.length || !lateIds.length) continue
 
-    const früh_avg = earlyIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / earlyIds.length
-    const spät_avg = lateIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / lateIds.length
-    const shift = spät_avg - früh_avg
+    const early_avg = earlyIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / earlyIds.length
+    const late_avg = lateIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / lateIds.length
+    const shift = late_avg - early_avg
     if (Math.abs(shift) <= VALENCE_SHIFT_MODERATE) continue
 
     const entry_early = representativeMember(earlyIds, byId)
@@ -613,8 +613,8 @@ export function detectValenceShifts(
         entry_early,
         entry_late,
         shift,
-        früh_avg,
-        spät_avg,
+        early_avg,
+        late_avg,
         cluster_id: cluster.id,
         span_days: spanDays,
         occurrence_count: n,

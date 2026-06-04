@@ -96,7 +96,7 @@ def main():
                              else "●○○")
 
             cons = rule.consequent[0]
-            cons_color = RED if "negativ" in cons else GREEN
+            cons_color = RED if "negative" in cons else GREEN
 
             print(f"  {BOLD}Rule {i}{RESET}  "
                   f"{strength_color}{strength_icon} {rule.signal_strength}{RESET}")

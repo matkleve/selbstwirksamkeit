@@ -117,22 +117,22 @@ Items aus Embedding (wenn Clustering durchgeführt):
   "cluster:{cluster_id}"     z.B. "cluster:C1"
 
 Items aus grid_x (Valenz-Bucket):
-  grid_x < -0.3  → "valence:negativ"
-  grid_x > +0.3  → "valence:positiv"
+  grid_x < -0.3  → "valence:negative"
+  grid_x > +0.3  → "valence:positive"
   sonst          → "valence:neutral"
 
 Items aus mood_tags:
   jeder Tag → "tag:{wert}"   z.B. "tag:Mum", "tag:zuhause"
 
 Items aus hour_of_day:
-  0–5    → "time:nacht"
-  6–11   → "time:morgen"
-  12–16  → "time:mittag"
-  17–21  → "time:abend"
-  22–23  → "time:spaet"
+  0–5    → "time:night"
+  6–11   → "time:morning"
+  12–16  → "time:midday"
+  17–21  → "time:evening"
+  22–23  → "time:late_evening"
 
 Items aus day_of_week:
-  0–4    → "weekday:woche"
+  0–4    → "weekday:midweek"
   5–6    → "weekday:weekend"
 ```
 
@@ -194,12 +194,12 @@ LLM MAY für Cluster-Labels verwendet werden (einmalig pro Cluster).
 
 | Antecedent enthält | Consequent | Template |
 |---|---|---|
-| `cluster:*` | `valence:negativ` | "Das Thema '{label}' taucht seit {weeks} Wochen {count}× auf." |
-| `cluster:*` | `valence:positiv` | "'{label}' erscheint seit {weeks} Wochen als positive Kraft — {count}×." |
-| `tag:*` (Person) | `valence:negativ` | "Wenn du mit {person} zusammen bist, fühlst du dich in {conf}% der Fälle unwohl." |
-| `tag:*` (Person) | `valence:positiv` | "Einträge mit {person} sind in {conf}% der Fälle positiv." |
-| `time:*` | `valence:negativ` | "Deine {time}-Einträge zeigen systematisch negativere Zustände." |
-| `weekday:*` | `valence:negativ` | "An {day} notierst du häufiger negative Zustände als an anderen Tagen." |
+| `cluster:*` | `valence:negative` | "Das Thema '{label}' taucht seit {weeks} Wochen {count}× auf." |
+| `cluster:*` | `valence:positive` | "'{label}' erscheint seit {weeks} Wochen als positive Kraft — {count}×." |
+| `tag:*` (Person) | `valence:negative` | "Wenn du mit {person} zusammen bist, fühlst du dich in {conf}% der Fälle unwohl." |
+| `tag:*` (Person) | `valence:positive` | "Einträge mit {person} sind in {conf}% der Fälle positiv." |
+| `time:*` | `valence:negative` | "Deine {time}-Einträge zeigen systematisch negativere Zustände." |
+| `weekday:*` | `valence:negative` | "An {day} notierst du häufiger negative Zustände als an anderen Tagen." |
 | default | beliebig | "Mir ist aufgefallen: {antecedent} hängt in {conf}% mit {valence} Zuständen zusammen." |
 
 ### 8.2 Priorität bei mehreren Antecedents

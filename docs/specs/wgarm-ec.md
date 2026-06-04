@@ -65,11 +65,11 @@ MUST NOT emit a mirror candidate when `span_days < 7` (pattern lacks meaningful 
 | `location` | `tag:loc:{value}` | Location template |
 | `activity` | `tag:act:{value}` | Default / combined |
 
-MUST NOT show raw item keys (`time:abend`, `tag:mood:calm`) in `template_text`. Use German labels (`abends`, `Calm`).
+MUST NOT show raw item keys (`time:evening`, `tag:mood:calm`) in `template_text`. Use German labels (`abends`, `ruhig`).
 
 ## Cluster labels
 
-Cluster label MUST only be set when `valenceBias` is unambiguous (`positiv` or `negativ`, not `mixed`).  
+Cluster label MUST only be set when `valenceBias` is unambiguous (`positive` or `negative`, not `mixed`).  
 Label source: dominant `body_state` tags in cluster members (not person names).
 
 Cluster-only rules without a usable label MUST NOT become mirror candidates.

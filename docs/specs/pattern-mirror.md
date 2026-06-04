@@ -206,9 +206,9 @@ For each semantic cluster with **≥ 4 entries** and span **≥ 30 days** (by `c
 
 1. Sort cluster members by `created_at` ascending
 2. Split into **early** / **late** half by index (not by count threshold): `early = [0 .. mid)`, `late = [mid .. n)`
-3. `früh_avg` = mean `grid_x` (normalized −1…+1) of early half
-4. `spät_avg` = mean `grid_x` of late half
-5. `shift = spät_avg − früh_avg`
+3. `early_avg` = mean `grid_x` (normalized −1…+1) of early half
+4. `late_avg` = mean `grid_x` of late half
+5. `shift = late_avg − early_avg`
 6. If `|shift| > 0.35` → emit candidate
 
 ### Signal strength
@@ -221,7 +221,7 @@ For each semantic cluster with **≥ 4 entries** and span **≥ 30 days** (by `c
 ### Source and metadata
 
 - `source = 'valence_shift'`
-- `pattern_metadata` MUST include: `entry_early`, `entry_late`, `shift`, `früh_avg`, `spät_avg`, `cluster_id`, `span_days`, `occurrence_count`, `anchor_entry_ids: [entry_early, entry_late]`
+- `pattern_metadata` MUST include: `entry_early`, `entry_late`, `shift`, `early_avg`, `late_avg`, `cluster_id`, `span_days`, `occurrence_count`, `anchor_entry_ids: [entry_early, entry_late]`
 - **Representative entry** per half: member whose embedding has highest cosine similarity to the half’s centroid (fallback: closest `grid_x` to half mean)
 
 ### Template text — MUST be neutral (no evaluation)

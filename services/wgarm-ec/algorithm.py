@@ -172,9 +172,9 @@ def entry_to_transaction(
 
     # Valence bucket
     if entry.grid_x < -0.3:
-        items.append("valence:negativ")
+        items.append("valence:negative")
     elif entry.grid_x > 0.3:
-        items.append("valence:positiv")
+        items.append("valence:positive")
     else:
         items.append("valence:neutral")
 
@@ -185,18 +185,18 @@ def entry_to_transaction(
     # Time of day
     h = entry.hour_of_day
     if h < 6:
-        items.append("time:nacht")
+        items.append("time:night")
     elif h < 12:
-        items.append("time:morgen")
+        items.append("time:morning")
     elif h < 17:
-        items.append("time:mittag")
+        items.append("time:midday")
     elif h < 22:
-        items.append("time:abend")
+        items.append("time:evening")
     else:
-        items.append("time:spaet")
+        items.append("time:late_evening")
 
     # Day type
-    items.append("weekday:weekend" if entry.day_of_week >= 5 else "weekday:woche")
+    items.append("weekday:weekend" if entry.day_of_week >= 5 else "weekday:midweek")
 
     return items
 
@@ -236,7 +236,7 @@ def generate_rules(
     frequent_itemsets: Dict[frozenset, float],
     min_confidence: float = 0.60,
     min_lift: float = 1.30,
-    valence_items: frozenset = frozenset({"valence:negativ", "valence:positiv", "valence:neutral"})
+    valence_items: frozenset = frozenset({"valence:negative", "valence:positive", "valence:neutral"})
 ) -> List[Dict]:
     """
     Only generates rules where consequent is a valence item.
@@ -368,34 +368,34 @@ def generate_text(rule: AssociationRule, clusters: List[SemanticCluster]) -> str
 
     escalation_note = " Die Häufigkeit nimmt zu." if rule.is_escalating else ""
 
-    if label and cons == "valence:negativ":
+    if label and cons == "valence:negative":
         return (f"Das Thema \"{label}\" taucht seit {weeks} Wochen "
                 f"regelmäßig auf — {count}× beschrieben.{escalation_note}")
 
-    if label and cons == "valence:positiv":
+    if label and cons == "valence:positive":
         return (f"\"{label}\" erscheint als wiederkehrende positive Kraft "
                 f"— {count}× in {weeks} Wochen.")
 
-    if persons and cons == "valence:negativ":
+    if persons and cons == "valence:negative":
         p = ", ".join(persons)
         return (f"Wenn du mit {p} zusammen bist, fühlst du dich "
                 f"in {conf_pct}% der Fälle unwohl.")
 
-    if persons and cons == "valence:positiv":
+    if persons and cons == "valence:positive":
         p = ", ".join(persons)
         return f"Einträge mit {p} sind in {conf_pct}% der Fälle positiv."
 
-    if time_items and cons == "valence:negativ":
+    if time_items and cons == "valence:negative":
         return (f"Deine {time_items[0]}-Einträge zeigen systematisch "
                 f"negativere Zustände als zu anderen Tageszeiten.")
 
-    if weekday_items and cons == "valence:negativ":
+    if weekday_items and cons == "valence:negative":
         w = "am Wochenende" if weekday_items[0] == "weekend" else "unter der Woche"
         return f"Du notierst {w} häufiger negative Zustände ({conf_pct}% der Fälle)."
 
     # Default
     ant_str = ", ".join(a for a in ant if not a.startswith("cluster:"))
-    valence_str = "negativen" if cons == "valence:negativ" else "positiven"
+    valence_str = "negativen" if cons == "valence:negative" else "positiven"
     return (f"Mir ist aufgefallen: {ant_str} hängt in {conf_pct}% "
             f"der Fälle mit {valence_str} Zuständen zusammen.")
 
