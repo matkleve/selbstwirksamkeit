@@ -126,6 +126,8 @@ export function TimelineRangeSlider({
     setDragPreview(null)
   }
 
+  const isDragging = dragPreview !== null
+
   const selStart = dateToRatio(displayRange.start, bounds)
   const selEnd = dateToRatio(displayRange.end, bounds)
 
@@ -168,7 +170,12 @@ export function TimelineRangeSlider({
           ))}
 
           <div
-            className="pointer-events-none absolute inset-y-0 rounded-md border border-[var(--border-focus)] bg-[color-mix(in_srgb,var(--nav-active-bg)_55%,transparent)]"
+            className={cn(
+              'pointer-events-none absolute inset-y-0 rounded-md border',
+              isDragging
+                ? 'border-[var(--mirror-gold)] bg-[color-mix(in_srgb,var(--mirror-gold-bg)_55%,transparent)]'
+                : 'border-[var(--nav-active-fg)] bg-[color-mix(in_srgb,var(--nav-active-bg)_55%,transparent)]',
+            )}
             style={{ left: ratioLeft(selStart), width: ratioWidth(selStart, selEnd) }}
           />
         </div>

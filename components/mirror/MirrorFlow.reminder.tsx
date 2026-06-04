@@ -5,11 +5,9 @@ import { Badge } from '@/components/ui/badge'
 import { MIRROR_REMINDER_OPTIONS, pickMirrorReminderIntro } from '@/components/mirror/MirrorFlow.constants'
 
 export function MirrorReminderChips({
-  duration,
-  setDuration,
+  onSelect,
 }: {
-  duration: string | null
-  setDuration: (v: string | null) => void
+  onSelect: (label: (typeof MIRROR_REMINDER_OPTIONS)[number]['label']) => void
 }) {
   const intro = useMemo(() => pickMirrorReminderIntro(), [])
 
@@ -21,10 +19,10 @@ export function MirrorReminderChips({
           <button
             key={opt.label}
             type="button"
-            onClick={() => setDuration(duration === opt.label ? null : opt.label)}
+            onClick={() => onSelect(opt.label)}
             className="cursor-pointer rounded-chip border-0 bg-transparent p-0"
           >
-            <Badge variant={duration === opt.label ? 'filled' : 'default'}>{opt.label}</Badge>
+            <Badge variant="default">{opt.label}</Badge>
           </button>
         ))}
       </div>

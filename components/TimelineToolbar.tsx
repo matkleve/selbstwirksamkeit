@@ -1,8 +1,7 @@
 'use client'
 
-import { useRef } from 'react'
 import { ArrowDownAZ, ChevronDown, Filter, LayoutList } from 'lucide-react'
-import { DropdownPanel, useClickOutside } from '@/components/DropdownPanel'
+import { NavDropdown } from '@/components/NavDropdown'
 import { cn } from '@/lib/cn'
 import {
   TIMELINE_DENSITY_OPTIONS,
@@ -48,50 +47,43 @@ function ToolbarDropdown<T extends string>({
   value: T
   onChange: (v: T) => void
 }) {
-  const ref = useRef<HTMLDivElement>(null)
   const open = openMenu === menuId
 
-  useClickOutside(ref, () => onOpenMenu(null), open)
-
   return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        onClick={() => onOpenMenu(open ? null : menuId)}
-        className={cn(
-          'nav-interactive nav-interactive--ink flex h-8 items-center gap-1.5 rounded-lg border border-edge px-2.5 text-xs',
-          open && 'border-[var(--border-focus)] bg-subtle',
-        )}
-      >
-        <Icon size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-ink-3" />
-        <span className="hidden text-ink-3 sm:inline">{label}</span>
-        <span className="font-medium text-ink">{valueLabel}</span>
-        <ChevronDown
-          size={14}
-          strokeWidth={1.75}
-          aria-hidden
-          className={cn('shrink-0 text-ink-3 transition-transform', open && 'rotate-180')}
-        />
-      </button>
-
-      {open && (
-        <DropdownPanel
-          role="listbox"
-          minWidth={168}
-          items={options.map(o => ({
-            type: 'item' as const,
-            id: o.id,
-            label: o.id === value ? `✓ ${o.label}` : o.label,
-            onClick: () => {
-              onChange(o.id)
-              onOpenMenu(null)
-            },
-          }))}
-        />
+    <NavDropdown
+      role="listbox"
+      minWidth={168}
+      open={open}
+      onOpenChange={next => onOpenMenu(next ? menuId : null)}
+      items={options.map(o => ({
+        type: 'item' as const,
+        id: o.id,
+        label: o.label,
+        selected: o.id === value,
+        onClick: () => onChange(o.id),
+      }))}
+    >
+      {({ open: isOpen, toggle }) => (
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
+          onClick={toggle}
+          data-active={isOpen ? '' : undefined}
+          className="nav-interactive nav-interactive--ink flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-edge px-2.5 text-xs"
+        >
+          <Icon size={14} strokeWidth={1.75} aria-hidden className="shrink-0 text-ink-3" />
+          <span className="hidden text-ink-3 sm:inline">{label}</span>
+          <span className="font-medium text-ink">{valueLabel}</span>
+          <ChevronDown
+            size={14}
+            strokeWidth={1.75}
+            aria-hidden
+            className={cn('shrink-0 text-ink-3 transition-transform', isOpen && 'rotate-180')}
+          />
+        </button>
       )}
-    </div>
+    </NavDropdown>
   )
 }
 

@@ -52,6 +52,18 @@ export function formatEntryDate(dateStr: string): string {
   })
 }
 
+/** z. B. „25. März 2026 um 15:34“ */
+export function formatEntryDateTime(input: Date | string): string {
+  const d = typeof input === 'string' ? new Date(input) : input
+  const date = d.toLocaleDateString('de-DE', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  const time = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+  return `${date} um ${time}`
+}
+
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { ArrowRight } from 'lucide-react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Button } from '@/components/ui/button'
@@ -7,10 +8,17 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { MirrorRevealWords } from '@/components/mirror/MirrorRevealWords'
 import { MirrorTimelineRow } from '@/components/mirror/MirrorFlow.timeline'
-import { MIRROR_SUMMARY_TEXT } from '@/components/mirror/MirrorFlow.constants'
+import type { ClosureRevealState } from '@/components/mirror/MirrorFlow.useClosureReveal'
 import { MirrorReminderChips } from '@/components/mirror/MirrorFlow.reminder'
+import { MirrorReflectionExploration } from '@/components/mirror/MirrorReflectionExploration'
 import { MirrorExpandShell } from '@/components/mirror/MirrorExpandShell'
 import { splitRevealWords } from '@/lib/mirrorReveal'
+import type { ExplorationBlockReveal } from '@/components/mirror/MirrorFlow.useExplorationReveal'
+import type {
+  MirrorExplorationBlock,
+  MirrorExplorationKind,
+  MirrorExplorationOffers,
+} from '@/lib/mirrorExploration'
 import type { RefObject } from 'react'
 
 function MirrorWeiterButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
@@ -37,6 +45,12 @@ export function MirrorReflectionSection({
   setReflectionText,
   sessionIdRef,
   supabase,
+  explorationOffers,
+  usedExplorationKinds,
+  explorationBlocks,
+  explorationReveal,
+  relevantMeta,
+  onExplore,
   onContinue,
 }: {
   blocksLength: number
@@ -44,10 +58,35 @@ export function MirrorReflectionSection({
   setReflectionText: (v: string) => void
   sessionIdRef: RefObject<string | null>
   supabase: SupabaseClient
+  explorationOffers: MirrorExplorationOffers
+  usedExplorationKinds: ReadonlySet<MirrorExplorationKind>
+  explorationBlocks: MirrorExplorationBlock[]
+  explorationReveal: Record<string, ExplorationBlockReveal>
+  relevantMeta?: string[]
+  onExplore: (kind: MirrorExplorationKind) => void
   onContinue: () => void
 }) {
+  const hasExploration =
+    explorationBlocks.length > 0 ||
+    (['more', 'positive', 'contrast'] as const).some(
+      k => explorationOffers[k] && !usedExplorationKinds.has(k),
+    )
+
   return (
-    <MirrorTimelineRow markerType="reflection" markerIdx={blocksLength}>
+    <div className="flex flex-col">
+      {hasExploration && (
+        <MirrorReflectionExploration
+          offers={explorationOffers}
+          usedKinds={usedExplorationKinds}
+          blocks={explorationBlocks}
+          revealByBlock={explorationReveal}
+          relevantMeta={relevantMeta}
+          markerBaseIdx={blocksLength}
+          onExplore={onExplore}
+        />
+      )}
+
+      <MirrorTimelineRow markerType="reflection" markerIdx={blocksLength + 50}>
       <div className="flex flex-col gap-3">
         <Textarea
           value={reflectionText}
@@ -66,6 +105,7 @@ export function MirrorReflectionSection({
         <MirrorWeiterButton onClick={onContinue} />
       </div>
     </MirrorTimelineRow>
+    </div>
   )
 }
 
@@ -90,7 +130,7 @@ export function MirrorIntentionSection({
   duration: string | null
   setDuration: (v: string | null) => void
   onFieldsContinue: () => void
-  onReminderContinue: () => void
+  onReminderContinue: (label: string) => void
 }) {
   return (
     <>
@@ -119,33 +159,64 @@ export function MirrorIntentionSection({
 
       <MirrorExpandShell open={showReminderStep}>
         <MirrorTimelineRow markerType="reminder" markerIdx={blocksLength + 2}>
-          <div className="flex flex-col gap-3">
-            <MirrorReminderChips duration={duration} setDuration={setDuration} />
-            <MirrorWeiterButton onClick={onReminderContinue} />
-          </div>
+          <MirrorReminderChips
+            onSelect={label => {
+              setDuration(label)
+              onReminderContinue(label)
+            }}
+          />
         </MirrorTimelineRow>
       </MirrorExpandShell>
     </>
   )
 }
 
-export function MirrorSummarySection({
+export function MirrorClosureSection({
   blocksLength,
-  summaryWords,
+  messages,
+  reveal,
+  complete,
+  onClose,
 }: {
   blocksLength: number
-  summaryWords: number
+  messages: string[]
+  reveal: ClosureRevealState
+  complete: boolean
+  onClose?: () => void
 }) {
-  const words = splitRevealWords(MIRROR_SUMMARY_TEXT)
+  const router = useRouter()
+  const handleClose = () => (onClose ? onClose() : router.push('/mirror'))
+
   return (
-    <MirrorTimelineRow markerType="summary" markerIdx={blocksLength + 3}>
-      <MirrorRevealWords
-        as="p"
-        words={words}
-        visibleCount={summaryWords}
-        showCursor={summaryWords < words.length}
-        className="font-display text-[1.0625rem] leading-snug text-ink-3"
-      />
-    </MirrorTimelineRow>
+    <div className="flex flex-col gap-4">
+      {messages.map((text, i) => {
+        if (i > reveal.line) return null
+        const words = splitRevealWords(text)
+        const visible = i < reveal.line ? words.length : reveal.words
+        return (
+          <MirrorTimelineRow
+            key={i}
+            markerType={i === 0 ? 'summary' : 'summary'}
+            markerIdx={blocksLength + 3 + i}
+          >
+            <MirrorRevealWords
+              as="p"
+              words={words}
+              visibleCount={visible}
+              showCursor={!complete && i === reveal.line && visible < words.length}
+              className="font-display text-[1.0625rem] leading-snug text-ink-2"
+            />
+          </MirrorTimelineRow>
+        )
+      })}
+
+      {complete && (
+        <div className="flex justify-end pt-1">
+          <Button type="button" variant="gold" size="lg" onClick={handleClose}>
+            Abschließen
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }

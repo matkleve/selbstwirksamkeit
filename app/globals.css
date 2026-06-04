@@ -496,6 +496,11 @@
 
 .entry-card-valence {
   min-width: 0;
+  width: 100%;
+}
+
+.entry-grid-wrap {
+  width: 100%;
 }
 
 .entry-card-compose {
@@ -603,39 +608,17 @@
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: auto;
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
-    /* Scrollbar sits in app-main right padding — content width unchanged */
-    width: calc(100% + 16px);
-    margin-right: -16px;
-    padding-right: 16px;
+    /* Gutter reserviert Platz → kein Sprung wenn Inhalt scrollbar wird */
+    scrollbar-gutter: stable;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    width: 100%;
   }
 
   .mirror-chat-viewport::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .mirror-chat-viewport::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .mirror-chat-viewport::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
-    border-radius: 999px;
-    border: 1px solid transparent;
-    background-clip: padding-box;
-  }
-
-  .mirror-chat-viewport::-webkit-scrollbar-thumb:hover {
-    background-color: color-mix(in srgb, var(--text-muted) 65%, transparent);
-  }
-
-  @media (min-width: 768px) {
-    .mirror-chat-viewport {
-      width: calc(100% + 24px);
-      margin-right: -24px;
-      padding-right: 24px;
-    }
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .mirror-chat-stack {
@@ -677,6 +660,10 @@
   .mirror-expand-inner {
     overflow: hidden;
     min-height: 0;
+  }
+
+  .mirror-expand--open .mirror-expand-inner {
+    overflow: visible;
   }
 
   .mirror-slide-up {

@@ -42,6 +42,34 @@ function pickBestUnshown(rows: StoredCandidate[]): StoredCandidate | null {
   })[0]!
 }
 
+function candidateFingerprint(source: string, entryIds: string[]): string {
+  return `${source}:${[...entryIds].sort().join(',')}`
+}
+
+async function fetchShownFingerprints(supabase: SupabaseClient): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('mirror_candidates')
+    .select('entry_ids, source')
+    .eq('shown', true)
+
+  if (error) throw new Error(error.message)
+
+  return new Set(
+    (data ?? []).map(row =>
+      candidateFingerprint(row.source, (row.entry_ids ?? []) as string[]),
+    ),
+  )
+}
+
+function isCandidateAlreadyShown(candidate: MirrorCandidate, shown: Set<string>): boolean {
+  return shown.has(candidateFingerprint(candidate.source, candidate.entryIds))
+}
+
+function sameMirrorCandidate(a: MirrorCandidate, b: MirrorCandidate | null): boolean {
+  if (!b) return false
+  return candidateFingerprint(a.source, a.entryIds) === candidateFingerprint(b.source, b.entryIds)
+}
+
 async function persistPhase1Candidate(
   supabase: SupabaseClient,
   userId: string,
@@ -74,11 +102,27 @@ async function candidateFromStoredRow(
   if (!entryRows?.length) return null
 
   if (markShown) {
-    const { error: updateError } = await supabase
+    const shownAt = new Date().toISOString()
+    const targetFp = candidateFingerprint(stored.source, stored.entry_ids)
+
+    const { data: unshown, error: listError } = await supabase
       .from('mirror_candidates')
-      .update({ shown: true, shown_at: new Date().toISOString() })
-      .eq('id', stored.id)
-    if (updateError) throw new Error(updateError.message)
+      .select('id, entry_ids, source')
+      .eq('shown', false)
+
+    if (listError) throw new Error(listError.message)
+
+    const ids = (unshown ?? [])
+      .filter(row => candidateFingerprint(row.source, (row.entry_ids ?? []) as string[]) === targetFp)
+      .map(row => row.id)
+
+    if (ids.length) {
+      const { error: updateError } = await supabase
+        .from('mirror_candidates')
+        .update({ shown: true, shown_at: shownAt })
+        .in('id', ids)
+      if (updateError) throw new Error(updateError.message)
+    }
   }
 
   return candidateFromStored(stored, entryRows as Entry[])
@@ -89,16 +133,28 @@ async function resolveDevMode(
   userId: string,
   entries: EntryWithEmbedding[],
 ): Promise<MirrorCandidate | null> {
+  const shown = await fetchShownFingerprints(supabase)
+
   const phase1 = detectPattern(entries)
   const { best: wgarmBest, bestValenceShift } = runWgarmForEntries(entries)
 
   const wgarmMirror = wgarmBest ? wgarmToMirrorCandidate(wgarmBest, entries) : null
   const valenceMirror = bestValenceShift ? valenceShiftToMirror(bestValenceShift, entries) : null
-  const best = pickBestMirrorCandidate([phase1, wgarmMirror, valenceMirror])
 
-  if (phase1) await persistPhase1Candidate(supabase, userId, phase1, true)
-  if (wgarmBest) await persistWgarmCandidate(supabase, userId, wgarmBest, true)
-  if (bestValenceShift) await persistValenceShiftCandidate(supabase, userId, bestValenceShift, true)
+  const pool = [phase1, wgarmMirror, valenceMirror].filter(
+    (c): c is MirrorCandidate => c !== null && !isCandidateAlreadyShown(c, shown),
+  )
+  const best = pickBestMirrorCandidate(pool)
+
+  if (!best) return null
+
+  if (sameMirrorCandidate(best, phase1) && phase1) {
+    await persistPhase1Candidate(supabase, userId, phase1, true)
+  } else if (sameMirrorCandidate(best, wgarmMirror) && wgarmBest) {
+    await persistWgarmCandidate(supabase, userId, wgarmBest, true)
+  } else if (sameMirrorCandidate(best, valenceMirror) && bestValenceShift) {
+    await persistValenceShiftCandidate(supabase, userId, bestValenceShift, true)
+  }
 
   return best
 }

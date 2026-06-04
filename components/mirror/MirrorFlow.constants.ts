@@ -1,4 +1,23 @@
+/** @deprecated Use `buildMirrorClosureMessages` — kept for tests/legacy refs */
 export const MIRROR_SUMMARY_TEXT = 'Du hast heute hingeschaut. Das zählt.'
+
+export type MirrorClosureMode = 'reminder' | 'no_reminder' | 'session_only'
+
+export function buildMirrorClosureMessages(mode: MirrorClosureMode): string[] {
+  switch (mode) {
+    case 'reminder':
+      return [
+        'Hey — ich hab dir diesen Reminder angelegt. Ich melde mich in den kommenden Tagen bei dir.',
+        'Deine Einträge aus diesem Spiegel habe ich für dich hinterlegt.',
+      ]
+    case 'no_reminder':
+      return [
+        'Deine Einträge und dein Wenn-Dann habe ich für dich hinterlegt.',
+      ]
+    case 'session_only':
+      return ['Deine Einträge aus diesem Spiegel habe ich für dich hinterlegt.']
+  }
+}
 
 export const MIRROR_LOADING_STEPS = [
   'Lese deine Einträge…',
@@ -11,7 +30,7 @@ export const MIRROR_LOADING_STEPS = [
 export const MIRROR_LOADER_MIN_MS = 3200
 
 export const MIRROR_EXHAUSTED_TEXT =
-  'Du hast alle aktuellen Erkenntnisse gesehen. Nächste Woche gibt es neue.'
+  'Du hast alle aktuellen Erkenntnisse gesehen. Wir schauen, ob bald wieder neue für dich da sind.'
 
 /** UI labels — non-calendar; maps to DB `reminder_type` / expiry in MirrorFlow. */
 export const MIRROR_REMINDER_OPTIONS = [

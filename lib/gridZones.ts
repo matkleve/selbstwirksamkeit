@@ -277,11 +277,14 @@ export function cardTintShadow(
   return `inset 0 0 0 1000px rgba(${r},${g},${b},${opacity})`
 }
 
-/** Compose + saved entry cards — drop shadow + grid tint (single source of truth). */
+/** Soft lift only — no 1px ring (entry cards are borderless). */
+export const ENTRY_CARD_DROP_SHADOW = '0 1px 3px rgba(0,0,0,.06)'
+
+/** Compose + saved entry cards — drop shadow + grid tint, no border. */
 export function cardBoxShadow(
   x: number,
   y: number,
   opacity = CARD_TINT_OPACITY,
 ): string {
-  return `0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05), ${cardTintShadow(x, y, opacity)}`
+  return `${ENTRY_CARD_DROP_SHADOW}, ${cardTintShadow(x, y, opacity)}`
 }

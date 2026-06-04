@@ -43,7 +43,7 @@ export function EntryMetaChips({ groups, mode, relevantValues, size = 'sm', clas
   if (mode === 'selective' && relevantValues?.length) {
     let unitIndex = 0
     return (
-      <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+      <div className={cn('flex flex-wrap items-center gap-1.5 overflow-visible', className)}>
         {groups.flatMap(g => {
           const { icon, label } = META_CONFIG[g.kind]
           const open = g.values.filter(v => isMetaRelevant(v, relevantValues))
@@ -87,7 +87,7 @@ export function EntryMetaChips({ groups, mode, relevantValues, size = 'sm', clas
 
   if (mode === 'closed') {
     return (
-      <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+      <div className={cn('flex flex-wrap items-center gap-1.5 overflow-visible', className)}>
         {groups.map((g, gi) => {
           const { icon, label } = META_CONFIG[g.kind]
           return wrapUnit(

@@ -56,6 +56,9 @@ function catmullRomPath(points: GridPoint[]): string {
   return d
 }
 
+const axisLabelClass =
+  'pointer-events-none absolute z-[2] flex items-center gap-1 text-[0.6875rem] text-ink-2 select-none whitespace-nowrap'
+
 export default function EntryGrid({ value, onChange }: EntryGridProps) {
   const gridRef = useRef<HTMLDivElement>(null)
   const isDragging = useRef(false)
@@ -109,121 +112,111 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
     }, 1500)
   }
 
-  const axisLabel: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', gap: 4,
-    fontSize: '0.6875rem', color: 'var(--text-secondary)',
-    userSelect: 'none', whiteSpace: 'nowrap',
-  }
-  const sideLabel: React.CSSProperties = {
-    fontSize: '1rem', color: 'var(--text-muted)',
-    userSelect: 'none', lineHeight: 1,
-  }
-
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gridTemplateRows: 'auto 1fr auto', gap: 0, width: '100%' }}>
-      {/* row 1 */}
-      <div />
-      <div style={{ ...axisLabel, justifyContent: 'center', paddingBottom: 8 }}>
-        <Users size={12} strokeWidth={1.5} /> <span>andere</span>
+    <div
+      ref={gridRef}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+      aria-label="Stimmungsfeld"
+    >
+      <div className={`${axisLabelClass} inset-x-0 top-2 justify-center`}>
+        <Users size={12} strokeWidth={1.5} aria-hidden />
+        <span>andere</span>
       </div>
-      <div />
-
-      {/* row 2 */}
-      <div style={{ ...sideLabel, display: 'flex', alignItems: 'center', paddingRight: 10 }}>−</div>
-
-      {/* The grid */}
-      <div
-        ref={gridRef}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+      <div className={`${axisLabelClass} inset-x-0 bottom-2 justify-center`}>
+        <User size={12} strokeWidth={1.5} aria-hidden />
+        <span>ich</span>
+      </div>
+      <span
+        className={`${axisLabelClass} left-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
+        aria-hidden
       >
-        <div
-          className="absolute inset-0 pointer-events-none overflow-hidden bg-subtle [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
-          aria-hidden
-        >
-          {trailPath && (
-            <svg
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              className="absolute inset-0 size-full"
-              style={{
-                opacity: trailFading ? 0 : 1,
-                transition: trailFading ? 'opacity 1500ms ease' : 'none',
-              }}
-            >
-              <defs>
-                {trailEnds && (
-                  <linearGradient
-                    id={trailGradId}
-                    gradientUnits="userSpaceOnUse"
-                    x1={trailEnds.start.x}
-                    y1={trailEnds.start.y}
-                    x2={trailEnds.end.x}
-                    y2={trailEnds.end.y}
-                  >
-                    <stop offset="0%" stopColor={dotColor} stopOpacity={0} />
-                    <stop offset="30%" stopColor={dotColor} stopOpacity={0.08} />
-                    <stop offset="70%" stopColor={dotColor} stopOpacity={0.22} />
-                    <stop offset="100%" stopColor={dotColor} stopOpacity={0.38} />
-                  </linearGradient>
-                )}
-                <filter
-                  id={trailFilterId}
-                  x="-50%"
-                  y="-50%"
-                  width="200%"
-                  height="200%"
-                  colorInterpolationFilters="sRGB"
-                >
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
-                </filter>
-              </defs>
-              <path
-                d={trailPath}
-                fill="none"
-                stroke={`url(#${trailGradId})`}
-                strokeWidth={3.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-                filter={`url(#${trailFilterId})`}
-              />
-              <path
-                d={trailPath}
-                fill="none"
-                stroke={`url(#${trailGradId})`}
-                strokeWidth={1}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                vectorEffect="non-scaling-stroke"
-              />
-            </svg>
-          )}
+        −
+      </span>
+      <span
+        className={`${axisLabelClass} right-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
+        aria-hidden
+      >
+        +
+      </span>
 
-          <div
-            className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
+        aria-hidden
+      >
+        {trailPath && (
+          <svg
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            className="absolute inset-0 size-full"
             style={{
-              left: `${dotPct.left}%`,
-              top: `${dotPct.top}%`,
-              background: dotColor,
-              boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
-              transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
+              opacity: trailFading ? 0 : 1,
+              transition: trailFading ? 'opacity 1500ms ease' : 'none',
             }}
-          />
-        </div>
-      </div>
+          >
+            <defs>
+              {trailEnds && (
+                <linearGradient
+                  id={trailGradId}
+                  gradientUnits="userSpaceOnUse"
+                  x1={trailEnds.start.x}
+                  y1={trailEnds.start.y}
+                  x2={trailEnds.end.x}
+                  y2={trailEnds.end.y}
+                >
+                  <stop offset="0%" stopColor={dotColor} stopOpacity={0} />
+                  <stop offset="30%" stopColor={dotColor} stopOpacity={0.08} />
+                  <stop offset="70%" stopColor={dotColor} stopOpacity={0.22} />
+                  <stop offset="100%" stopColor={dotColor} stopOpacity={0.38} />
+                </linearGradient>
+              )}
+              <filter
+                id={trailFilterId}
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+                colorInterpolationFilters="sRGB"
+              >
+                <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
+              </filter>
+            </defs>
+            <path
+              d={trailPath}
+              fill="none"
+              stroke={`url(#${trailGradId})`}
+              strokeWidth={3.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              filter={`url(#${trailFilterId})`}
+            />
+            <path
+              d={trailPath}
+              fill="none"
+              stroke={`url(#${trailGradId})`}
+              strokeWidth={1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+        )}
 
-      <div style={{ ...sideLabel, display: 'flex', alignItems: 'center', paddingLeft: 10 }}>+</div>
-
-      {/* row 3 */}
-      <div />
-      <div style={{ ...axisLabel, justifyContent: 'center', paddingTop: 8 }}>
-        <User size={12} strokeWidth={1.5} /> <span>ich</span>
+        <div
+          className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+          style={{
+            left: `${dotPct.left}%`,
+            top: `${dotPct.top}%`,
+            background: dotColor,
+            boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
+            transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
+          }}
+        />
       </div>
-      <div />
     </div>
   )
 }

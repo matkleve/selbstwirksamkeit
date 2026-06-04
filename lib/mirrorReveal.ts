@@ -14,20 +14,25 @@ export const MIRROR_REVEAL = {
   chip: 268,
 } as const
 
+/** Freitext-Exploration („Mehr Beispiele“) — etwas schneller als der Haupt-Flow */
+export const MIRROR_EXPLORATION_REVEAL = {
+  blockGap: 72,
+  wordBase: 108,
+  wordSlowEvery: 7,
+  wordSlowExtra: 140,
+  wordPauseEvery: 12,
+  wordPauseExtra: 240,
+  chip: 172,
+  startDelay: 160,
+} as const
+
 export function splitRevealWords(text: string): string[] {
   return text.trim().split(/\s+/).filter(Boolean)
 }
 
 /** Deterministic word tick delay — occasional slower beats. */
 export function wordTickDelay(wordIndex: number): number {
-  let ms = MIRROR_REVEAL.wordBase
-  if (wordIndex > 0 && wordIndex % MIRROR_REVEAL.wordSlowEvery === 0) {
-    ms += MIRROR_REVEAL.wordSlowExtra
-  }
-  if (wordIndex > 0 && wordIndex % MIRROR_REVEAL.wordPauseEvery === 0) {
-    ms += MIRROR_REVEAL.wordPauseExtra
-  }
-  return ms
+  return wordTickDelayAt(wordIndex, MIRROR_REVEAL)
 }
 
 export function entryChipUnitCount(entry: Entry, relevantMeta?: string[]): number {
@@ -55,18 +60,44 @@ export function entryRevealLengths(entry: Entry) {
   }
 }
 
+function wordTickDelayAt(
+  wordIndex: number,
+  cfg: {
+    wordBase: number
+    wordSlowEvery: number
+    wordSlowExtra: number
+    wordPauseEvery: number
+    wordPauseExtra: number
+  },
+): number {
+  let ms = cfg.wordBase
+  if (wordIndex > 0 && wordIndex % cfg.wordSlowEvery === 0) ms += cfg.wordSlowExtra
+  if (wordIndex > 0 && wordIndex % cfg.wordPauseEvery === 0) ms += cfg.wordPauseExtra
+  return ms
+}
+
 export function scheduleWordTicks(
   count: number,
   startAt: number,
   onTick: (wordIndex: number) => void,
   sched: (fn: () => void, ms: number) => void,
+  cfg: typeof MIRROR_REVEAL = MIRROR_REVEAL,
 ): number {
   if (count <= 0) return startAt
-  let t = startAt + Math.round(MIRROR_REVEAL.wordBase * 0.55)
+  let t = startAt + Math.round(cfg.wordBase * 0.55)
   for (let i = 0; i < count; i++) {
     const wi = i
     sched(() => onTick(wi + 1), t)
-    if (i < count - 1) t += wordTickDelay(i + 1)
+    if (i < count - 1) t += wordTickDelayAt(i + 1, cfg)
   }
   return t
+}
+
+export function scheduleExplorationWordTicks(
+  count: number,
+  startAt: number,
+  onTick: (wordIndex: number) => void,
+  sched: (fn: () => void, ms: number) => void,
+): number {
+  return scheduleWordTicks(count, startAt, onTick, sched, MIRROR_EXPLORATION_REVEAL)
 }

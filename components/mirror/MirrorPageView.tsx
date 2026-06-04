@@ -1,9 +1,12 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import { fetchMirrorHistory } from '@/lib/mirror-session'
 import { Bell, Eye } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
+import { MirrorTitle } from '@/components/mirror/MirrorTitle'
 import { RemindersPanel } from '@/components/RemindersPanel'
 import MirrorFlow from '@/components/MirrorFlow'
 import { MirrorNetworkLoader } from '@/components/mirror/MirrorNetworkLoader'
@@ -30,15 +33,29 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
   const [view, setView] = useState<View>('landing')
   const [candidate, setCandidate] = useState<MirrorCandidate | null>(null)
   const [sessions, setSessions] = useState(initialSessions)
+  const [entriesByIdState, setEntriesByIdState] = useState(entriesById)
   const [opening, setOpening] = useState(false)
   const [remindersOpen, setRemindersOpen] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
 
+  useEffect(() => {
+    setSessions(initialSessions)
+    setEntriesByIdState(entriesById)
+  }, [initialSessions, entriesById])
+
+  const refreshHistory = useCallback(async () => {
+    const supabase = createClient()
+    const { sessions: next, entriesById: nextEntries } = await fetchMirrorHistory(supabase)
+    setSessions(next)
+    setEntriesByIdState(nextEntries)
+  }, [])
+
   const returnToLanding = useCallback(() => {
     setView('landing')
     setCandidate(null)
+    void refreshHistory()
     router.refresh()
-  }, [router])
+  }, [router, refreshHistory])
 
   const handleOpen = async () => {
     if (opening) return
@@ -79,11 +96,13 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
 
   if (view === 'exhausted') {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 px-4 text-center">
-        <p className="text-base leading-relaxed text-ink-2">{MIRROR_EXHAUSTED_TEXT}</p>
-        <Button type="button" variant="ghost" size="lg" onClick={returnToLanding}>
-          Schließen
-        </Button>
+      <div className="mx-auto w-full max-w-lg pb-28 pt-2">
+        <div className="flex min-h-[50vh] flex-col justify-center gap-6 py-8">
+          <p className="text-base leading-relaxed text-ink-2">{MIRROR_EXHAUSTED_TEXT}</p>
+          <Button type="button" variant="ghost" size="lg" className="self-start" onClick={returnToLanding}>
+            Schließen
+          </Button>
+        </div>
       </div>
     )
   }
@@ -100,9 +119,9 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
 
   return (
     <>
-      <div className="w-full pb-28 pt-2">
+      <div className="mx-auto w-full max-w-lg pb-28 pt-2">
         <PageHeader
-          title="Spiegel"
+          title={<MirrorTitle />}
           description="Hier siehst du wiederkehrende Muster in deinen Einträgen — ohne Bewertung, nur als Spiegel dessen, was sich wiederholt."
           action={
             <button
@@ -138,7 +157,7 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
           <h2 className="mb-4">Verlauf</h2>
           <MirrorHistory
             sessions={sessions}
-            entriesById={entriesById}
+            entriesById={entriesByIdState}
             onSessionsChange={setSessions}
           />
         </section>

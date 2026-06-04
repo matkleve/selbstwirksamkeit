@@ -99,7 +99,7 @@ After loading animation completes:
 
 | Element | Requirement |
 |---------|-------------|
-| Copy | „Du hast alle aktuellen Erkenntnisse gesehen. Nächste Woche gibt es neue." |
+| Copy | „Du hast alle aktuellen Erkenntnisse gesehen. Wir schauen, ob bald wieder neue für dich da sind." |
 | Summary block | MUST NOT appear |
 | Actions | Button **„Schließen"** → return to `/mirror` landing |
 

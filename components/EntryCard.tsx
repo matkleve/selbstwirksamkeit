@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cardBoxShadow, getZone, zoneTexts } from '@/lib/gridZones'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
-import { formatTime } from '@/lib/utils'
+import { formatEntryDateTime } from '@/lib/utils'
 import { User, MapPin, Zap } from 'lucide-react'
 import { AddChip, FilledChip, EntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
@@ -45,7 +45,7 @@ export default function EntryCard() {
   useEffect(() => {
     const initial = zoneTexts[getZone(0, 0)]
     setQuote(initial[Math.floor(Math.random() * initial.length)])
-    const tick = () => setClock(formatTime(new Date()))
+    const tick = () => setClock(formatEntryDateTime(new Date()))
     tick()
     const id = setInterval(tick, 60_000)
 

@@ -167,15 +167,6 @@ export default function TimelineView() {
         </Card>
       ) : (
         <>
-          <div className="mb-3 flex items-baseline justify-between gap-3">
-            <h2 className="text-base font-medium text-ink">
-              {rangeActive && dateRange
-                ? `Einträge · ${formatRangeLabel(dateRange)}`
-                : 'Alle Einträge'}
-            </h2>
-            <span className="shrink-0 text-xs text-ink-3">{filtered.length}</span>
-          </div>
-
           {density === 'full' ? (
             <div className="grid grid-cols-2 gap-2.5">
               {filtered.map(entry => (

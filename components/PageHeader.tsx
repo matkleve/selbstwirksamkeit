@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 interface Props {
-  title: string
+  title: ReactNode
   description?: string
   action?: ReactNode
   className?: string
@@ -18,7 +18,7 @@ export function PageHeader({ title, description, action, className }: Props) {
       )}
     >
       <div className="min-w-0">
-        <h1>{title}</h1>
+        {typeof title === 'string' ? <h1>{title}</h1> : title}
         {description ? <p>{description}</p> : null}
       </div>
       {action ? <div className="shrink-0 pt-0.5">{action}</div> : null}

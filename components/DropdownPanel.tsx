@@ -2,10 +2,18 @@
 
 import { createElement, useEffect, type ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
-import { Search } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
 
 export type DropdownMenuItem =
-  | { type: 'item'; id: string; label: string; icon?: LucideIcon; onClick: () => void; destructive?: boolean }
+  | {
+      type: 'item'
+      id: string
+      label: string
+      icon?: LucideIcon
+      onClick: () => void
+      destructive?: boolean
+      selected?: boolean
+    }
   | { type: 'separator' }
 
 interface SearchConfig {
@@ -78,6 +86,8 @@ export function DropdownPanel({
                 <button
                   type="button"
                   role={role === 'listbox' ? 'option' : 'menuitem'}
+                  aria-selected={entry.selected}
+                  data-active={entry.selected ? '' : undefined}
                   onClick={entry.onClick}
                   className={[
                     'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-[inherit]',
@@ -88,19 +98,27 @@ export function DropdownPanel({
                         ].filter(Boolean).join(' ')
                       : [
                           'transition-colors hover:bg-subtle active:bg-subtle',
+                          entry.selected && 'bg-subtle font-medium',
                           entry.destructive ? 'text-danger' : 'text-ink',
                         ].join(' '),
                   ].join(' ')}
                 >
                   {(() => {
-                    const iconNode = renderIcon?.(entry) ?? (entry.icon
-                      ? createElement(entry.icon, {
+                    const iconNode = renderIcon?.(entry) ?? (entry.selected && !entry.icon
+                      ? createElement(Check, {
                           size: 15,
-                          strokeWidth: 1.75,
+                          strokeWidth: 2,
                           'aria-hidden': true,
                           className: 'size-[15px] shrink-0',
                         })
-                      : null)
+                      : entry.icon
+                        ? createElement(entry.icon, {
+                            size: 15,
+                            strokeWidth: 1.75,
+                            'aria-hidden': true,
+                            className: 'size-[15px] shrink-0',
+                          })
+                        : null)
                     return iconNode ? (
                       <span className="inline-flex size-[15px] shrink-0 items-center justify-center">
                         {iconNode}

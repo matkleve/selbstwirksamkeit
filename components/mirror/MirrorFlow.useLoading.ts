@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, type Dispatch, type RefObject, type SetStateAction } from 'react'
+import { useEffect, useRef, type Dispatch, type RefObject, type SetStateAction } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { MirrorCandidate } from '@/lib/patternDetection'
 import { patternTextFromCandidate } from '@/lib/mirror-session'
@@ -25,7 +25,7 @@ export function useMirrorLoadingPhase(
   setNarrativeDone: (v: boolean) => void,
   setPastReflection: (v: boolean) => void,
   setShowSummary: (v: boolean) => void,
-  setSummaryWords: (n: number) => void,
+  resetClosure: () => void,
   setPhase: (p: 'loading' | 'mirror') => void,
   enabled: boolean,
 ) {
@@ -40,7 +40,7 @@ export function useMirrorLoadingPhase(
       setNarrativeDone(false)
       setPastReflection(false)
       setShowSummary(false)
-      setSummaryWords(0)
+      resetClosure()
       setPhase('mirror')
     }, MIRROR_LOADING_STEPS.length * MIRROR_REVEAL.loadingStep + 500)
     return clear
@@ -54,20 +54,31 @@ export function useMirrorSession(
   sessionIdRef: RefObject<string | null>,
   supabase: SupabaseClient,
 ) {
+  const insertStartedRef = useRef(false)
+
   useEffect(() => {
-    if (phase !== 'mirror' || !candidate) return
-    void supabase
-      .from('mirror_sessions')
-      .insert({
-        pattern_type: candidate.source,
-        pattern_text: patternTextFromCandidate(candidate),
-        anchor_entry_ids: candidate.entryIds,
-        signal_strength: candidate.signalStrength,
-      })
-      .select('id')
-      .single()
-      .then(({ data }) => {
-        if (data?.id) sessionIdRef.current = data.id
-      })
+    if (phase !== 'mirror' || !candidate || insertStartedRef.current) return
+    insertStartedRef.current = true
+
+    void (async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('mirror_sessions')
+        .insert({
+          user_id: user.id,
+          pattern_type: candidate.source,
+          pattern_text: patternTextFromCandidate(candidate),
+          anchor_entry_ids: candidate.entryIds,
+          signal_strength: candidate.signalStrength,
+        })
+        .select('id')
+        .single()
+
+      if (!error && data?.id) sessionIdRef.current = data.id
+    })()
   }, [phase, candidate, sessionIdRef, supabase])
 }

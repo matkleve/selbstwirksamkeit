@@ -1,7 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/cn'
-import { cardBoxShadow } from '@/lib/gridZones'
+import { cardBoxShadow, ENTRY_CARD_DROP_SHADOW } from '@/lib/gridZones'
 import type { Entry } from '@/lib/types'
 import type { ReactNode } from 'react'
 
@@ -17,7 +17,7 @@ export function EntryCardShell({ entry, children, className, padding = 'sm' }: P
   const boxShadow =
     entry.grid_x !== null
       ? cardBoxShadow(entry.grid_x, entry.grid_y ?? 0)
-      : 'var(--shadow-card)'
+      : ENTRY_CARD_DROP_SHADOW
 
   return (
     <div
