@@ -19,7 +19,7 @@ export default async function HomePage() {
     <EntriesLoadingGate>
       <>
         <PageHeader
-          title="Neu"
+          title="Eintrag erstellen"
           description="Setze einen Punkt im Stimmungsfeld und schreib auf, was gerade wichtig ist."
         />
         <EntryCard />

@@ -13,12 +13,8 @@ fi
 echo "→ Starting local Supabase…"
 supabase start
 
-if [[ ! -f .env.local ]]; then
-  echo "→ Creating .env.local from supabase status…"
-  bash "$ROOT/scripts/write-local-env.sh"
-else
-  echo "→ Using existing .env.local (delete it to regenerate from supabase status)"
-fi
+echo "→ Syncing local Supabase keys into .env.local (keeps MISTRAL_KEY, etc.)…"
+bash "$ROOT/scripts/sync-local-env.sh"
 
 echo "→ Starting Next.js on http://localhost:3000 …"
 exec npm run dev

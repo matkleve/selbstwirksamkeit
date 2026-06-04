@@ -151,19 +151,19 @@ export default function DashboardView() {
       </Card>
 
       <Card className="min-w-0 p-5">
-        <p className="section-label">Letzte Einträge</p>
-        <div className="mb-3.5 flex flex-col gap-2">
-          {latestEntries.map(entry => (
-            <EntryDisplay key={entry.id} entry={entry} variant="text" size="sm" lines={2} />
-          ))}
-        </div>
-        <div className="flex justify-end">
+        <div className="mb-3.5 flex items-start justify-between gap-3">
+          <p className="section-label mb-0">Letzte Einträge</p>
           <Link
             href="/timeline"
-            className="text-sm text-ink-2 underline underline-offset-[3px] hover:text-ink"
+            className="shrink-0 text-sm text-[var(--valence-pos-strong)] underline underline-offset-[3px] transition-colors hover:text-[var(--mirror-gold)]"
           >
             Alle Einträge →
           </Link>
+        </div>
+        <div className="flex flex-col gap-2">
+          {latestEntries.map(entry => (
+            <EntryDisplay key={entry.id} entry={entry} variant="text" size="sm" lines={2} />
+          ))}
         </div>
       </Card>
 

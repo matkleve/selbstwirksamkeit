@@ -13,18 +13,24 @@ const TABS = [
   { href: '/motivation', label: 'Stärke', Icon: Sparkles },
 ] as const
 
+const TAB_WIDTH = 'w-[4.75rem]' as const
+
 export default function BottomTabBar() {
   const path = usePathname()
 
   return (
-    <nav
-      className={cn(
-        'fixed bottom-[max(20px,env(safe-area-inset-bottom,20px))] left-1/2 z-50 flex -translate-x-1/2 gap-2',
-        'rounded-full border border-edge bg-card p-1.5',
-        'shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)]',
-      )}
-      aria-label="Hauptnavigation"
+    <div
+      className="pointer-events-none fixed inset-x-0 bottom-[max(20px,env(safe-area-inset-bottom,20px))] z-50 flex justify-center"
+      aria-hidden
     >
+      <nav
+        className={cn(
+          'pointer-events-auto flex gap-2',
+          'rounded-full border border-edge bg-card p-1.5',
+          'shadow-[0_4px_24px_rgba(0,0,0,0.12),0_1px_4px_rgba(0,0,0,0.08)]',
+        )}
+        aria-label="Hauptnavigation"
+      >
       {TABS.map(({ href, label, Icon }) => {
         const active = path === href
         return (
@@ -35,7 +41,8 @@ export default function BottomTabBar() {
             data-active={active ? '' : undefined}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'nav-interactive flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-full px-3.5 py-1.5',
+              'nav-interactive flex flex-col items-center justify-center gap-0.5 rounded-full py-1.5',
+              TAB_WIDTH,
               'no-underline',
             )}
           >
@@ -44,6 +51,7 @@ export default function BottomTabBar() {
           </Link>
         )
       })}
-    </nav>
+      </nav>
+    </div>
   )
 }

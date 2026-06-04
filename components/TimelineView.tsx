@@ -1,26 +1,26 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowDownAZ, SlidersHorizontal } from 'lucide-react'
 import TimelineCard from '@/components/TimelineCard'
+import { TimelineToolbar } from '@/components/TimelineToolbar'
 import { useEntries } from '@/components/EntriesProvider'
 import { EntryDisplay } from '@/components/entry'
 import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/card'
-import { cn } from '@/lib/cn'
 import {
-  TIMELINE_DENSITY_OPTIONS,
-  TIMELINE_FILTER_OPTIONS,
-  TIMELINE_SORT_OPTIONS,
-  entriesForDotStrip,
   filterEntries,
-  groupEntriesByDate,
   sortEntries,
   type TimelineDensity,
   type TimelineFilter,
   type TimelineSort,
 } from '@/lib/timelineView'
-import { getValenceColor } from '@/lib/types'
+import {
+  filterEntriesByDateRange,
+  formatRangeLabel,
+  timelineBounds,
+  type TimelineDateRange,
+} from '@/lib/timelineRange'
+import { TimelineRangeSlider } from '@/components/TimelineRangeSlider'
 
 const STORAGE_KEY = 'selbstwirksamkeit-timeline-view'
 
@@ -28,6 +28,8 @@ interface StoredPrefs {
   density: TimelineDensity
   sort: TimelineSort
   filter: TimelineFilter
+  rangeStart?: string
+  rangeEnd?: string
 }
 
 function loadPrefs(): StoredPrefs {
@@ -43,31 +45,6 @@ function loadPrefs(): StoredPrefs {
   }
 }
 
-function ToolbarChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean
-  onClick: () => void
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'shrink-0 rounded-full border px-3 py-1.5 text-xs transition-colors',
-        active
-          ? 'border-ink bg-ink text-ink-inv'
-          : 'border-edge bg-subtle text-ink-2 hover:border-ring hover:text-ink',
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
 export default function TimelineView() {
   const { entries: entriesAsc } = useEntries()
   const entries = useMemo(
@@ -78,30 +55,56 @@ export default function TimelineView() {
   const [density, setDensity] = useState<TimelineDensity>('text')
   const [sort, setSort] = useState<TimelineSort>('date-desc')
   const [filter, setFilter] = useState<TimelineFilter>('all')
-  const [showSort, setShowSort] = useState(false)
+  const [openMenu, setOpenMenu] = useState<'density' | 'filter' | 'sort' | null>(null)
+  const [dateRange, setDateRange] = useState<TimelineDateRange | null>(null)
+  const [rangeReady, setRangeReady] = useState(false)
+
+  const bounds = useMemo(() => timelineBounds(entriesAsc), [entriesAsc])
 
   useEffect(() => {
     const p = loadPrefs()
     setDensity(p.density)
     setSort(p.sort)
     setFilter(p.filter)
+    if (p.rangeStart && p.rangeEnd) {
+      setDateRange({ start: p.rangeStart, end: p.rangeEnd })
+    }
+    setRangeReady(true)
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ density, sort, filter }))
-  }, [density, sort, filter])
+    if (!bounds || dateRange || !rangeReady) return
+    setDateRange(bounds)
+  }, [bounds, dateRange, rangeReady])
 
-  const filtered = useMemo(
-    () => sortEntries(filterEntries(entries, filter), sort),
-    [entries, filter, sort],
-  )
+  useEffect(() => {
+    if (!rangeReady) return
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        density,
+        sort,
+        filter,
+        rangeStart: dateRange?.start,
+        rangeEnd: dateRange?.end,
+      }),
+    )
+  }, [density, sort, filter, dateRange, rangeReady])
 
-  const dotEntries = useMemo(
-    () => entriesForDotStrip(filterEntries(entries, filter)),
+  const rangeActive =
+    !!dateRange &&
+    !!bounds &&
+    (dateRange.start !== bounds.start || dateRange.end !== bounds.end)
+
+  const filtered = useMemo(() => {
+    const byMeta = filterEntries(entries, filter)
+    return sortEntries(filterEntriesByDateRange(byMeta, dateRange), sort)
+  }, [entries, filter, sort, dateRange])
+
+  const sliderEntries = useMemo(
+    () => filterEntries(entries, filter),
     [entries, filter],
   )
-
-  const byDate = useMemo(() => groupEntriesByDate(dotEntries), [dotEntries])
 
   if (!entries.length) {
     return (
@@ -123,115 +126,57 @@ export default function TimelineView() {
         title="Verlauf"
         description="Alle deine Einträge — durchsuchbar und filterbar nach Kategorie."
       />
-      <Card className="mb-3.5 space-y-3 p-4">
-        <div className="flex items-center gap-2 text-ink-3">
-          <SlidersHorizontal size={14} strokeWidth={1.75} aria-hidden />
-          <span className="text-[0.6875rem] font-medium uppercase tracking-[0.06em]">
-            Ansicht
-          </span>
-        </div>
+      <TimelineToolbar
+        density={density}
+        filter={filter}
+        sort={sort}
+        onDensityChange={setDensity}
+        onFilterChange={setFilter}
+        onSortChange={setSort}
+        openMenu={openMenu}
+        onOpenMenu={setOpenMenu}
+        summary={`${filtered.length} Einträge${rangeActive && dateRange ? ` · ${formatRangeLabel(dateRange)}` : ' · gesamter Verlauf'}`}
+      />
 
-        <div>
-          <p className="mb-1.5 text-xs text-ink-3">Größe</p>
-          <div className="flex flex-wrap gap-1.5">
-            {TIMELINE_DENSITY_OPTIONS.map(o => (
-              <ToolbarChip
-                key={o.id}
-                active={density === o.id}
-                onClick={() => setDensity(o.id)}
-              >
-                {o.label}
-              </ToolbarChip>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-1.5 text-xs text-ink-3">Filter</p>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {TIMELINE_FILTER_OPTIONS.map(o => (
-              <ToolbarChip
-                key={o.id}
-                active={filter === o.id}
-                onClick={() => setFilter(o.id)}
-              >
-                {o.label}
-              </ToolbarChip>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <button
-            type="button"
-            onClick={() => setShowSort(s => !s)}
-            className="mb-1.5 flex items-center gap-1.5 text-xs text-ink-3 hover:text-ink"
-          >
-            <ArrowDownAZ size={14} strokeWidth={1.75} aria-hidden />
-            Sortierung
-            <span className="text-ink-2">
-              · {TIMELINE_SORT_OPTIONS.find(o => o.id === sort)?.label}
-            </span>
-          </button>
-          {showSort && (
-            <div className="flex flex-wrap gap-1.5">
-              {TIMELINE_SORT_OPTIONS.map(o => (
-                <ToolbarChip
-                  key={o.id}
-                  active={sort === o.id}
-                  onClick={() => {
-                    setSort(o.id)
-                    setShowSort(false)
-                  }}
-                >
-                  {o.label}
-                </ToolbarChip>
-              ))}
-            </div>
+      {entries.length > 0 && bounds && dateRange && (
+        <Card className="mb-3.5 space-y-2 p-4">
+          <p className="text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-3">
+            Zeitraum
+          </p>
+          <TimelineRangeSlider
+            entries={sliderEntries}
+            bounds={bounds}
+            range={dateRange}
+            onRangeChange={setDateRange}
+          />
+          {(dateRange.start !== bounds.start || dateRange.end !== bounds.end) && (
+            <button
+              type="button"
+              onClick={() => setDateRange(bounds)}
+              className="text-xs text-ink-3 underline-offset-2 hover:text-ink hover:underline"
+            >
+              Gesamten Zeitraum anzeigen
+            </button>
           )}
-        </div>
-
-        <p className="text-xs text-ink-3">
-          {filtered.length} von {entries.length} Einträgen
-        </p>
-      </Card>
-
-      {filtered.length > 0 && (
-        <Card className="mb-3.5 p-3">
-          <div className="flex flex-col gap-1.5">
-            {byDate.map(({ date, entries: dayEntries }) => {
-              const label = new Date(date + 'T12:00:00').toLocaleDateString('de-DE', {
-                day: 'numeric',
-                month: 'short',
-              })
-              return (
-                <div key={date} className="flex items-center gap-2">
-                  <span className="w-9 shrink-0 text-[10px] text-ink-3">{label}</span>
-                  <div className="flex flex-wrap gap-1">
-                    {dayEntries.map(e => (
-                      <div
-                        key={e.id}
-                        title={e.text.slice(0, 60)}
-                        className="size-[11px] shrink-0 rounded-[3px]"
-                        style={{
-                          background: getValenceColor(e.grid_x),
-                          opacity: 0.8,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
         </Card>
       )}
 
       {filtered.length === 0 ? (
         <Card className="py-10 text-center text-sm text-ink-3">
-          Keine Einträge für diesen Filter.
+          Keine Einträge für diesen Filter oder Zeitraum.
         </Card>
-      ) : density === 'full' ? (
+      ) : (
+        <>
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 className="text-base font-medium text-ink">
+              {rangeActive && dateRange
+                ? `Einträge · ${formatRangeLabel(dateRange)}`
+                : 'Alle Einträge'}
+            </h2>
+            <span className="shrink-0 text-xs text-ink-3">{filtered.length}</span>
+          </div>
+
+          {density === 'full' ? (
         <div className="flex flex-col gap-2.5">
           {filtered.map(entry => (
             <TimelineCard key={entry.id} entry={entry} />
@@ -265,6 +210,8 @@ export default function TimelineView() {
             </div>
           ))}
         </div>
+          )}
+        </>
       )}
     </>
   )
