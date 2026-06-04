@@ -153,6 +153,16 @@ export function detectPattern(entries: Entry[]): MirrorCandidate | null {
   return detectTagFrequency(entries) ?? detectGridCluster(entries)
 }
 
+/** All Phase-1 candidates (tag + grid), both may be present. */
+export function detectAllPhase1(entries: Entry[]): MirrorCandidate[] {
+  const out: MirrorCandidate[] = []
+  const tag = detectTagFrequency(entries)
+  const grid = detectGridCluster(entries)
+  if (tag) out.push(tag)
+  if (grid) out.push(grid)
+  return out
+}
+
 export function candidateFromStored(
   stored: {
     entry_ids: string[]

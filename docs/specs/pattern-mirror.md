@@ -126,6 +126,30 @@ Steps 3–7 are Phase 2. They MUST NOT be started until project lead explicitly 
 
 ---
 
+## Dev mode
+
+When `NEXT_PUBLIC_MIRROR_DEV_MODE=true`:
+
+- Mirror MUST re-run Phase-1 detectors on every page open
+- Mirror MUST NOT read from `mirror_candidates` for display
+- Results MUST still be persisted to `mirror_candidates` (for analysis)
+- Client loading animation MUST be identical in dev and production mode
+
+When unset: existing logic (`mirror_candidates` first, then live detection).
+
+---
+
+## Test script
+
+`scripts/test-mirror.ts` — run with `npx tsx scripts/test-mirror.ts`
+
+- MUST connect via existing Supabase env vars
+- MUST run all Phase-1 detectors against real DB data immediately
+- MUST run WGARM-EC when embeddings are present (Python subprocess)
+- MUST print all candidates sorted by `signal_strength`
+
+---
+
 ## Out of scope
 
 - Stärke feature implementation
