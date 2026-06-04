@@ -11,6 +11,7 @@ export interface IntentionReminderRow {
   active: boolean
   fired_count: number
   expires_at: string | null
+  last_fired_at?: string | null
 }
 
 /** Notification body for fire `firedCount` (0 = Tag 1). null = do not send (Tag 4+). */

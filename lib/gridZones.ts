@@ -265,7 +265,14 @@ export function bilinearColor(x: number, y: number): [number, number, number] {
   return enrichChroma(rgb, dist, x, y)
 }
 
-export function cardTintShadow(x: number, y: number, opacity = 0.22): string {
+/** Compose + saved cards — one bilinear wash (matches `cardTintShadow`). */
+export const CARD_TINT_OPACITY = 0.22
+
+export function cardTintShadow(
+  x: number,
+  y: number,
+  opacity = CARD_TINT_OPACITY,
+): string {
   const [r, g, b] = bilinearColor(x, y)
   return `inset 0 0 0 1000px rgba(${r},${g},${b},${opacity})`
 }

@@ -16,7 +16,9 @@
     "seed:entries": "node scripts/seed-entries.mjs",
     "seed:entries:local": "node scripts/seed-entries.mjs --clear",
     "test:mirror": "npx tsx scripts/test-mirror.ts",
-    "backfill:embeddings": "node scripts/backfill-embeddings.mjs"
+    "backfill:embeddings": "node scripts/backfill-embeddings.mjs",
+    "icons:generate": "node scripts/generate-pwa-icons.mjs",
+    "vapid:generate": "node scripts/generate-vapid-keys.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",
@@ -25,7 +27,8 @@
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -35,6 +38,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^15",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

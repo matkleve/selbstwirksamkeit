@@ -852,12 +852,17 @@
     will-change: transform;
   }
 
+  .grid-tint-veil--mesh {
+    opacity: 0.5;
+  }
+
   .grid-tint-veil--drift-a {
-    mix-blend-mode: normal;
+    opacity: 0.35;
     animation: grid-tint-drift-a 32s ease-in-out infinite;
   }
 
   .grid-tint-veil--drift-b {
+    opacity: 0.3;
     mix-blend-mode: soft-light;
     animation: grid-tint-drift-b 40s ease-in-out infinite;
   }

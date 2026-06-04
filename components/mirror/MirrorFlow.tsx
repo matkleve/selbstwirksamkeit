@@ -25,6 +25,7 @@ import {
 } from '@/components/mirror/MirrorFlow.response'
 import { MirrorEmptyClose } from '@/components/mirror/MirrorFlow.emptyClose'
 import { reminderTypeForLabel } from '@/components/mirror/MirrorFlow.constants'
+import { registerPushSubscription } from '@/lib/push/subscribe-client'
 import { intentionExpiresAt } from '@/lib/intentionReminderText'
 
 interface MirrorFlowProps {
@@ -138,6 +139,9 @@ export default function MirrorFlow({
             reminder_type: reminderType === '7days' ? 'week' : reminderType,
           })
           .eq('id', sessionIdRef.current)
+      }
+      if (reminderType) {
+        void registerPushSubscription()
       }
     }
     setShowSummary(true)

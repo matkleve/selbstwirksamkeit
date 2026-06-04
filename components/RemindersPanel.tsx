@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Bell, BellOff, Clock, X } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/cn'
+import { isPushSupported, registerPushSubscription } from '@/lib/push/subscribe-client'
 
 interface Props {
   onClose: () => void
@@ -15,13 +16,21 @@ export function RemindersPanel({ onClose }: Props) {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default')
 
   const requestPermission = async () => {
-    if (!('Notification' in window)) {
+    if (!isPushSupported()) {
       setPermission('unsupported')
       return
     }
-    const result = await Notification.requestPermission()
-    setPermission(result)
-    if (result === 'granted') setEnabled(true)
+    const result = await registerPushSubscription()
+    if (result === 'granted') {
+      setPermission('granted')
+      setEnabled(true)
+      return
+    }
+    if (result === 'denied') {
+      setPermission('denied')
+      return
+    }
+    setPermission(Notification.permission)
   }
 
   return (

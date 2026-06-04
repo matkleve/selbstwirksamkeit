@@ -1,5 +1,6 @@
 import {
   bilinearColor,
+  CARD_TINT_OPACITY,
   gridReferenzAxisRgb,
   gridValenceAxisRgb,
 } from '@/lib/gridZones'
@@ -30,6 +31,7 @@ export type GridTintLayers = {
 const PRESETS = {
   card: {
     baseMix: 8,
+    tintOpacity: CARD_TINT_OPACITY,
     borderMix: 48,
     valenceBaseMix: 12,
     mesh: true,
@@ -38,14 +40,16 @@ const PRESETS = {
   },
   'card-compact': {
     baseMix: 10,
+    tintOpacity: CARD_TINT_OPACITY,
     borderMix: 48,
     valenceBaseMix: 12,
     mesh: true,
     animate: true,
-    meshScale: 0.58,
+    meshScale: 0.92,
   },
   button: {
     baseMix: 12,
+    tintOpacity: 0.18,
     borderMix: 55,
     valenceBaseMix: 18,
     mesh: true,
@@ -54,6 +58,7 @@ const PRESETS = {
   },
   flat: {
     baseMix: 18,
+    tintOpacity: 0,
     borderMix: 45,
     valenceBaseMix: 14,
     mesh: false,
@@ -87,8 +92,8 @@ function rgba(rgb: readonly [number, number, number], alpha: number) {
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`
 }
 
-/** Pull grid colours toward card white — aurora look, not neon. */
-function pastelRgb(rgb: readonly [number, number, number], white = 0.38): [number, number, number] {
+/** Lighten for blobs only — keep axis hues readable. */
+function softenRgb(rgb: readonly [number, number, number], white = 0.14): [number, number, number] {
   return [
     Math.round(rgb[0] + (255 - rgb[0]) * white),
     Math.round(rgb[1] + (255 - rgb[1]) * white),
@@ -96,33 +101,23 @@ function pastelRgb(rgb: readonly [number, number, number], white = 0.38): [numbe
   ]
 }
 
-export type GridTintVeilId = 'valence' | 'referenz' | 'blend'
-
-export type GridTintVeil = {
-  id: GridTintVeilId
-  backgroundImage: string
-  drift: 'a' | 'b' | 'none'
-}
-
-function veilGradient(
+function auroraBlob(
   atX: number,
   atY: number,
   rgb: readonly [number, number, number],
   peak: number,
-  w = 125,
-  h = 115,
+  w: number,
+  h: number,
 ) {
-  const c = pastelRgb(rgb, 0.36)
-  return `radial-gradient(ellipse ${w}% ${h}% at ${atX}% ${atY}%, ${rgba(c, peak)} 0%, ${rgba(c, peak * 0.38)} 48%, transparent 76%)`
+  const c = softenRgb(rgb)
+  return `radial-gradient(ellipse ${w}% ${h}% at ${atX}% ${atY}%, ${rgba(c, peak)} 0%, ${rgba(c, peak * 0.5)} 38%, transparent 72%)`
 }
 
-/**
- * Two axis colours (valence + referenz) that meet at the grid point — like the 2D field.
- */
-export function gridTintVeils(
+/** Static mesh: valence + referenz clouds + meet (stacked on compose-style wash). */
+export function gridTintAuroraMesh(
   pos: GridPosition,
   preset: GridTintPreset = 'card',
-): GridTintVeil[] | null {
+): string | null {
   const cfg = PRESETS[preset]
   if (!cfg.mesh || pos.x === null) return null
 
@@ -130,34 +125,78 @@ export function gridTintVeils(
   const y = pos.y ?? 0
   const s = cfg.meshScale
   const { left, top } = gridToPercent(x, y)
+  const valence = gridValenceAxisRgb(x)
+  const referenz = gridReferenzAxisRgb(y)
+  const meet = bilinearColor(x, y)
 
-  const valenceRgb = gridValenceAxisRgb(x)
-  const referenzRgb = gridReferenzAxisRgb(y)
-  const meetRgb = pastelRgb(bilinearColor(x, y), 0.3)
+  return [
+    auroraBlob(left, 84, valence, 0.14 * s, 148, 132),
+    auroraBlob(6, top, referenz, 0.12 * s, 138, 142),
+    auroraBlob(left, top, meet, 0.1 * s, 118, 110),
+  ].join(', ')
+}
 
-  const veils: GridTintVeil[] = [
-    {
-      id: 'valence',
-      drift: 'a',
-      backgroundImage: veilGradient(left, 74, valenceRgb, 0.32 * s, 132, 118),
-    },
-    {
-      id: 'referenz',
-      drift: 'b',
-      backgroundImage: veilGradient(18, top, referenzRgb, 0.28 * s, 118, 128),
-    },
-    {
-      id: 'blend',
-      drift: 'none',
-      backgroundImage: veilGradient(left, top, meetRgb, 0.22 * s, 95, 88),
-    },
-  ]
+/** Drift overlays — one animated layer per axis (GPU transform only). */
+export function gridTintAuroraDrift(
+  pos: GridPosition,
+  preset: GridTintPreset = 'card',
+): { a: string; b: string } | null {
+  const cfg = PRESETS[preset]
+  if (!cfg.mesh || pos.x === null) return null
 
-  if (preset === 'button') {
-    return veils.slice(0, 2)
+  const x = pos.x
+  const y = pos.y ?? 0
+  const s = cfg.meshScale * 0.85
+  const { left, top } = gridToPercent(x, y)
+  const valence = gridValenceAxisRgb(x)
+  const referenz = gridReferenzAxisRgb(y)
+
+  return {
+    a: auroraBlob(left - 8, 78, valence, 0.09 * s, 130, 118),
+    b: auroraBlob(14, top + 6, referenz, 0.08 * s, 122, 128),
   }
+}
 
-  return veils
+/** Same rgba wash as compose `cardTintShadow` (no extra mesh on the shell). */
+export function gridTintComposeFill(
+  pos: GridPosition,
+  opacity = CARD_TINT_OPACITY,
+): string | null {
+  if (pos.x === null) return null
+  const [r, g, b] = bilinearColor(pos.x, pos.y ?? 0)
+  return `linear-gradient(0deg, rgba(${r}, ${g}, ${b}, ${opacity}), rgba(${r}, ${g}, ${b}, ${opacity}))`
+}
+
+/** Saved cards: compose tint only — aurora lives in `GridTintBackground`. */
+export function gridTintShellBackground(
+  pos: GridPosition,
+  preset: GridTintPreset = 'card',
+  base = 'var(--bg-card)',
+): string {
+  if (pos.x === null) return base
+  const fill = gridTintComposeFill(pos, PRESETS[preset].tintOpacity)
+  return fill ?? base
+}
+
+export type GridTintVeilId = 'valence' | 'referenz'
+
+export type GridTintVeil = {
+  id: GridTintVeilId
+  backgroundImage: string
+  drift: 'a' | 'b'
+}
+
+/** @deprecated use gridTintAuroraDrift */
+export function gridTintVeils(
+  pos: GridPosition,
+  preset: GridTintPreset = 'card',
+): GridTintVeil[] | null {
+  const drift = gridTintAuroraDrift(pos, preset)
+  if (!drift) return null
+  return [
+    { id: 'valence', drift: 'a', backgroundImage: drift.a },
+    { id: 'referenz', drift: 'b', backgroundImage: drift.b },
+  ]
 }
 
 /** @deprecated mesh replaces blob layers */
@@ -190,6 +229,9 @@ export function gridTintBackgroundStyle(
   base = 'var(--bg-card)',
 ): string {
   const cfg = PRESETS[preset]
+  if (cfg.mesh && gridTintRgb(pos)) {
+    return gridTintShellBackground(pos, preset, base)
+  }
   const rgb = gridTintRgb(pos)
   if (!rgb) {
     if (pos.x === null) return base

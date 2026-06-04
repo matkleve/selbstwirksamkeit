@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/intention-reminders",
+      "schedule": "0 8,14,20 * * *"
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import {
   gridTintLayers,
   gridTintMix,
   gridTintRgb,
+  gridTintShellBackground,
   gridTintVeils,
   type GridPosition,
   type GridTintBlob,
@@ -30,6 +31,7 @@ export {
   gridTintLayers,
   gridTintMix,
   gridTintRgb,
+  gridTintShellBackground,
   gridTintVeils,
 }
 
@@ -48,8 +50,9 @@ export function entryCorrelationColor(entry: Entry): string {
   return gridTintAccentColor({ x: entry.grid_x, y: entry.grid_y })
 }
 
+/** Compose-equivalent fill (prefer `cardTintShadow` on shell `box-shadow`). */
 export function entryCardBackground(entry: Entry, compact = false): string {
-  return gridTintBackgroundStyle(
+  return gridTintShellBackground(
     { x: entry.grid_x, y: entry.grid_y },
     entryPreset(compact),
   )

@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import {
+  gridTintAuroraDrift,
+  gridTintAuroraMesh,
   gridTintShouldAnimate,
-  gridTintVeils,
   type GridPosition,
   type GridTintPreset,
-  type GridTintVeil,
 } from '@/lib/gridTint'
 
 export interface GridTintBackgroundProps extends GridPosition {
@@ -15,15 +15,9 @@ export interface GridTintBackgroundProps extends GridPosition {
   className?: string
 }
 
-function veilClass(veil: GridTintVeil) {
-  if (veil.drift === 'a') return 'grid-tint-veil grid-tint-veil--drift-a'
-  if (veil.drift === 'b') return 'grid-tint-veil grid-tint-veil--drift-b'
-  return 'grid-tint-veil'
-}
-
 /**
- * Two drifting axis colours (valence + referenz) + blend at the grid point.
- * Animation pauses off-screen (safe for long entry lists).
+ * Light valence/referenz clouds on top of compose tint — must stay subtle.
+ * Pauses off-screen for long lists.
  */
 export function GridTintBackground({
   x: gridX,
@@ -32,14 +26,15 @@ export function GridTintBackground({
   className,
 }: GridTintBackgroundProps) {
   const pos = useMemo(() => ({ x: gridX, y: gridY }), [gridX, gridY])
-  const veils = useMemo(() => gridTintVeils(pos, preset), [pos, preset])
+  const mesh = useMemo(() => gridTintAuroraMesh(pos, preset), [pos, preset])
+  const drift = useMemo(() => gridTintAuroraDrift(pos, preset), [pos, preset])
   const rootRef = useRef<HTMLDivElement>(null)
   const [animate, setAnimate] = useState(false)
   const shouldAnimate = gridTintShouldAnimate(preset)
 
   useEffect(() => {
     const el = rootRef.current
-    if (!el || !veils?.length || !shouldAnimate) return
+    if (!el || !drift || !shouldAnimate) return
 
     const io = new IntersectionObserver(
       ([e]) => setAnimate(e.isIntersecting),
@@ -47,9 +42,9 @@ export function GridTintBackground({
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [veils, shouldAnimate])
+  }, [drift, shouldAnimate])
 
-  if (!veils?.length) return null
+  if (!mesh && !drift) return null
 
   return (
     <div
@@ -61,13 +56,24 @@ export function GridTintBackground({
       )}
       aria-hidden
     >
-      {veils.map(veil => (
+      {mesh && (
         <div
-          key={veil.id}
-          className={veilClass(veil)}
-          style={{ backgroundImage: veil.backgroundImage }}
+          className="grid-tint-veil grid-tint-veil--mesh"
+          style={{ backgroundImage: mesh }}
         />
-      ))}
+      )}
+      {drift && (
+        <>
+          <div
+            className="grid-tint-veil grid-tint-veil--drift-a"
+            style={{ backgroundImage: drift.a }}
+          />
+          <div
+            className="grid-tint-veil grid-tint-veil--drift-b"
+            style={{ backgroundImage: drift.b }}
+          />
+        </>
+      )}
       <div className="grid-tint-grain" />
     </div>
   )
