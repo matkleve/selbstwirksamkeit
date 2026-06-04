@@ -8,8 +8,10 @@ import {
 import {
   runWgarmForEntries,
   wgarmToMirrorCandidate,
+  valenceShiftToMirror,
   pickBestMirrorCandidate,
   persistWgarmCandidate,
+  persistValenceShiftCandidate,
 } from '@/lib/mirror-wgarm'
 import type { Entry } from '@/lib/types'
 
@@ -39,13 +41,15 @@ async function resolveDevMode(
   entries: EntryWithEmbedding[],
 ): Promise<MirrorCandidate | null> {
   const phase1 = detectPattern(entries)
-  const { best: wgarmBest } = runWgarmForEntries(entries)
+  const { best: wgarmBest, bestValenceShift } = runWgarmForEntries(entries)
 
   const wgarmMirror = wgarmBest ? wgarmToMirrorCandidate(wgarmBest, entries) : null
-  const best = pickBestMirrorCandidate([phase1, wgarmMirror])
+  const valenceMirror = bestValenceShift ? valenceShiftToMirror(bestValenceShift, entries) : null
+  const best = pickBestMirrorCandidate([phase1, wgarmMirror, valenceMirror])
 
   if (phase1) await persistPhase1Candidate(supabase, userId, phase1, true)
   if (wgarmBest) await persistWgarmCandidate(supabase, userId, wgarmBest, true)
+  if (bestValenceShift) await persistValenceShiftCandidate(supabase, userId, bestValenceShift, true)
 
   return best
 }

@@ -96,6 +96,12 @@
   --danger:          #C4603A;
   --hint-ok:         #5A8A6A;
   --mirror-gold:     #C8A84B;
+
+  /* Semantic aliases (Mirror spec / shadcn compat) */
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card:       var(--bg-card);
+  --muted-foreground: var(--text-muted);
 }
 
 .dark {
@@ -134,6 +140,10 @@
   --danger:          #D4886A;
   --hint-ok:         #7AB890;
   --mirror-gold:     #D4B86A;
+
+  --background: var(--bg-base);
+  --foreground: var(--text-primary);
+  --card:       var(--bg-card);
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -379,27 +389,34 @@
   }
 }
 
-/* Mirror page — prototype dark canvas + scoped tokens for MirrorFlow */
-.mirror-page {
-  --mirror-bg: #0d0a07;
-  --bg-base: var(--mirror-bg);
-  --text-primary: rgba(255, 255, 255, 0.92);
-  --text-secondary: rgba(255, 255, 255, 0.72);
-  --text-muted: rgba(255, 255, 255, 0.42);
-  --bg-subtle: rgba(255, 255, 255, 0.06);
-  --border: rgba(200, 168, 75, 0.2);
-  margin: -20px -16px;
-  padding: 20px 16px calc(96px + env(safe-area-inset-bottom, 0px));
-  min-height: calc(100dvh - 52px);
-  background: var(--mirror-bg);
+/* MirrorFlow animations (no hardcoded theme colors) */
+@keyframes mirror-slide-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mirror-fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes mirror-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mirror-blink {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 0.4; }
+}
+@keyframes mirror-dot {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.2; }
+  40% { transform: scale(1); opacity: 0.9; }
 }
 
-@media (min-width: 768px) {
-  .mirror-page {
-    margin: -20px -24px;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
+@layer components {
+  .mirror-slide-up { animation: mirror-slide-up 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; }
+  .mirror-fade-in { animation: mirror-fade-in 0.4s ease forwards; }
+  .mirror-fade { animation: mirror-fade 0.35s ease forwards; }
+  .mirror-blink { animation: mirror-blink 0.9s ease infinite; }
+  .mirror-dot-pulse { animation: mirror-dot 1.4s ease infinite; }
 }
 
 /* ── Base — inside @layer so Tailwind utilities win ── */

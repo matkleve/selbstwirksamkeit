@@ -37,6 +37,25 @@ export interface WgarmMirrorCandidate {
   }
 }
 
+export interface ValenceShiftCandidate {
+  entry_ids: string[]
+  source: 'valence_shift'
+  signal_strength: 'moderate' | 'strong'
+  template_text: string
+  question: string
+  pattern_metadata: {
+    entry_early: string
+    entry_late: string
+    shift: number
+    früh_avg: number
+    spät_avg: number
+    cluster_id: string
+    span_days: number
+    occurrence_count: number
+    anchor_entry_ids: string[]
+  }
+}
+
 interface SemanticCluster {
   id: string
   centroid: number[]
@@ -66,16 +85,22 @@ interface AssociationRule {
 export interface WgarmResult {
   error?: string
   mirror_candidates: WgarmMirrorCandidate[]
+  valence_shift_candidates: ValenceShiftCandidate[]
   stats: {
     entries: number
     clusters: number
     frequent_itemsets: number
     rules: number
+    valence_shifts: number
   }
 }
 
 const VALENCE_ITEMS = new Set(['valence:negativ', 'valence:positiv', 'valence:neutral'])
 const MIN_SPAN_DAYS = 7
+const VALENCE_SHIFT_MIN_ENTRIES = 4
+const VALENCE_SHIFT_MIN_SPAN_DAYS = 30
+const VALENCE_SHIFT_MODERATE = 0.35
+const VALENCE_SHIFT_STRONG = 0.6
 
 const MOOD_LABELS: Record<string, string> = {
   stressed: 'gestresst',
@@ -98,6 +123,13 @@ const WEEKDAY_LABELS: Record<string, string> = {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+export function metaLabelsFromAntecedent(antecedent: string[]): string[] {
+  return antecedent
+    .filter(item => item.startsWith('tag:'))
+    .map(formatItemLabel)
+    .filter(Boolean)
 }
 
 function formatItemLabel(item: string): string {
@@ -507,6 +539,103 @@ function dedupeRules(rules: AssociationRule[]): AssociationRule[] {
   return [...seen.values()]
 }
 
+function halfCentroid(embeddings: number[][]): number[] {
+  const dim = embeddings[0]!.length
+  const c = new Array<number>(dim).fill(0)
+  for (const emb of embeddings) {
+    for (let i = 0; i < dim; i++) c[i]! += emb[i]!
+  }
+  return c.map(v => v / embeddings.length)
+}
+
+function representativeMember(
+  memberIds: string[],
+  byId: Map<string, WgarmEntry>,
+): string {
+  const withEmb = memberIds
+    .map(id => ({ id, emb: byId.get(id)?.embedding }))
+    .filter((x): x is { id: string; emb: number[] } => !!x.emb?.length)
+  if (withEmb.length === 0) return memberIds[0]!
+  const centroid = halfCentroid(withEmb.map(x => x.emb))
+  let best = withEmb[0]!.id
+  let bestSim = -Infinity
+  for (const { id, emb } of withEmb) {
+    const sim = cosineSimilarity(emb, centroid)
+    if (sim > bestSim) {
+      bestSim = sim
+      best = id
+    }
+  }
+  return best
+}
+
+export function detectValenceShifts(
+  entries: WgarmEntry[],
+  clusters: SemanticCluster[],
+): ValenceShiftCandidate[] {
+  const byId = new Map(entries.map(e => [e.id, e]))
+  const out: ValenceShiftCandidate[] = []
+
+  for (const cluster of clusters) {
+    const n = cluster.member_ids.length
+    if (n < VALENCE_SHIFT_MIN_ENTRIES) continue
+
+    const sorted = [...cluster.member_ids].sort(
+      (a, b) => byId.get(a)!.created_at.getTime() - byId.get(b)!.created_at.getTime(),
+    )
+    const times = sorted.map(id => byId.get(id)!.created_at.getTime())
+    const spanDays = Math.round((times[times.length - 1]! - times[0]!) / (24 * 60 * 60 * 1000))
+    if (spanDays < VALENCE_SHIFT_MIN_SPAN_DAYS) continue
+
+    const mid = Math.floor(n / 2)
+    const earlyIds = sorted.slice(0, mid)
+    const lateIds = sorted.slice(mid)
+    if (!earlyIds.length || !lateIds.length) continue
+
+    const früh_avg = earlyIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / earlyIds.length
+    const spät_avg = lateIds.reduce((s, id) => s + byId.get(id)!.grid_x, 0) / lateIds.length
+    const shift = spät_avg - früh_avg
+    if (Math.abs(shift) <= VALENCE_SHIFT_MODERATE) continue
+
+    const entry_early = representativeMember(earlyIds, byId)
+    const entry_late = representativeMember(lateIds, byId)
+
+    out.push({
+      entry_ids: sorted,
+      source: 'valence_shift',
+      signal_strength: Math.abs(shift) > VALENCE_SHIFT_STRONG ? 'strong' : 'moderate',
+      template_text:
+        shift > 0
+          ? 'In Momenten wie diesen hat sich etwas verändert. Früher klang das schwerer.'
+          : 'In Momenten wie diesen klingt es zuletzt anders als noch vor einigen Monaten.',
+      question: 'Was hat sich verändert?',
+      pattern_metadata: {
+        entry_early,
+        entry_late,
+        shift,
+        früh_avg,
+        spät_avg,
+        cluster_id: cluster.id,
+        span_days: spanDays,
+        occurrence_count: n,
+        anchor_entry_ids: [entry_early, entry_late],
+      },
+    })
+  }
+
+  return out.sort((a, b) => Math.abs(b.pattern_metadata.shift) - Math.abs(a.pattern_metadata.shift))
+}
+
+export function pickBestValenceShift(candidates: ValenceShiftCandidate[]): ValenceShiftCandidate | null {
+  if (!candidates.length) return null
+  const STRENGTH = { strong: 2, moderate: 1 } as const
+  return [...candidates].sort((a, b) => {
+    const sd = STRENGTH[b.signal_strength] - STRENGTH[a.signal_strength]
+    if (sd !== 0) return sd
+    return Math.abs(b.pattern_metadata.shift) - Math.abs(a.pattern_metadata.shift)
+  })[0]!
+}
+
 export function runWgarmEc(
   entries: WgarmEntry[],
   opts: { clusterThreshold?: number; minSupport?: number; minConfidence?: number; minLift?: number } = {},
@@ -524,7 +653,8 @@ export function runWgarmEc(
     return {
       error: 'Zu wenig Einträge (min. 10 erforderlich)',
       mirror_candidates: [],
-      stats: { entries: entries.length, clusters: 0, frequent_itemsets: 0, rules: 0 },
+      valence_shift_candidates: [],
+      stats: { entries: entries.length, clusters: 0, frequent_itemsets: 0, rules: 0, valence_shifts: 0 },
     }
   }
 
@@ -566,13 +696,17 @@ export function runWgarmEc(
     },
   }))
 
+  const valence_shift_candidates = hasEmb ? detectValenceShifts(entries, clusters) : []
+
   return {
     mirror_candidates,
+    valence_shift_candidates,
     stats: {
       entries: entries.length,
       clusters: clusters.length,
       frequent_itemsets: frequent.size,
       rules: rules.length,
+      valence_shifts: valence_shift_candidates.length,
     },
   }
 }

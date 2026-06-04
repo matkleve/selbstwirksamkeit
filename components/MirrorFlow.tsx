@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import type { MirrorCandidate } from '@/lib/patternDetection'
+import { mirrorTransitionText } from '@/lib/mirrorTransition'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { EntryDisplay } from '@/components/entry'
+import { cn } from '@/lib/cn'
 
 const LOADING_STEPS = [
   'Lese deine Einträge…',
@@ -11,29 +17,82 @@ const LOADING_STEPS = [
   'Bereite deinen Spiegel vor…',
 ]
 
+const REMINDER_OPTIONS = ['Heute', '3 Tage', 'Diese Woche', 'Kein Reminder'] as const
+
 type InternalBlock =
   | { id: string; type: 'text'; text: string; muted?: boolean }
   | { id: string; type: 'entry'; entry: MirrorCandidate['entries'][number] }
+  | { id: string; type: 'transition'; text: string }
   | { id: string; type: 'question'; text: string }
   | { id: string; type: 'decision' }
 
 interface BlockState {
   visible: boolean
   wordCount: number
-  entryPhase: 'hidden' | 'date' | 'text'
 }
 
-function fmtDate(s: string) {
-  return new Date(s).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })
-}
-function fmtTime(s: string) {
-  return new Date(s).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
-}
-
-const MARKER: Record<string, string> = { question: '?', decision: '→', entry: '❝' }
+const MARKER: Record<string, string> = { question: '?', decision: '→', entry: '❝', transition: '↔' }
 const markerFor = (type: string, idx: number) => MARKER[type] ?? (idx === 0 ? '◦' : '·')
 
+function buildBlocks(candidate: MirrorCandidate | null): InternalBlock[] {
+  if (!candidate) {
+    return [
+      {
+        id: 'empty',
+        type: 'text',
+        text: 'Noch zu wenige Muster. Schreib weiter — ich schaue dann nochmal.',
+        muted: true,
+      },
+    ]
+  }
+
+  const blocks: InternalBlock[] = [{ id: 'intro', type: 'text', text: candidate.introText }]
+
+  candidate.entries.forEach((entry, i) => {
+    blocks.push({ id: `entry-${i}`, type: 'entry', entry })
+    const next = candidate.entries[i + 1]
+    if (next) {
+      blocks.push({
+        id: `transition-${i}`,
+        type: 'transition',
+        text: mirrorTransitionText(entry.created_at, next.created_at),
+      })
+    }
+  })
+
+  blocks.push({ id: 'question', type: 'question', text: candidate.question })
+  blocks.push({ id: 'decision', type: 'decision' })
+  blocks.push({
+    id: 'summary',
+    type: 'text',
+    text: 'Du hast heute hingeschaut. Das zählt.',
+    muted: true,
+  })
+  return blocks
+}
+
+function SpineMarker({ type, idx, className }: { type: string; idx: number; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'absolute -left-10 top-0.5 z-[2] flex size-5 min-h-5 min-w-5 items-center justify-center',
+        'rounded-full border border-edge bg-[var(--background)] font-bold text-ink-2',
+        type === 'question' ? 'text-[0.625rem]' : 'text-[0.6875rem]',
+        className,
+      )}
+      aria-hidden
+    >
+      {markerFor(type, idx)}
+    </div>
+  )
+}
+
+function TypingCursor() {
+  return <span className="mirror-blink">|</span>
+}
+
 export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate | null }) {
+  const blocks = useMemo(() => buildBlocks(candidate), [candidate])
   const [loadingStep, setLoadingStep] = useState(0)
   const [phase, setPhase] = useState<'loading' | 'mirror'>('loading')
   const [states, setStates] = useState<Record<string, BlockState>>({})
@@ -49,36 +108,33 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
   const supabase = createClient()
 
   const sched = (fn: () => void, ms: number) => {
-    const id = setTimeout(fn, ms); timers.current.push(id)
+    const id = setTimeout(fn, ms)
+    timers.current.push(id)
   }
-  const clear = () => { timers.current.forEach(clearTimeout); timers.current = [] }
-  const scrollDown = () => setTimeout(() => scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' }), 60)
+  const clear = () => {
+    timers.current.forEach(clearTimeout)
+    timers.current = []
+  }
+  const scrollDown = () =>
+    setTimeout(() => scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' }), 60)
 
-  const blocks: InternalBlock[] = candidate ? [
-    { id: 'intro', type: 'text', text: candidate.introText },
-    ...candidate.entries.map((e, i) => ({ id: `entry-${i}`, type: 'entry' as const, entry: e })),
-    { id: 'question', type: 'question', text: candidate.question },
-    { id: 'decision', type: 'decision' as const },
-    { id: 'summary', type: 'text', text: 'Du hast heute hingeschaut. Das zählt.', muted: true },
-  ] : [
-    { id: 'empty', type: 'text', text: 'Noch zu wenige Muster. Schreib weiter — ich schaue dann nochmal.', muted: true },
-  ]
-
-  // Loading
   useEffect(() => {
     clear()
-    LOADING_STEPS.forEach((_, i) => { if (i > 0) sched(() => setLoadingStep(i), i * 820) })
+    LOADING_STEPS.forEach((_, i) => {
+      if (i > 0) sched(() => setLoadingStep(i), i * 820)
+    })
     sched(() => {
       const init: Record<string, BlockState> = {}
-      blocks.forEach(b => { init[b.id] = { visible: false, wordCount: 0, entryPhase: 'hidden' } })
+      blocks.forEach(b => {
+        init[b.id] = { visible: false, wordCount: 0 }
+      })
       setStates(init)
       setPhase('mirror')
     }, LOADING_STEPS.length * 820 + 400)
     return clear
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks])
 
-  // Mirror animation
   useEffect(() => {
     if (phase !== 'mirror') return
     clear()
@@ -91,17 +147,8 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
       }, d)
       d += 320
 
-      if (block.type === 'entry') {
-        sched(() => setStates(p => ({ ...p, [block.id]: { ...p[block.id], entryPhase: 'date' } })), d)
-        d += 240
-        const words = block.entry.text.slice(0, 120).split(' ')
-        words.forEach((_, wi) => {
-          sched(() => {
-            setStates(p => ({ ...p, [block.id]: { ...p[block.id], wordCount: wi + 1, entryPhase: 'text' } }))
-            if (wi === words.length - 1) scrollDown()
-          }, d + wi * 85)
-        })
-        d += words.length * 85 + 280
+      if (block.type === 'entry' || block.type === 'transition') {
+        d += block.type === 'entry' ? 400 : 220
       }
 
       if ((block.type === 'text' || block.type === 'question') && block.text) {
@@ -116,12 +163,16 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
       }
 
       if (block.type === 'decision') {
-        sched(() => { setShowDecision(true); scrollDown() }, d); d += 200
+        sched(() => {
+          setShowDecision(true)
+          scrollDown()
+        }, d)
+        d += 200
       }
     })
     return clear
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, blocks])
 
   const visWords = (id: string, text: string) =>
     text.split(' ').slice(0, states[id]?.wordCount ?? 0).join(' ')
@@ -130,277 +181,201 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
 
   const handleSave = async () => {
     if (!wennText || !dannText) return
-    const reminderMap: Record<string, string> = { 'Heute': 'today', '3 Tage': '3days', 'Diese Woche': '7days' }
+    const reminderMap: Record<string, string> = {
+      Heute: 'today',
+      '3 Tage': '3days',
+      'Diese Woche': '7days',
+    }
     await supabase.from('implementation_intentions').insert({
-      wenn_text: wennText, dann_text: dannText,
+      wenn_text: wennText,
+      dann_text: dannText,
       wants_reminder: !!duration && duration !== 'Kein Reminder',
       reminder_type: duration ? (reminderMap[duration] ?? null) : null,
       active: true,
     })
-    setSaved(true); scrollDown()
+    setSaved(true)
+    scrollDown()
   }
-
-  const GOLD = 'var(--mirror-gold)'
-  const SPINE = 'rgba(200,168,75,0.28)'
-
-  const dot = (type: string, idx: number, color?: string) => (
-    <div style={{
-      position: 'absolute', left: -33, top: 2,
-      width: 18, height: 18, borderRadius: '50%',
-      background: 'var(--bg-base)', border: `1px solid ${SPINE}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: type === 'question' ? 9 : 8,
-      color: color ?? GOLD, fontWeight: 700, zIndex: 2,
-    }}>
-      {markerFor(type, idx)}
-    </div>
-  )
 
   return (
     <>
-      <style>{`
-        @keyframes mSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
-        @keyframes mFadeIn  { from{opacity:0;transform:translateY(5px)}  to{opacity:1;transform:none} }
-        @keyframes mFade    { from{opacity:0} to{opacity:1} }
-        @keyframes mBlink   { 0%,100%{opacity:0} 50%{opacity:.4} }
-        @keyframes mDot     { 0%,80%,100%{transform:scale(.5);opacity:.2} 40%{transform:scale(1);opacity:.9} }
-      `}</style>
-
-      {/* Loading overlay */}
       {phase === 'loading' && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 100, background: '#0D0A07',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 44,
-        }}>
-          <div style={{
-            width: 54, height: 54, borderRadius: '50%',
-            border: '1.5px solid #2A1E10',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-          }}>🪞</div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 210 }}>
-            {LOADING_STEPS.map((step, i) => (
-              loadingStep >= i ? (
-                <div key={i} style={{
-                  display: 'flex', gap: 10, alignItems: 'center',
-                  fontSize: '0.8125rem', letterSpacing: '0.015em',
-                  color: loadingStep === i ? GOLD : 'rgba(200,168,75,0.28)',
-                  animation: 'mFadeIn 0.4s ease forwards',
-                }}>
-                  <span style={{ fontSize: 9, width: 12, opacity: .7 }}>{loadingStep > i ? '✓' : '·'}</span>
-                  {step}
-                </div>
-              ) : null
-            ))}
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-11 bg-[var(--background)] text-[var(--foreground)]"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div
+            className="flex size-14 items-center justify-center rounded-full border border-edge bg-card text-2xl"
+            aria-hidden
+          >
+            🪞
           </div>
 
-          <div style={{ display: 'flex', gap: 7 }}>
-            {[0,1,2].map(i => (
-              <div key={i} style={{
-                width: 4, height: 4, borderRadius: '50%',
-                background: 'rgba(200,168,75,0.35)',
-                animation: `mDot 1.4s ease ${i * 0.2}s infinite`,
-              }} />
+          <div className="flex min-w-[13.125rem] flex-col gap-2">
+            {LOADING_STEPS.map((step, i) =>
+              loadingStep >= i ? (
+                <div
+                  key={i}
+                  className={cn(
+                    'mirror-fade-in flex items-center gap-2.5 text-[0.8125rem] tracking-wide',
+                    loadingStep === i ? 'text-ink' : 'text-ink-3',
+                  )}
+                >
+                  <span className="w-3 text-[0.5625rem] opacity-70" aria-hidden>
+                    {loadingStep > i ? '✓' : '·'}
+                  </span>
+                  {step}
+                </div>
+              ) : null,
+            )}
+          </div>
+
+          <div className="flex gap-1.5" aria-hidden>
+            {[0, 1, 2].map(i => (
+              <span
+                key={i}
+                className="mirror-dot-pulse size-1 rounded-full bg-ink-3"
+                style={{ animationDelay: `${i * 0.2}s` }}
+              />
             ))}
           </div>
         </div>
       )}
 
-      {/* Mirror content */}
       <div
         ref={scrollRef}
-        style={{
-          opacity: phase === 'mirror' ? 1 : 0,
-          transition: 'opacity 0.7s ease',
-          position: 'relative', paddingLeft: 40, paddingTop: 4,
-        }}
+        className={cn(
+          'relative pt-1 pl-10 transition-opacity duration-700',
+          phase === 'mirror' ? 'opacity-100' : 'opacity-0',
+        )}
       >
-        {/* Spine */}
-        <div style={{
-          position: 'absolute', left: 15, top: 0, bottom: 0, width: 1.5,
-          background: `linear-gradient(to bottom, transparent 0, ${SPINE} 16px, ${SPINE} calc(100% - 16px), transparent 100%)`,
-          pointerEvents: 'none',
-        }} />
+        <div
+          className="pointer-events-none absolute top-0 bottom-0 left-[0.9375rem] w-px bg-gradient-to-b from-transparent via-edge to-transparent"
+          aria-hidden
+        />
 
         {blocks.map((block, idx) => {
           if (!states[block.id]?.visible) return null
-          const st = states[block.id]
 
           return (
-            <div key={block.id} style={{
-              position: 'relative', marginBottom: 22,
-              animation: 'mSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
-            }}>
-              {dot(block.type, idx)}
+            <div key={block.id} className="relative mb-5 mirror-slide-up">
+              <SpineMarker type={block.type} idx={idx} />
 
-              {/* TEXT / SUMMARY */}
               {block.type === 'text' && (
-                <p style={{
-                  margin: 0,
-                  fontFamily: 'var(--font-display), Georgia, serif',
-                  fontSize: '1.0625rem', lineHeight: 1.55, fontWeight: 400,
-                  color: block.muted ? 'var(--text-muted)' : 'var(--text-secondary)',
-                }}>
-                  {visWords(block.id, block.text)}
-                  {isTyping(block.id, block.text) && (
-                    <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
+                <p
+                  className={cn(
+                    'm-0 font-display text-[1.0625rem] leading-snug text-[var(--foreground)]',
+                    block.muted ? 'text-ink-3' : 'text-ink-2',
                   )}
+                >
+                  {visWords(block.id, block.text)}
+                  {isTyping(block.id, block.text) && <TypingCursor />}
                 </p>
               )}
 
-              {/* QUESTION */}
               {block.type === 'question' && (
-                <p style={{
-                  margin: 0,
-                  fontFamily: 'var(--font-display), Georgia, serif',
-                  fontSize: '1rem', fontStyle: 'italic', lineHeight: 1.55,
-                  color: 'var(--text-secondary)',
-                }}>
+                <p className="m-0 font-display text-base italic leading-snug text-ink-2">
                   {visWords(block.id, block.text)}
-                  {isTyping(block.id, block.text) && (
-                    <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
-                  )}
+                  {isTyping(block.id, block.text) && <TypingCursor />}
                 </p>
               )}
 
-              {/* ENTRY */}
-              {block.type === 'entry' && (() => {
-                const ep = st.entryPhase
-                const text = block.entry.text.slice(0, 120)
-                return (
-                  <div style={{
-                    borderRadius: 10, background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border)', padding: '10px 12px',
-                  }}>
-                    {ep !== 'hidden' && (
-                      <div style={{
-                        display: 'flex', justifyContent: 'space-between', marginBottom: 6,
-                        animation: 'mFade 0.35s ease forwards',
-                      }}>
-                        <span style={{
-                          fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-muted)',
-                          letterSpacing: '0.06em', textTransform: 'uppercase',
-                        }}>{fmtDate(block.entry.created_at)}</span>
-                        <span style={{ fontSize: '0.6875rem', color: 'var(--text-muted)' }}>
-                          {fmtTime(block.entry.created_at)}
-                        </span>
-                      </div>
-                    )}
-                    {ep === 'text' && (
-                      <p style={{
-                        margin: 0,
-                        fontFamily: 'var(--font-display), Georgia, serif',
-                        fontSize: '0.9375rem', fontStyle: 'italic',
-                        color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: 20,
-                      }}>
-                        "{visWords(block.id, text)}
-                        {isTyping(block.id, text)
-                          ? <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
-                          : '"'
-                        }
-                      </p>
-                    )}
-                  </div>
-                )
-              })()}
+              {block.type === 'transition' && (
+                <p className="mirror-fade m-0 font-display text-sm italic text-ink-3">{block.text}</p>
+              )}
 
-              {/* DECISION */}
+              {block.type === 'entry' && (
+                <EntryDisplay
+                  entry={block.entry}
+                  variant="chips-closed"
+                  header="mirror"
+                  size="sm"
+                  lines={2}
+                  menu={false}
+                  card
+                  relevantMeta={candidate?.relevantMeta}
+                />
+              )}
+
               {block.type === 'decision' && showDecision && !showForm && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={{
-                    flex: 1, padding: '9px 0', borderRadius: 9,
-                    border: '1px solid var(--border)', background: 'transparent',
-                    color: 'var(--text-muted)', fontSize: '0.8125rem',
-                    fontFamily: 'inherit', cursor: 'pointer',
-                  }}>Schließen</button>
-                  <button onClick={() => { setShowForm(true); scrollDown() }} style={{
-                    flex: 1, padding: '9px 0', borderRadius: 9,
-                    border: 'none', background: GOLD, color: '#fff',
-                    fontSize: '0.8125rem', fontWeight: 500,
-                    fontFamily: 'inherit', cursor: 'pointer',
-                  }}>Wenn-Dann →</button>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="flex-1">
+                    Schließen
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowForm(true)
+                      scrollDown()
+                    }}
+                  >
+                    Wenn-Dann →
+                  </Button>
                 </div>
               )}
               {block.type === 'decision' && showForm && (
-                <p style={{
-                  margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted)',
-                  fontStyle: 'italic', fontFamily: 'var(--font-display), Georgia, serif',
-                }}>Intention gesetzt ↓</p>
+                <p className="m-0 font-display text-[0.8125rem] italic text-ink-3">
+                  Intention gesetzt ↓
+                </p>
               )}
             </div>
           )
         })}
 
-        {/* Wenn-Dann form */}
         {showForm && !saved && (
-          <div style={{
-            position: 'relative', marginBottom: 22,
-            animation: 'mSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
-          }}>
-            {dot('intention', 99)}
-            {[
-              { label: 'Wenn', value: wennText, set: setWennText, ph: 'dieses Muster wieder auftaucht' },
-              { label: 'Dann', value: dannText, set: setDannText, ph: 'tue ich…' },
-            ].map(row => (
-              <div key={row.label} style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
-                <span style={{
-                  fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)',
-                  letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0, width: 36,
-                }}>{row.label}</span>
-                <input
-                  value={row.value}
-                  onChange={e => row.set(e.target.value)}
-                  placeholder={row.ph}
-                  style={{
-                    flex: 1, border: 'none',
-                    borderBottom: `1.5px solid ${row.value ? GOLD : 'var(--border)'}`,
-                    background: 'transparent',
-                    fontSize: '0.9375rem', fontStyle: 'italic',
-                    fontFamily: 'var(--font-display), Georgia, serif',
-                    color: 'var(--text-primary)', outline: 'none',
-                    padding: '2px 0', transition: 'border-color 0.2s',
-                  }}
-                />
-              </div>
-            ))}
-
-            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-              {['Heute', '3 Tage', 'Diese Woche', 'Kein Reminder'].map(opt => (
-                <button key={opt} onClick={() => setDuration(duration === opt ? null : opt)} style={{
-                  padding: '4px 10px', borderRadius: 20, cursor: 'pointer',
-                  fontSize: '0.75rem', fontFamily: 'inherit',
-                  fontWeight: duration === opt ? 500 : 400,
-                  border: `1.5px solid ${duration === opt ? GOLD : 'var(--border)'}`,
-                  background: duration === opt ? 'rgba(200,168,75,0.08)' : 'transparent',
-                  color: duration === opt ? GOLD : 'var(--text-muted)',
-                  transition: 'all 0.15s',
-                }}>{opt}</button>
+          <div className="relative mb-5 mirror-slide-up">
+            <SpineMarker type="intention" idx={99} />
+            <div className="flex flex-col gap-3">
+              {[
+                { label: 'Wenn', value: wennText, set: setWennText, ph: 'dieses Muster wieder auftaucht' },
+                { label: 'Dann', value: dannText, set: setDannText, ph: 'tue ich…' },
+              ].map(row => (
+                <div key={row.label} className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+                  <span className="shrink-0 text-[0.6875rem] font-semibold uppercase tracking-wider text-ink-3 sm:w-9">
+                    {row.label}
+                  </span>
+                  <Input
+                    value={row.value}
+                    onChange={e => row.set(e.target.value)}
+                    placeholder={row.ph}
+                    className="min-w-0 flex-1"
+                  />
+                </div>
               ))}
-            </div>
 
-            <button
-              onClick={handleSave}
-              disabled={!wennText || !dannText}
-              style={{
-                width: '100%', padding: '10px 0', borderRadius: 9, border: 'none',
-                background: wennText && dannText ? GOLD : 'var(--bg-subtle)',
-                color: wennText && dannText ? '#fff' : 'var(--text-muted)',
-                fontSize: '0.875rem', fontWeight: 500, fontFamily: 'inherit',
-                cursor: wennText && dannText ? 'pointer' : 'default',
-                transition: 'background 0.2s, color 0.2s',
-              }}
-            >Intention speichern</button>
+              <div className="flex flex-wrap gap-1.5">
+                {REMINDER_OPTIONS.map(opt => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setDuration(duration === opt ? null : opt)}
+                    className="cursor-pointer rounded-chip border-0 bg-transparent p-0"
+                  >
+                    <Badge variant={duration === opt ? 'filled' : 'default'}>{opt}</Badge>
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleSave}
+                disabled={!wennText || !dannText}
+                className="w-full"
+                size="lg"
+              >
+                Intention speichern
+              </Button>
+            </div>
           </div>
         )}
 
         {saved && (
-          <div style={{ position: 'relative', marginBottom: 22, animation: 'mFade 0.4s ease forwards' }}>
-            {dot('saved', 99, 'var(--hint-ok)')}
-            <p style={{
-              margin: 0, fontFamily: 'var(--font-display), Georgia, serif',
-              fontSize: '0.9375rem', fontStyle: 'italic', color: 'var(--hint-ok)',
-            }}>
+          <div className="relative mb-5 mirror-fade">
+            <SpineMarker type="saved" idx={99} className="text-ok" />
+            <p className="m-0 font-display text-[0.9375rem] italic text-ok">
               Wenn {wennText}, dann {dannText}.
             </p>
           </div>

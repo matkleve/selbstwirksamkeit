@@ -9,6 +9,7 @@ import { EntryCardShell } from '@/components/entry/EntryCardShell'
 import { EntryCardMenu } from '@/components/entry/EntryCardMenu'
 import { EntryDate } from '@/components/entry/EntryDate'
 import { EntryMetaChips } from '@/components/entry/EntryMetaChips'
+import { formatMirrorDateTime } from '@/lib/mirrorTransition'
 import type { ReactNode } from 'react'
 
 export type EntryDisplayVariant =
@@ -29,6 +30,8 @@ export interface EntryDisplayProps {
   lines?: 1 | 2 | 3 | 'none'
   /** @deprecated Header always shows date when entry number is available */
   showDate?: boolean
+  /** Mirror timeline: date+time only, right-aligned */
+  header?: 'default' | 'mirror'
   /** Override chronological number (Entry #N) */
   entryNumber?: number
   showTitle?: boolean
@@ -36,6 +39,8 @@ export interface EntryDisplayProps {
   card?: boolean
   /** ⋮ menu with edit / delete (default: true except color) */
   menu?: boolean
+  /** Mirror: expand chips that match the pattern association */
+  relevantMeta?: string[]
   children?: React.ReactNode
 }
 
@@ -72,6 +77,16 @@ function ColorDot({ entry, size }: { entry: Entry; size: EntryDisplaySize }) {
       title={entry.text.slice(0, 60)}
       aria-hidden
     />
+  )
+}
+
+function MirrorEntryHeader({ dateStr }: { dateStr: string }) {
+  return (
+    <div className="mb-1.5 flex justify-end">
+      <time dateTime={dateStr} className="text-xs uppercase tracking-wide text-ink-3">
+        {formatMirrorDateTime(dateStr)}
+      </time>
+    </div>
   )
 }
 
@@ -143,10 +158,12 @@ export function EntryDisplay({
   className,
   lines = 2,
   showDate = true,
+  header = 'default',
   entryNumber: entryNumberProp,
   showTitle = false,
   card: cardProp,
   menu: menuProp,
+  relevantMeta,
   children,
 }: EntryDisplayProps) {
   const { entryNumber: entryNumberFromCtx } = useEntries()
@@ -164,15 +181,18 @@ export function EntryDisplay({
     )
   }
 
-  const header = (
-    <EntryHeader
-      entry={entry}
-      number={number}
-      dateStr={entry.created_at}
-      showDate={showDate}
-      showMenu={showMenu}
-    />
-  )
+  const headerBlock =
+    header === 'mirror' ? (
+      <MirrorEntryHeader dateStr={entry.created_at} />
+    ) : (
+      <EntryHeader
+        entry={entry}
+        number={number}
+        dateStr={entry.created_at}
+        showDate={showDate}
+        showMenu={showMenu}
+      />
+    )
 
   if (variant === 'text') {
     return wrapCard(
@@ -181,7 +201,7 @@ export function EntryDisplay({
       shellPadding,
       className,
       <>
-        {header}
+        {headerBlock}
         {showTitle && entry.title && (
           <p className="mb-0.5 text-xs font-medium text-ink-2">{entry.title}</p>
         )}
@@ -197,7 +217,7 @@ export function EntryDisplay({
       shellPadding,
       className,
       <>
-        {header}
+        {headerBlock}
         <div className="flex min-w-0 items-start gap-2.5">
           <ColorRail entry={entry} size={size} />
           <EntryBody text={entry.text} size={size} lines={lines} className="min-w-0 flex-1" />
@@ -207,16 +227,27 @@ export function EntryDisplay({
   }
 
   if (variant === 'chips-closed' || variant === 'chips-open') {
-    const chipMode = variant === 'chips-closed' ? 'closed' : 'open'
+    const chipMode =
+      variant === 'chips-open'
+        ? 'open'
+        : relevantMeta?.length
+          ? 'selective'
+          : 'closed'
     return wrapCard(
       entry,
       card,
       shellPadding,
       className,
       <>
-        {header}
+        {headerBlock}
         <EntryBody text={entry.text} size={size} lines={lines} />
-        <EntryMetaChips groups={meta} mode={chipMode} size={size} />
+        <EntryMetaChips
+          groups={meta}
+          mode={chipMode}
+          relevantValues={relevantMeta}
+          size={size}
+          className="mt-2"
+        />
       </>,
     )
   }
@@ -225,7 +256,7 @@ export function EntryDisplay({
     <div className={cn('flex min-w-0 gap-0', !card && className)}>
       <ColorRail entry={entry} size={size} />
       <div className="min-w-0 flex-1 py-0.5 pl-3">
-        {header}
+        {headerBlock}
         {showTitle && entry.title && (
           <p className="mb-1 text-xs font-medium text-ink-2">{entry.title}</p>
         )}

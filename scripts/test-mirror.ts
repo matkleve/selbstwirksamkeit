@@ -22,7 +22,7 @@ import {
   type MirrorCandidate,
   type MirrorSource,
 } from '../lib/patternDetection'
-import { runWgarmEc, toWgarmEntry } from '../lib/wgarmEc'
+import { runWgarmEc, toWgarmEntry, type ValenceShiftCandidate } from '../lib/wgarmEc'
 import type { Entry } from '../lib/types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -124,6 +124,29 @@ function loadSupabaseEnv(forceLocal = false): { url: string; key: string } {
 
 // ── WGARM-EC (TypeScript) ───────────────────────────────────────────────────
 
+function runValenceShiftCandidates(entries: EntryRow[]): TestCandidate[] {
+  const wgarmEntries = entries.map(toWgarmEntry).filter(Boolean)
+  if (wgarmEntries.length < 10) return []
+
+  const result = runWgarmEc(wgarmEntries)
+  if (result.error) return []
+
+  const byId = new Map(entries.map(e => [e.id, e]))
+  return result.valence_shift_candidates.map((c: ValenceShiftCandidate) => ({
+    source: c.source,
+    signalStrength: c.signal_strength,
+    templateText: c.template_text,
+    antecedent: `cluster ${c.pattern_metadata.cluster_id}`,
+    consequent: `shift ${c.pattern_metadata.shift.toFixed(2)}`,
+    confidence: null,
+    lift: null,
+    spanDays: c.pattern_metadata.span_days,
+    occurrenceCount: c.pattern_metadata.occurrence_count,
+    displayEntries: [c.pattern_metadata.entry_early, c.pattern_metadata.entry_late]
+      .map(id => byId.get(id))
+      .filter((e): e is Entry => !!e),
+  }))
+}
 function runWgarmEcCandidates(entries: EntryRow[]): TestCandidate[] {
   const wgarmEntries = entries.map(toWgarmEntry).filter(Boolean)
   if (wgarmEntries.length < 10) return []
@@ -177,13 +200,27 @@ function phase1ToTest(c: MirrorCandidate, byId: Map<string, Entry>): TestCandida
       displayEntries: c.entries,
     }
   }
-  const m = c.introText.match(/Bereich ([^—]+)/)
+  if (c.source === 'grid_cluster') {
+    const m = c.introText.match(/die sich (.+?) anfühlen/)
+    return {
+      source: c.source,
+      signalStrength: c.signalStrength,
+      templateText: c.introText,
+      antecedent: m?.[1]?.trim() ?? 'quadrant',
+      consequent: `cluster (${c.count}×)`,
+      confidence: null,
+      lift: null,
+      spanDays: spanDays(c.entryIds, byId),
+      occurrenceCount: c.count,
+      displayEntries: c.entries,
+    }
+  }
   return {
     source: c.source,
     signalStrength: c.signalStrength,
     templateText: c.introText,
-    antecedent: m?.[1]?.trim() ?? 'quadrant',
-    consequent: `cluster (${c.count}×)`,
+    antecedent: 'valence_shift',
+    consequent: `${c.count}×`,
     confidence: null,
     lift: null,
     spanDays: spanDays(c.entryIds, byId),
@@ -281,6 +318,7 @@ async function main() {
   const candidates: TestCandidate[] = [
     ...detectAllPhase1(entries).map(c => phase1ToTest(c, byId)),
     ...runWgarmEcCandidates(entries),
+    ...runValenceShiftCandidates(entries),
   ].sort((a, b) => STRENGTH_ORDER[a.signalStrength] - STRENGTH_ORDER[b.signalStrength])
 
   if (candidates.length === 0) {

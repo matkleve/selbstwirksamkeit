@@ -3,9 +3,12 @@ import {
   runWgarmEc,
   toWgarmEntry,
   pickBestWgarmCandidate,
+  pickBestValenceShift,
+  metaLabelsFromAntecedent,
   type WgarmMirrorCandidate,
+  type ValenceShiftCandidate,
 } from '@/lib/wgarmEc'
-import type { MirrorCandidate } from '@/lib/patternDetection'
+import { valenceShiftToMirrorCandidate, type MirrorCandidate } from '@/lib/patternDetection'
 import type { Entry } from '@/lib/types'
 
 type EntryWithEmbedding = Entry & { embedding?: number[] | string | null }
@@ -32,12 +35,14 @@ export function wgarmToMirrorCandidate(
     count: wgarm.pattern_metadata.occurrence_count,
     introText: wgarm.template_text,
     question: 'Was fällt dir daran auf?',
+    relevantMeta: metaLabelsFromAntecedent(wgarm.pattern_metadata.antecedent),
   }
 }
 
 const STRENGTH_RANK = { strong: 3, moderate: 2, weak: 1 } as const
 const SOURCE_RANK: Record<string, number> = {
   wgarm_ec: 10,
+  valence_shift: 9,
   tag_frequency: 5,
   grid_cluster: 4,
   embedding_temporal: 3,
@@ -55,16 +60,47 @@ export function pickBestMirrorCandidate(
   })[0]!
 }
 
+export function valenceShiftToMirror(
+  shift: ValenceShiftCandidate,
+  allEntries: Entry[],
+): MirrorCandidate | null {
+  return valenceShiftToMirrorCandidate(shift, allEntries)
+}
+
 export function runWgarmForEntries(entries: EntryWithEmbedding[]) {
   const wgarmEntries = entriesToWgarm(entries)
   if (wgarmEntries.length < 10) {
-    return { result: null, best: null as WgarmMirrorCandidate | null }
+    return {
+      result: null,
+      best: null as WgarmMirrorCandidate | null,
+      bestValenceShift: null as ValenceShiftCandidate | null,
+    }
   }
   const result = runWgarmEc(wgarmEntries)
-  const best = pickBestWgarmCandidate(
-    result.mirror_candidates.filter(c => c.signal_strength !== 'weak'),
-  ) ?? pickBestWgarmCandidate(result.mirror_candidates)
-  return { result, best }
+  const best =
+    pickBestWgarmCandidate(result.mirror_candidates.filter(c => c.signal_strength !== 'weak')) ??
+    pickBestWgarmCandidate(result.mirror_candidates)
+  const bestValenceShift = pickBestValenceShift(result.valence_shift_candidates)
+  return { result, best, bestValenceShift }
+}
+
+export async function persistValenceShiftCandidate(
+  supabase: SupabaseClient,
+  userId: string,
+  shift: ValenceShiftCandidate,
+  shown: boolean,
+): Promise<void> {
+  await supabase.from('mirror_candidates').insert({
+    user_id: userId,
+    entry_ids: shift.entry_ids,
+    source: 'valence_shift',
+    signal_strength: shift.signal_strength,
+    template_text: shift.template_text,
+    question: shift.question,
+    pattern_metadata: shift.pattern_metadata,
+    shown,
+    shown_at: shown ? new Date().toISOString() : null,
+  })
 }
 
 export async function persistWgarmCandidate(

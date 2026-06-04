@@ -43,3 +43,13 @@ export function getEntryMeta(entry: Entry): EntryMetaGroup[] {
 export function metaCount(groups: EntryMetaGroup[]): number {
   return groups.reduce((n, g) => n + g.values.length, 0)
 }
+
+export function normalizeMetaMatch(value: string): string {
+  return value.toLowerCase().trim()
+}
+
+export function isMetaRelevant(value: string, relevantMeta?: string[]): boolean {
+  if (!relevantMeta?.length) return false
+  const needle = normalizeMetaMatch(value)
+  return relevantMeta.some(r => normalizeMetaMatch(r) === needle)
+}

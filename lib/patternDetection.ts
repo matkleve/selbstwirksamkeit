@@ -1,6 +1,8 @@
+import { splitMetaValues } from './entryMeta'
+import { metaLabelsFromAntecedent } from './wgarmEc'
 import type { Entry } from './types'
 
-export type MirrorSource = 'tag_frequency' | 'grid_cluster' | 'wgarm_ec' | 'embedding_temporal'
+export type MirrorSource = 'tag_frequency' | 'grid_cluster' | 'wgarm_ec' | 'embedding_temporal' | 'valence_shift'
 
 export interface MirrorCandidate {
   entryIds: string[]
@@ -10,6 +12,8 @@ export interface MirrorCandidate {
   count: number
   introText: string
   question: string
+  /** Chip labels to expand in the mirror timeline (person, place, mood, …). */
+  relevantMeta?: string[]
 }
 
 const RECENT_MS = 7 * 24 * 60 * 60 * 1000
@@ -18,6 +22,12 @@ const BODY_STATE_LABELS: Record<string, string> = {
   stressed: 'gestresst',
   calm: 'ruhig',
   tired: 'müde',
+}
+
+function relevantMetaFromField(field: keyof Entry, raw: string): string[] {
+  if (field === 'body_state') return [BODY_STATE_LABELS[raw] ?? raw]
+  if (field === 'person') return splitMetaValues(raw)
+  return [raw.trim()]
 }
 
 function tagLabel(field: keyof Entry, val: string): string {
@@ -73,7 +83,10 @@ function temporalIntro(label: string, sorted: Entry[]): string {
 }
 
 export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
-  const buckets = new Map<string, { label: string; hits: Entry[] }>()
+  const buckets = new Map<
+    string,
+    { field: keyof Entry; raw: string; label: string; hits: Entry[] }
+  >()
 
   for (const e of entries) {
     const fields: [keyof Entry, string][] = [
@@ -82,18 +95,18 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
       ['activity', 'beim'],
       ['body_state', ''],
     ]
-    for (const [field, prep] of fields) {
+    for (const [field] of fields) {
       const val = e[field] as string | null
       if (!val) continue
       const key = `${field}:${val}`
       if (!buckets.has(key)) {
-        buckets.set(key, { label: tagLabel(field, val), hits: [] })
+        buckets.set(key, { field, raw: val, label: tagLabel(field, val), hits: [] })
       }
       buckets.get(key)!.hits.push(e)
     }
   }
 
-  let best: { label: string; hits: Entry[] } | null = null
+  let best: { field: keyof Entry; raw: string; label: string; hits: Entry[] } | null = null
   for (const b of buckets.values()) {
     if (b.hits.length >= 3 && (!best || b.hits.length > best.hits.length)) {
       best = b
@@ -114,6 +127,7 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
     count,
     introText: temporalIntro(best.label, sorted),
     question: 'Was verbindest du mit diesen Momenten?',
+    relevantMeta: relevantMetaFromField(best.field, best.raw),
   }
 }
 
@@ -176,6 +190,36 @@ export function detectAllPhase1(entries: Entry[]): MirrorCandidate[] {
   return out
 }
 
+export function valenceShiftToMirrorCandidate(
+  stored: {
+    entry_ids: string[]
+    signal_strength: string
+    template_text: string
+    question: string
+    pattern_metadata: {
+      entry_early: string
+      entry_late: string
+      shift?: number
+      occurrence_count?: number
+    }
+  },
+  entries: Entry[],
+): MirrorCandidate | null {
+  const byId = new Map(entries.map(e => [e.id, e]))
+  const early = byId.get(stored.pattern_metadata.entry_early)
+  const late = byId.get(stored.pattern_metadata.entry_late)
+  if (!early || !late) return null
+  return {
+    entryIds: stored.entry_ids,
+    entries: [early, late],
+    source: 'valence_shift',
+    signalStrength: stored.signal_strength as MirrorCandidate['signalStrength'],
+    count: stored.pattern_metadata.occurrence_count ?? stored.entry_ids.length,
+    introText: stored.template_text,
+    question: stored.question,
+  }
+}
+
 export function candidateFromStored(
   stored: {
     entry_ids: string[]
@@ -184,12 +228,32 @@ export function candidateFromStored(
     intro_text?: string | null
     question?: string | null
     template_text?: string | null
+    pattern_metadata?: Record<string, unknown> | null
   },
   entries: Entry[],
 ): MirrorCandidate {
   const sorted = sortByDate(entries)
 
+  if (stored.template_text && stored.source === 'valence_shift' && stored.pattern_metadata) {
+    const vs = valenceShiftToMirrorCandidate(
+      {
+        entry_ids: stored.entry_ids,
+        signal_strength: stored.signal_strength,
+        template_text: stored.template_text,
+        question: stored.question ?? 'Was hat sich verändert?',
+        pattern_metadata: stored.pattern_metadata as {
+          entry_early: string
+          entry_late: string
+          occurrence_count?: number
+        },
+      },
+      entries,
+    )
+    if (vs) return vs
+  }
+
   if (stored.template_text) {
+    const antecedent = stored.pattern_metadata?.antecedent
     return {
       entryIds: stored.entry_ids,
       entries: pickDisplayEntries(sorted),
@@ -198,6 +262,9 @@ export function candidateFromStored(
       count: sorted.length,
       introText: stored.template_text,
       question: stored.question ?? 'Was fällt dir daran auf?',
+      relevantMeta: Array.isArray(antecedent)
+        ? metaLabelsFromAntecedent(antecedent as string[])
+        : undefined,
     }
   }
 

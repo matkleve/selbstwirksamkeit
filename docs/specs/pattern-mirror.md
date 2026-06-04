@@ -144,7 +144,112 @@ When unset: existing logic (`mirror_candidates` first, then live detection).
 
 ---
 
-## Test script
+## Mirror UI (`MirrorFlow.tsx`)
+
+Normative language per RFC 2119.
+
+### Loading screen
+
+- MUST use app design tokens (`--background` / `--bg-base`, `--foreground` / `--text-primary`)
+- MUST show loading copy sequentially (not all at once):
+  - „Lese deine Einträge…"
+  - „Suche nach Mustern…"
+  - „Gleiche Zeiträume ab…"
+  - „Bereite deinen Spiegel vor…"
+- MUST NOT use a dedicated dark canvas (`#0D0A07` or similar)
+- MUST NOT reveal all status lines immediately
+
+### Content
+
+- MUST use app tokens for surfaces and text: `--background`, `--foreground`, `--card` / `--bg-card`, `--border`
+- Timeline spine markers MAY be slightly larger than prototype defaults
+
+### Wenn-Dann
+
+- MUST use existing `Input`, `Button`, and `Badge` components
+- Primary action: `Button` primary variant; dismiss: `Button` ghost variant
+- Reminder chips: `Badge` (toggle via button wrapper)
+- MUST NOT use inline hardcoded colors or bespoke form controls
+
+### Entry cards (Mirror content)
+
+- MUST use existing `EntryDisplay` — compact/chips variant (`chips-closed` or equivalent), `menu={false}`
+- MUST show meta chips when present
+- MUST show date and time on one line, right-aligned: `15. MAI 2026  ·  12:05`
+- MUST NOT use bespoke card markup or inline card styles
+
+### Timeline markers
+
+- MUST be at least 20×20 px
+
+### Transition copy between entry cards
+
+Italic, small, muted (`--foreground` muted / `text-ink-3`). MUST map by day gap between consecutive cards:
+
+| Gap | Text |
+|-----|------|
+| `< 14` days | „Kurz darauf." |
+| `< 60` days | „Einen Monat später." |
+| `< 180` days | „{n} Monate später." (`n = round(days / 30)`) |
+| `< 365` days | „Ein halbes Jahr später." |
+| `≥ 365` days | „Fast ein Jahr später." |
+
+---
+
+## valence_shift detector
+
+Normative language per RFC 2119. Requires entry embeddings (semantic clusters from WGARM-EC pipeline).
+
+### Algorithm
+
+For each semantic cluster with **≥ 4 entries** and span **≥ 30 days** (by `created_at`):
+
+1. Sort cluster members by `created_at` ascending
+2. Split into **early** / **late** half by index (not by count threshold): `early = [0 .. mid)`, `late = [mid .. n)`
+3. `früh_avg` = mean `grid_x` (normalized −1…+1) of early half
+4. `spät_avg` = mean `grid_x` of late half
+5. `shift = spät_avg − früh_avg`
+6. If `|shift| > 0.35` → emit candidate
+
+### Signal strength
+
+| Condition | `signal_strength` |
+|-----------|-------------------|
+| `\|shift\| > 0.6` | `strong` |
+| `\|shift\| > 0.35` | `moderate` |
+
+### Source and metadata
+
+- `source = 'valence_shift'`
+- `pattern_metadata` MUST include: `entry_early`, `entry_late`, `shift`, `früh_avg`, `spät_avg`, `cluster_id`, `span_days`, `occurrence_count`, `anchor_entry_ids: [entry_early, entry_late]`
+- **Representative entry** per half: member whose embedding has highest cosine similarity to the half’s centroid (fallback: closest `grid_x` to half mean)
+
+### Template text — MUST be neutral (no evaluation)
+
+| Condition | `intro_text` / `template_text` |
+|-----------|-------------------------------|
+| `shift > 0.35` (early more negative) | „In Momenten wie diesen hat sich etwas verändert. Früher klang das schwerer." |
+| `shift < −0.35` (late more negative) | „In Momenten wie diesen klingt es zuletzt anders als noch vor einigen Monaten." |
+
+MUST NOT use evaluative phrasing („Es geht dir besser", „Du hast Fortschritte gemacht", „Es wird schlechter", etc.).
+
+### Mirror display
+
+1. Entry card — early anchor (date/time header)
+2. Transition line (see **Transition copy** table above)
+3. Entry card — late anchor
+4. Pattern text (`introText`)
+5. Question: **„Was hat sich verändert?"**
+
+Stärke MAY reuse the same candidate with different copy (out of scope here).
+
+### Implementation split
+
+- **`lib/wgarmEc.ts`**: cluster scan, shift math, templates, `ValenceShiftCandidate[]`
+- **`lib/patternDetection.ts`**: `MirrorSource` includes `valence_shift`; `MirrorCandidate` carries early/late entries; adapter from WGARM output
+- **`scripts/test-mirror.ts`**: MUST list `valence_shift` candidates alongside Phase-1 and WGARM-EC
+
+---
 
 `scripts/test-mirror.ts` — run with `npm run test:mirror`
 
