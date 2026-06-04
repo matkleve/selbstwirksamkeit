@@ -13,6 +13,24 @@ import { MirrorExpandShell } from '@/components/mirror/MirrorExpandShell'
 import { splitRevealWords } from '@/lib/mirrorReveal'
 import type { RefObject } from 'react'
 
+function MirrorWeiterButton({ onClick, disabled }: { onClick: () => void; disabled?: boolean }) {
+  return (
+    <div className="flex justify-end">
+      <Button
+        type="button"
+        variant="gold"
+        onClick={onClick}
+        disabled={disabled}
+        className="max-w-[11rem] w-full"
+        size="lg"
+      >
+        Weiter
+        <ArrowRight size={18} strokeWidth={2} aria-hidden />
+      </Button>
+    </div>
+  )
+}
+
 export function MirrorReflectionSection({
   blocksLength,
   reflectionText,
@@ -45,12 +63,7 @@ export function MirrorReflectionSection({
           rows={3}
           className="w-full"
         />
-        <div className="flex justify-end">
-          <Button type="button" onClick={onContinue} className="max-w-[11rem] w-full" size="lg">
-            Weiter
-            <ArrowRight size={18} strokeWidth={2} aria-hidden />
-          </Button>
-        </div>
+        <MirrorWeiterButton onClick={onContinue} />
       </div>
     </MirrorTimelineRow>
   )
@@ -65,7 +78,7 @@ export function MirrorIntentionSection({
   intentionComplete,
   duration,
   setDuration,
-  onSave,
+  onContinue,
 }: {
   blocksLength: number
   wennText: string
@@ -75,7 +88,7 @@ export function MirrorIntentionSection({
   intentionComplete: boolean
   duration: string | null
   setDuration: (v: string | null) => void
-  onSave: () => void
+  onContinue: () => void
 }) {
   return (
     <>
@@ -98,15 +111,7 @@ export function MirrorIntentionSection({
             </div>
           ))}
 
-          <Button
-            type="button"
-            onClick={onSave}
-            disabled={!intentionComplete}
-            className="w-full"
-            size="lg"
-          >
-            Intention speichern
-          </Button>
+          <MirrorWeiterButton onClick={onContinue} />
         </div>
       </MirrorTimelineRow>
 

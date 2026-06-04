@@ -96,6 +96,8 @@
   --danger:          #C4603A;
   --hint-ok:         #5A8A6A;
   --mirror-gold:     #C8A84B;
+  --mirror-gold-bg:  #F3EBD4;
+  --mirror-gold-bg-hover: #EDE3C4;
 
   /* Semantic aliases (Mirror spec / shadcn compat) */
   --background: var(--bg-base);
@@ -140,6 +142,8 @@
   --danger:          #D4886A;
   --hint-ok:         #7AB890;
   --mirror-gold:     #D4B86A;
+  --mirror-gold-bg:  #2E2818;
+  --mirror-gold-bg-hover: #3A3320;
 
   --background: var(--bg-base);
   --foreground: var(--text-primary);

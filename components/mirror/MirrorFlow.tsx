@@ -12,7 +12,6 @@ import { useMirrorLoadingPhase, useMirrorSession } from '@/components/mirror/Mir
 import { useMirrorNarrativeSchedule } from '@/components/mirror/MirrorFlow.useNarrativeSchedule'
 import {
   useMirrorSummaryReveal,
-  useMirrorSkipIntention,
 } from '@/components/mirror/MirrorFlow.useSummary'
 import { MirrorFlowLoading } from '@/components/mirror/MirrorFlow.loading'
 import { MirrorFlowChat } from '@/components/mirror/MirrorFlow.chat'
@@ -58,7 +57,6 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
   useMirrorSession(phase, candidate, sessionIdRef, supabase)
   useMirrorNarrativeSchedule(phase, blocks, candidate, sched, clear, setStates, setNarrativeDone)
   useMirrorSummaryReveal(showSummary, setSummaryWords)
-  useMirrorSkipIntention(pastReflection, wennText, dannText, setShowSummary)
 
   const blockWords = (text: string) => splitRevealWords(text)
   const wordProgress = (id: string, text: string) => states[id]?.wordCount ?? 0
@@ -77,20 +75,23 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
     scrollDown(true)
   }, [reflectionText, supabase, scrollDown])
 
-  const handleSaveIntention = async () => {
-    if (!wennText.trim() || !dannText.trim()) return
-    const reminderMap: Record<string, string> = {
-      Heute: 'today',
-      '3 Tage': '3days',
-      'Diese Woche': '7days',
+  const handleIntentionContinue = async () => {
+    const wenn = wennText.trim()
+    const dann = dannText.trim()
+    if (wenn && dann) {
+      const reminderMap: Record<string, string> = {
+        Heute: 'today',
+        '3 Tage': '3days',
+        'Diese Woche': '7days',
+      }
+      await supabase.from('implementation_intentions').insert({
+        wenn_text: wenn,
+        dann_text: dann,
+        wants_reminder: !!duration && duration !== 'Kein Reminder',
+        reminder_type: duration ? (reminderMap[duration] ?? null) : null,
+        active: true,
+      })
     }
-    await supabase.from('implementation_intentions').insert({
-      wenn_text: wennText.trim(),
-      dann_text: dannText.trim(),
-      wants_reminder: !!duration && duration !== 'Kein Reminder',
-      reminder_type: duration ? (reminderMap[duration] ?? null) : null,
-      active: true,
-    })
     setShowSummary(true)
     scrollDown(true)
   }
@@ -141,7 +142,7 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
                   intentionComplete={intentionComplete}
                   duration={duration}
                   setDuration={setDuration}
-                  onSave={() => void handleSaveIntention()}
+                  onContinue={() => void handleIntentionContinue()}
                 />
               </MirrorExpandShell>
             </>

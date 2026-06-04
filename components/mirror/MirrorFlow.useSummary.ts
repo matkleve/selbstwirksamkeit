@@ -22,16 +22,3 @@ export function useMirrorSummaryReveal(
     return () => summaryTimers.forEach(clearTimeout)
   }, [showSummary, setSummaryWords])
 }
-
-export function useMirrorSkipIntention(
-  pastReflection: boolean,
-  wennText: string,
-  dannText: string,
-  setShowSummary: (v: boolean) => void,
-) {
-  useEffect(() => {
-    if (pastReflection && !wennText && !dannText) {
-      setShowSummary(true)
-    }
-  }, [pastReflection, wennText, dannText, setShowSummary])
-}
