@@ -13,7 +13,8 @@
     "docker:env": "bash scripts/docker-env.sh",
     "fix:next": "bash scripts/fix-next-perms.sh",
     "seed:entries": "node scripts/seed-entries.mjs",
-    "test:mirror": "npx tsx scripts/test-mirror.ts"
+    "test:mirror": "npx tsx scripts/test-mirror.ts",
+    "backfill:embeddings": "node scripts/backfill-embeddings.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",

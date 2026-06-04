@@ -25,9 +25,9 @@ No free text analysis, no embeddings, no NLP.
 
 **Gate:** Phase 2 MUST NOT begin until Phase 1 is verified correct **and** explicitly confirmed by project lead. Agents MUST NOT self-authorize Phase 2 start.
 
-See `wgarm-ec.md` for the full algorithm spec.
+See `wgarm-ec.md` and `embeddings.md` for the full algorithm and embedding specs.
 
-- On entry save: embed text with context prefix `"[{tags}] {text}"` → `entries.embedding vector(1536)`
+- On entry save: embed via Mistral `mistral-embed` (see `embeddings.md`) with context prefix `"[{tags}] {text}"` → `entries.embedding vector(1024)`
 - Weekly job: semantic clustering + FP-Growth association rules → `mirror_candidates` with `source = 'wgarm_ec'`
 - Legacy temporal similarity (`embedding_temporal`, cosine > 0.75 AND span > 21 days) remains supported as fallback
 
@@ -106,6 +106,7 @@ Implementation MUST pause at these gates for explicit review:
 | After step | Deliverable | Proceed only when |
 |---|---|---|
 | Spec update | Diff of spec changes | Project lead confirms spec |
+| Embedding spec (`embeddings.md`) | Mistral model + vector(1024) decision | Project lead confirms spec |
 | Phase 1 complete | Test run with real entries | Project lead confirms detectors |
 | Phase 5 (WGARM-EC job) | Example mirror_candidates | Project lead confirms before Mirror displays them |
 | Phase 2 start | — | **Explicit confirmation required** — agents MUST NOT self-start Phase 2 |
@@ -116,8 +117,8 @@ Implementation MUST pause at these gates for explicit review:
 
 1. `mirror_candidates` + `mirror_sessions` + `implementation_intentions` migrations
 2. Phase 1 detectors (TypeScript, daily/on-demand)
-3. pgvector + `entries.embedding`
-4. Embedding on entry save (Edge Function)
+3. pgvector + `entries.embedding vector(1024)` — Mistral `mistral-embed` (see `embeddings.md`)
+4. Embedding on entry save (Edge Function, Mistral API)
 5. WGARM-EC weekly job (`services/wgarm-ec/`)
 6. Mirror frontend reads from `mirror_candidates` — never live-query as primary path
 7. Remove positive counterexample logic from Mirror (moved to Stärke)

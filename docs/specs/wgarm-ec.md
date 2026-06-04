@@ -18,6 +18,13 @@ WGARM-EC replaces naive embedding-pair similarity for Phase 2 pattern detection:
 
 Output: `mirror_candidates` rows with `source = 'wgarm_ec'`, `template_text`, `pattern_metadata`.
 
+## Embeddings
+
+Entry embeddings MUST be generated via Mistral `mistral-embed` (1024 dimensions).  
+See `embeddings.md` for API, secrets, and migration requirements.
+
+MUST NOT use OpenAI or Supabase `gte-small` (English-only).
+
 ## Grid normalization
 
 App grid uses −5…+5. WGARM-EC expects −1…+1:

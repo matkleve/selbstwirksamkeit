@@ -30,7 +30,7 @@ OPTIONAL aber RECOMMENDED:
   mood_tags:   string[]               Person, Ort, Gefühl, Aktivität
   hour_of_day: int (0–23)
   day_of_week: int (0–6)
-  embedding:   float[N]               Freitext-Embedding (text-embedding-3-small)
+  embedding:   float[1024]            Mistral mistral-embed (see docs/specs/embeddings.md)
   text:        string                 Originaltext
 ```
 
