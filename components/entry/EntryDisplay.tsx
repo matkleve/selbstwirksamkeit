@@ -10,6 +10,8 @@ import { EntryCardMenu } from '@/components/entry/EntryCardMenu'
 import { EntryDate } from '@/components/entry/EntryDate'
 import { EntryMetaChips } from '@/components/entry/EntryMetaChips'
 import { formatMirrorDateTime } from '@/lib/mirrorTransition'
+import { MirrorRevealWords } from '@/components/mirror/MirrorRevealWords'
+import { splitRevealWords } from '@/lib/mirrorReveal'
 import type { ReactNode } from 'react'
 
 export type EntryDisplayVariant =
@@ -41,7 +43,13 @@ export interface EntryDisplayProps {
   menu?: boolean
   /** Mirror: expand chips that match the pattern association */
   relevantMeta?: string[]
-  children?: React.ReactNode
+  /** Mirror: progressive word/chip reveal */
+  reveal?: {
+    headerWordCount: number
+    bodyWordCount: number
+    chipCount: number
+  }
+  children?: ReactNode
 }
 
 const lineClamp = {
@@ -80,12 +88,25 @@ function ColorDot({ entry, size }: { entry: Entry; size: EntryDisplaySize }) {
   )
 }
 
-function MirrorEntryHeader({ dateStr }: { dateStr: string }) {
+function MirrorEntryHeader({
+  dateStr,
+  reveal,
+}: {
+  dateStr: string
+  reveal?: EntryDisplayProps['reveal']
+}) {
+  const words = splitRevealWords(formatMirrorDateTime(dateStr))
+  const visible = reveal ? reveal.headerWordCount : words.length
   return (
     <div className="mb-1.5 flex justify-end">
-      <time dateTime={dateStr} className="text-xs uppercase tracking-wide text-ink-3">
-        {formatMirrorDateTime(dateStr)}
-      </time>
+      <MirrorRevealWords
+        as="time"
+        dateTime={dateStr}
+        words={words}
+        visibleCount={visible}
+        showCursor={!!reveal && visible < words.length}
+        className="text-xs uppercase tracking-wide text-ink-3"
+      />
     </div>
   )
 }
@@ -140,12 +161,17 @@ function wrapCard(
   padding: 'sm' | 'md',
   className: string | undefined,
   content: ReactNode,
+  mirrorAnimate = false,
 ) {
   if (!card) {
     return <div className={cn('min-w-0', className)}>{content}</div>
   }
   return (
-    <EntryCardShell entry={entry} padding={padding} className={cn('min-w-0', className)}>
+    <EntryCardShell
+      entry={entry}
+      padding={padding}
+      className={cn('min-w-0', mirrorAnimate && 'mirror-reveal-in', className)}
+    >
       {content}
     </EntryCardShell>
   )
@@ -164,6 +190,7 @@ export function EntryDisplay({
   card: cardProp,
   menu: menuProp,
   relevantMeta,
+  reveal,
   children,
 }: EntryDisplayProps) {
   const { entryNumber: entryNumberFromCtx } = useEntries()
@@ -183,7 +210,7 @@ export function EntryDisplay({
 
   const headerBlock =
     header === 'mirror' ? (
-      <MirrorEntryHeader dateStr={entry.created_at} />
+      <MirrorEntryHeader dateStr={entry.created_at} reveal={reveal} />
     ) : (
       <EntryHeader
         entry={entry}
@@ -233,6 +260,8 @@ export function EntryDisplay({
         : relevantMeta?.length
           ? 'selective'
           : 'closed'
+    const bodyWords = splitRevealWords(entry.text)
+    const bodyVisible = reveal ? reveal.bodyWordCount : bodyWords.length
     return wrapCard(
       entry,
       card,
@@ -240,11 +269,22 @@ export function EntryDisplay({
       className,
       <>
         {headerBlock}
-        <EntryBody text={entry.text} size={size} lines={lines} />
+        {reveal ? (
+          <MirrorRevealWords
+            as="p"
+            words={bodyWords}
+            visibleCount={bodyVisible}
+            showCursor={bodyVisible < bodyWords.length}
+            className={cn(entryTextStyle[size], lineClamp[lines])}
+          />
+        ) : (
+          <EntryBody text={entry.text} size={size} lines={lines} />
+        )}
         <EntryMetaChips
           groups={meta}
           mode={chipMode}
           relevantValues={relevantMeta}
+          visibleUnitCount={reveal?.chipCount}
           size={size}
           className="mt-2"
         />

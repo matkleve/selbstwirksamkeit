@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { MapPin, User, Zap, Activity } from 'lucide-react'
 import type { EntryMetaGroup, EntryMetaKind } from '@/lib/entryMeta'
 import { isMetaRelevant } from '@/lib/entryMeta'
@@ -23,40 +24,59 @@ interface Props {
   relevantValues?: string[]
   size?: 'sm' | 'md'
   className?: string
+  /** Mirror reveal: show first N chip units (open chips + popovers). */
+  visibleUnitCount?: number
 }
 
-export function EntryMetaChips({ groups, mode, relevantValues, size = 'sm', className }: Props) {
+export function EntryMetaChips({ groups, mode, relevantValues, size = 'sm', className, visibleUnitCount }: Props) {
   if (!groups.length) return null
 
+  const limit = visibleUnitCount ?? Number.POSITIVE_INFINITY
+
+  const wrapUnit = (node: ReactNode, key: string, index: number) =>
+    index < limit ? (
+      <span key={key} className="mirror-word-fade inline-flex">
+        {node}
+      </span>
+    ) : null
+
   if (mode === 'selective' && relevantValues?.length) {
+    let unitIndex = 0
     return (
       <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
         {groups.flatMap(g => {
           const { icon, label } = META_CONFIG[g.kind]
           const open = g.values.filter(v => isMetaRelevant(v, relevantValues))
           const closed = g.values.filter(v => !isMetaRelevant(v, relevantValues))
-          const nodes = open.map((value, i) => {
+          const nodes: ReactNode[] = []
+          for (const [i, value] of open.entries()) {
             const Icon = META_CONFIG[g.kind].icon
-            return (
-              <span
-                key={`${g.kind}-open-${i}`}
-                className={cn(chipFilled, size === 'sm' && 'h-6 min-h-6 max-h-6 px-2 text-xs')}
-              >
-                <Icon size={size === 'sm' ? 13 : 15} strokeWidth={1.75} aria-hidden />
-                <span>{value}</span>
-              </span>
-            )
-          })
-          if (closed.length) {
+            const idx = unitIndex++
             nodes.push(
-              <EntryMetaPopover
-                key={`${g.kind}-closed`}
-                icon={icon}
-                label={label}
-                count={closed.length}
-                items={closed}
-                size={size}
-              />,
+              wrapUnit(
+                <span className={cn(chipFilled, size === 'sm' && 'h-6 min-h-6 max-h-6 px-2 text-xs')}>
+                  <Icon size={size === 'sm' ? 13 : 15} strokeWidth={1.75} aria-hidden />
+                  <span>{value}</span>
+                </span>,
+                `${g.kind}-open-${i}`,
+                idx,
+              ),
+            )
+          }
+          if (closed.length) {
+            const idx = unitIndex++
+            nodes.push(
+              wrapUnit(
+                <EntryMetaPopover
+                  icon={icon}
+                  label={label}
+                  count={closed.length}
+                  items={closed}
+                  size={size}
+                />,
+                `${g.kind}-closed`,
+                idx,
+              ),
             )
           }
           return nodes
@@ -68,33 +88,40 @@ export function EntryMetaChips({ groups, mode, relevantValues, size = 'sm', clas
   if (mode === 'closed') {
     return (
       <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-        {groups.map(g => {
+        {groups.map((g, gi) => {
           const { icon, label } = META_CONFIG[g.kind]
-          return (
+          return wrapUnit(
             <EntryMetaPopover
-              key={g.kind}
               icon={icon}
               label={label}
               count={g.values.length}
               items={g.values}
               size={size}
-            />
+            />,
+            g.kind,
+            gi,
           )
         })}
       </div>
     )
   }
 
+  let unitIndex = 0
   return (
     <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
       {groups.flatMap(g => {
         const { icon: Icon } = META_CONFIG[g.kind]
-        return g.values.map((value, i) => (
-          <span key={`${g.kind}-${i}`} className={cn(chipFilled, size === 'sm' && 'h-6 min-h-6 max-h-6 px-2 text-xs')}>
-            <Icon size={size === 'sm' ? 13 : 15} strokeWidth={1.75} aria-hidden />
-            <span>{value}</span>
-          </span>
-        ))
+        return g.values.map((value, i) => {
+          const idx = unitIndex++
+          return wrapUnit(
+            <span className={cn(chipFilled, size === 'sm' && 'h-6 min-h-6 max-h-6 px-2 text-xs')}>
+              <Icon size={size === 'sm' ? 13 : 15} strokeWidth={1.75} aria-hidden />
+              <span>{value}</span>
+            </span>,
+            `${g.kind}-${i}`,
+            idx,
+          )
+        })
       })}
     </div>
   )

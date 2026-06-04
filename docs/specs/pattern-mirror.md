@@ -2,6 +2,8 @@
 
 Combines Phase-1 structural detectors, WGARM-EC association-rule engine, and Mirror invariants.
 
+**Insight types, templates, and response blocks:** `insight-types.md` (v1.2).
+
 ---
 
 ## Phase separation
@@ -146,7 +148,7 @@ When unset: existing logic (`mirror_candidates` first, then live detection).
 
 ## Mirror UI (`MirrorFlow.tsx`)
 
-Normative language per RFC 2119.
+Normative language per RFC 2119. **Response block order and invariants:** `insight-types.md` § Response Blocks.
 
 ### Loading screen
 
@@ -164,12 +166,17 @@ Normative language per RFC 2119.
 - MUST use app tokens for surfaces and text: `--background`, `--foreground`, `--card` / `--bg-card`, `--border`
 - Timeline spine markers MAY be slightly larger than prototype defaults
 
-### Wenn-Dann
+### Wenn-Dann & response flow
 
-- MUST use existing `Input`, `Button`, and `Badge` components
-- Primary action: `Button` primary variant; dismiss: `Button` ghost variant
-- Reminder chips: `Badge` (toggle via button wrapper)
-- MUST NOT use inline hardcoded colors or bespoke form controls
+- MUST follow universal response blocks in `insight-types.md`: Frage → Reflexion → Wenn-Dann → Reminder (conditional) → Summary last
+- Reflexion: `Textarea`, placeholder `…`, link **„→ weiter ohne Antwort"** — MUST NOT show confirmation after continue
+- Wenn-Dann placeholders: „es 21 Uhr wird · ich heimkomme" / „atme ich dreimal durch"
+- Save MUST stay disabled until both Wenn and Dann are filled
+- Reminder chips MUST NOT appear until both Wenn-Dann fields are filled
+- Summary MUST be the last visible block; MUST NOT use fanfare after save
+- Reflexion text MUST persist to `mirror_sessions.user_response`
+- MUST use existing `Input`, `Button`, `Badge`, `Textarea`
+- MUST NOT use a „Schließen" button equal to primary continue
 
 ### Entry cards (Mirror content)
 

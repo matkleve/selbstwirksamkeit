@@ -391,8 +391,36 @@
 
 /* MirrorFlow animations (no hardcoded theme colors) */
 @keyframes mirror-slide-up {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(1.25rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mirror-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes mirror-word-in {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+  }
 }
 @keyframes mirror-fade-in {
   from { opacity: 0; transform: translateY(5px); }
@@ -412,7 +440,48 @@
 }
 
 @layer components {
-  .mirror-slide-up { animation: mirror-slide-up 0.42s cubic-bezier(0.34, 1.4, 0.64, 1) forwards; }
+  .mirror-chat-viewport {
+    height: calc(100dvh - 52px - 20px - 96px - env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+  }
+
+  .mirror-chat-stack {
+    box-sizing: border-box;
+    display: flex;
+    width: 100%;
+    min-height: 100%;
+    flex-direction: column;
+  }
+
+  .mirror-chat-spacer {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .mirror-chat-messages {
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+  }
+
+  .mirror-slide-up {
+    transform-origin: bottom center;
+    animation: mirror-slide-up 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .mirror-word-fade {
+    animation: mirror-word-in 0.48s ease forwards;
+  }
+
+  .mirror-reveal-in {
+    opacity: 0;
+    transform-origin: bottom center;
+    animation: mirror-reveal-in 0.58s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
   .mirror-fade-in { animation: mirror-fade-in 0.4s ease forwards; }
   .mirror-fade { animation: mirror-fade 0.35s ease forwards; }
   .mirror-blink { animation: mirror-blink 0.9s ease infinite; }
