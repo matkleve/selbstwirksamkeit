@@ -14,6 +14,7 @@
     "sync:env": "bash scripts/sync-local-env.sh",
     "fix:next": "bash scripts/fix-next-perms.sh",
     "seed:entries": "node scripts/seed-entries.mjs",
+    "seed:entries:local": "node scripts/seed-entries.mjs --clear",
     "test:mirror": "npx tsx scripts/test-mirror.ts",
     "backfill:embeddings": "node scripts/backfill-embeddings.mjs"
   },

@@ -117,10 +117,10 @@ export const zoneTexts: Record<ZoneKey, string[]> = {
 // Pole colours: very desaturated, rendered at 10% opacity via inset box-shadow
 
 const POLES = {
-  neg_ich:    [186, 144,  82] as const,  // warm ochre
-  pos_ich:    [ 72, 168, 158] as const,  // muted teal
-  neg_andere: [168, 118, 128] as const,  // dusty mauve
-  pos_andere: [140, 120, 188] as const,  // muted violet
+  neg_ich:    [185, 100,  72] as const,  // terracotta
+  pos_ich:    [ 88, 152, 118] as const,  // sage
+  neg_andere: [172, 108, 128] as const,  // dusk rose
+  pos_andere: [ 88, 138, 178] as const,  // sky
 }
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
@@ -132,12 +132,121 @@ function lerpRgb(
   return [Math.round(lerp(a[0], b[0], t)), Math.round(lerp(a[1], b[1], t)), Math.round(lerp(a[2], b[2], t))]
 }
 
-export function bilinearColor(x: number, y: number): [number, number, number] {
-  const tx = (x + 5) / 10   // 0 = neg-x side, 1 = pos-x side
-  const ty = (y + 5) / 10   // 0 = ich side (y=-5), 1 = andere side (y=+5)
+/** Mild grid values (−2…+2) already lean toward a pole, not only at ±5. */
+const AXIS_CURVE = 0.62
+
+function expandAxis(v: number): number {
+  const sign = v >= 0 ? 1 : -1
+  const mag = Math.min(1, Math.abs(v) / 5)
+  return 0.5 + sign * Math.pow(mag, AXIS_CURVE) * 0.5
+}
+
+function bilinearFromUnit(tx: number, ty: number): [number, number, number] {
   const bottom = lerpRgb(POLES.neg_ich, POLES.pos_ich, tx)
-  const top    = lerpRgb(POLES.neg_andere, POLES.pos_andere, tx)
+  const top = lerpRgb(POLES.neg_andere, POLES.pos_andere, tx)
   return lerpRgb(bottom, top, ty)
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h = 0
+  let s = 0
+  const l = (max + min) / 2
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6
+        break
+      case g:
+        h = ((b - r) / d + 2) / 6
+        break
+      default:
+        h = ((r - g) / d + 4) / 6
+        break
+    }
+  }
+  return [h * 360, s, l]
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h /= 360
+  if (s === 0) {
+    const v = Math.round(l * 255)
+    return [v, v, v]
+  }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+  const p = 2 * l - q
+  const hue = (t: number) => {
+    let x = t
+    if (x < 0) x += 1
+    if (x > 1) x -= 1
+    if (x < 1 / 6) return p + (q - p) * 6 * x
+    if (x < 1 / 2) return q
+    if (x < 2 / 3) return p + (q - p) * (2 / 3 - x) * 6
+    return p
+  }
+  return [
+    Math.round(hue(h + 1 / 3) * 255),
+    Math.round(hue(h) * 255),
+    Math.round(hue(h - 1 / 3) * 255),
+  ]
+}
+
+function poleHueAt(x: number, y: number): number {
+  if (x >= 0 && y < 0) return rgbToHsl(...POLES.pos_ich)[0]
+  if (x >= 0 && y >= 0) return rgbToHsl(...POLES.pos_andere)[0]
+  if (x < 0 && y >= 0) return rgbToHsl(...POLES.neg_andere)[0]
+  return rgbToHsl(...POLES.neg_ich)[0]
+}
+
+function enrichChroma(rgb: [number, number, number], dist: number, x: number, y: number): [number, number, number] {
+  let [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2])
+  if (s < 0.08) h = poleHueAt(x, y)
+  const nearCenter = dist < 0.22
+  const minSat = nearCenter ? 0.34 : 0.2 + (1 - dist) * 0.16
+  const mult = 1.28 + (1 - dist) * 0.42
+  s = Math.min(0.82, Math.max(minSat, s * mult))
+  l = Math.min(0.9, Math.max(0.42, l))
+  return hslToRgb(h, s, l)
+}
+
+/** Axis-led tint when one dimension is near neutral — avoids grey “cross” at x≈0 or y≈0. */
+function axisLeanColor(x: number, y: number): [number, number, number] {
+  const ax = Math.abs(x)
+  const ay = Math.abs(y)
+  if (ax < 0.2 && ay < 0.2) {
+    const ich = lerpRgb(POLES.neg_ich, POLES.pos_ich, expandAxis(x || 0.6))
+    const andere = lerpRgb(POLES.neg_andere, POLES.pos_andere, expandAxis(y || -0.6))
+    return lerpRgb(ich, andere, 0.48)
+  }
+  if (ax >= ay) {
+    return lerpRgb(POLES.neg_ich, POLES.pos_ich, expandAxis(x))
+  }
+  const ichMid = lerpRgb(POLES.neg_ich, POLES.pos_ich, 0.5)
+  const andereMid = lerpRgb(POLES.neg_andere, POLES.pos_andere, 0.5)
+  return lerpRgb(ichMid, andereMid, expandAxis(y))
+}
+
+export function bilinearColor(x: number, y: number): [number, number, number] {
+  const tx = expandAxis(x)
+  const ty = expandAxis(y)
+  const base = bilinearFromUnit(tx, ty)
+  const dist = Math.hypot(x / 5, y / 5)
+
+  let rgb = base
+  if (dist < 0.58) {
+    const lean = axisLeanColor(x, y)
+    const t = (0.58 - dist) / 0.58
+    rgb = lerpRgb(base, lean, t * 0.72)
+  }
+
+  return enrichChroma(rgb, dist, x, y)
 }
 
 export function cardTintShadow(x: number, y: number, opacity = 0.22): string {

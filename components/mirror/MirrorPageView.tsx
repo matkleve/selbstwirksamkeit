@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bell } from 'lucide-react'
+import { Bell, Eye } from 'lucide-react'
 import { PageHeader } from '@/components/PageHeader'
 import { RemindersPanel } from '@/components/RemindersPanel'
 import MirrorFlow from '@/components/MirrorFlow'
@@ -129,6 +129,7 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
             disabled={opening}
             onClick={() => void handleOpen()}
           >
+            <Eye size={18} strokeWidth={1.75} aria-hidden />
             Spiegel öffnen
           </Button>
         </div>

@@ -16,10 +16,10 @@ import { EntryDisplay } from '@/components/entry'
 import { PageHeader } from '@/components/PageHeader'
 
 const QUADRANT_META = [
-  { key: 'neg-other' as const, label: '− / andere', bar: 'bg-v-neg-mid' },
-  { key: 'pos-other' as const, label: '+ / andere', bar: 'bg-v-pos-mid' },
-  { key: 'neg-self' as const, label: '− / ich', bar: 'bg-v-neg-mid' },
-  { key: 'pos-self' as const, label: '+ / ich', bar: 'bg-v-pos-mid' },
+  { key: 'neg-other' as const, label: '− / andere', bar: 'bg-grid-neg-andere' },
+  { key: 'pos-other' as const, label: '+ / andere', bar: 'bg-grid-pos-andere' },
+  { key: 'neg-self' as const, label: '− / ich', bar: 'bg-grid-neg-ich' },
+  { key: 'pos-self' as const, label: '+ / ich', bar: 'bg-grid-pos-ich' },
 ]
 
 export default function DashboardView() {
@@ -64,7 +64,14 @@ export default function DashboardView() {
     ].map(({ label, sublabel, start, end }) => {
       const pe = entries.filter(e => { const h = new Date(e.created_at).getHours(); return h >= start && h <= end })
       const wv = pe.filter(e => e.grid_x !== null)
-      return { label, sublabel, count: pe.length, avgValence: wv.length ? wv.reduce((s, e) => s + (e.grid_x ?? 0), 0) / wv.length : null }
+      const wy = wv.filter(e => e.grid_y !== null)
+      return {
+        label,
+        sublabel,
+        count: pe.length,
+        avgValence: wv.length ? wv.reduce((s, e) => s + (e.grid_x ?? 0), 0) / wv.length : null,
+        avgGridY: wy.length ? wy.reduce((s, e) => s + (e.grid_y ?? 0), 0) / wy.length : null,
+      }
     })
 
     const bodyGroups = (['stressed', 'calm', 'tired'] as BodyState[]).map(state => {

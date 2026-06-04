@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { getValenceColor } from '@/lib/types'
+import { calendarDayBackground } from '@/lib/gridColors'
 
 export interface CalDay {
   dateStr: string
   count: number
   avgValence: number | null
+  avgGridX: number | null
+  avgGridY: number | null
 }
 
 interface Props {
@@ -111,10 +113,7 @@ export default function CalendarHeatmap({ weeks }: Props) {
               {weeks.map((week, wi) => (
                 <div key={wi} className="flex shrink-0 flex-col gap-[3px]">
                   {week.map((day, di) => {
-                    const pct = day.count === 0 ? 0 : Math.min(45 + (day.count - 1) * 15, 80)
-                    const bg = day.count === 0
-                      ? 'var(--bg-subtle)'
-                      : `color-mix(in srgb, ${getValenceColor(day.avgValence)} ${pct}%, var(--bg-subtle))`
+                    const bg = calendarDayBackground(day.count, day.avgGridX, day.avgGridY)
                     const title = day.count > 0
                       ? `${day.dateStr}: ${day.count} Eintrag${day.count > 1 ? 'e' : ''}, Ø ${day.avgValence?.toFixed(1) ?? '–'}`
                       : day.dateStr

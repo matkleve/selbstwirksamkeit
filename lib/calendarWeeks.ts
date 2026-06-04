@@ -46,10 +46,13 @@ export function buildCalendarWeeks(entries: Entry[]): CalDay[][] {
     const day = String(d.getDate()).padStart(2, '0')
     const dateStr = `${y}-${mo}-${day}`
     const de = entries.filter(e => e.created_at.slice(0, 10) === dateStr && e.grid_x !== null)
+    const withY = de.filter(e => e.grid_y !== null)
     return {
       dateStr,
       count: de.length,
       avgValence: de.length ? de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length : null,
+      avgGridX: de.length ? de.reduce((s, e) => s + (e.grid_x ?? 0), 0) / de.length : null,
+      avgGridY: withY.length ? withY.reduce((s, e) => s + (e.grid_y ?? 0), 0) / withY.length : null,
     }
   })
 

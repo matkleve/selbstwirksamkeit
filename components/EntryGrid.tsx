@@ -1,8 +1,9 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Users, User } from 'lucide-react'
 import type { GridPoint } from '@/lib/types'
+import { gridPct } from '@/lib/gridCoords'
 import { bilinearColor } from '@/lib/gridZones'
 
 interface EntryGridProps {
@@ -14,12 +15,9 @@ function snap(v: number): number {
   return Math.max(-5, Math.min(5, Math.round(v * 10) / 10))
 }
 
-function gridToPct(p: GridPoint) {
-  return { x: ((p.x + 5) / 10) * 100, y: ((5 - p.y) / 10) * 100 }
-}
-
 function toSvgPct(p: GridPoint) {
-  return gridToPct(p)
+  const { left, top } = gridPct(p.x, p.y)
+  return { x: left, y: top }
 }
 
 function readGridPoint(
@@ -65,9 +63,16 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
   const [trailFading, setTrailFading] = useState(false)
   const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  const trailFilterId = useId().replace(/:/g, '')
+  const trailGradId = useId().replace(/:/g, '')
   const [r, g, b] = bilinearColor(value.x, value.y)
-  const dotColor = `rgb(${r},${g},${b})`
-  const dotPct = gridToPct(value)
+  const dotColor = `rgb(${r}, ${g}, ${b})`
+  const dotPct = gridPct(value.x, value.y)
+  const trailPath = trail.length > 1 ? catmullRomPath(trail) : ''
+  const trailEnds =
+    trail.length > 1
+      ? { start: toSvgPct(trail[0]), end: toSvgPct(trail[trail.length - 1]!) }
+      : null
 
   function readPos(e: React.PointerEvent): GridPoint {
     const el = gridRef.current!
@@ -133,26 +138,63 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+        className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
       >
         <div
-          className="absolute inset-3 pointer-events-none bg-subtle bg-center [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px]"
+          className="absolute inset-0 pointer-events-none overflow-hidden bg-subtle [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
           aria-hidden
         >
-          {trail.length > 1 && (
+          {trailPath && (
             <svg
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
               className="absolute inset-0 size-full"
               style={{
-                opacity: trailFading ? 0 : 0.5,
+                opacity: trailFading ? 0 : 1,
                 transition: trailFading ? 'opacity 1500ms ease' : 'none',
               }}
             >
+              <defs>
+                {trailEnds && (
+                  <linearGradient
+                    id={trailGradId}
+                    gradientUnits="userSpaceOnUse"
+                    x1={trailEnds.start.x}
+                    y1={trailEnds.start.y}
+                    x2={trailEnds.end.x}
+                    y2={trailEnds.end.y}
+                  >
+                    <stop offset="0%" stopColor={dotColor} stopOpacity={0} />
+                    <stop offset="30%" stopColor={dotColor} stopOpacity={0.08} />
+                    <stop offset="70%" stopColor={dotColor} stopOpacity={0.22} />
+                    <stop offset="100%" stopColor={dotColor} stopOpacity={0.38} />
+                  </linearGradient>
+                )}
+                <filter
+                  id={trailFilterId}
+                  x="-50%"
+                  y="-50%"
+                  width="200%"
+                  height="200%"
+                  colorInterpolationFilters="sRGB"
+                >
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
+                </filter>
+              </defs>
               <path
-                d={catmullRomPath(trail)}
+                d={trailPath}
                 fill="none"
-                stroke={dotColor}
+                stroke={`url(#${trailGradId})`}
+                strokeWidth={3.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                filter={`url(#${trailFilterId})`}
+              />
+              <path
+                d={trailPath}
+                fill="none"
+                stroke={`url(#${trailGradId})`}
                 strokeWidth={1}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -164,8 +206,8 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
           <div
             className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
             style={{
-              left: `${dotPct.x}%`,
-              top: `${dotPct.y}%`,
+              left: `${dotPct.left}%`,
+              top: `${dotPct.top}%`,
               background: dotColor,
               boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
               transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',

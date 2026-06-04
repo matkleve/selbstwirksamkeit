@@ -42,10 +42,21 @@ the 2D grid. Very desaturated — only 10% opacity over card white.
 
 | Quadrant | RGB |
 |---|---|
-| neg/ich (x<0, y<0) | `rgb(186, 144, 82)` — warm ochre |
-| pos/ich (x>0, y<0) | `rgb(72, 168, 158)` — muted teal |
-| neg/andere (x<0, y>0) | `rgb(168, 118, 128)` — dusty mauve |
-| pos/andere (x>0, y>0) | `rgb(140, 120, 188)` — muted violet |
+| neg/ich (x<0, y<0) | `rgb(185, 100, 72)` — terracotta |
+| pos/ich (x>0, y<0) | `rgb(88, 152, 118)` — sage |
+| neg/andere (x<0, y>0) | `rgb(172, 108, 128)` — dusk rose |
+| pos/andere (x>0, y>0) | `rgb(88, 138, 178)` — sky |
+
+CSS variables: `--grid-neg-ich`, … → Tailwind `bg-grid-*`. Calendar heatmap and quadrant bars use `lib/gridColors.ts` (`bilinearColor`), not legacy `--valence-*` blue/orange.
+
+**Grid tint** (`lib/gridTint.ts`, `components/GridTintBackground.tsx`): smoke + hero from `grid_x`/`grid_y`. Presets: `card`, `card-compact`, `button`, `flat`. Use on any `relative overflow-hidden` surface; pair with `gridTintBackgroundStyle()` for flat base mix.
+
+```tsx
+<div className="relative overflow-hidden rounded-card border" style={{ background: gridTintBackgroundStyle({ x, y }, 'button'), borderColor: gridTintBorderStyle({ x, y }, 'button') }}>
+  <GridTintBackground x={x} y={y} preset="button" />
+  <span className="relative z-[1]">…</span>
+</div>
+```
 
 ### Typography
 

@@ -113,9 +113,9 @@ function TrajectoryLineChart({ data, mode }: Props) {
       )
       : (
         <>
-          <stop offset="0%" stopColor="rgb(186, 144, 82)" />
+          <stop offset="0%" stopColor="rgb(185, 100, 72)" />
           <stop offset="50%" stopColor="var(--valence-neutral)" />
-          <stop offset="100%" stopColor="rgb(140, 120, 188)" />
+          <stop offset="100%" stopColor="rgb(88, 138, 178)" />
         </>
       )
 

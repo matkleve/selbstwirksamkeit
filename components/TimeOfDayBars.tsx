@@ -1,10 +1,11 @@
-import { getValenceColor } from '@/lib/types'
+import { gridColorMix } from '@/lib/gridColors'
 
 export interface DayPeriod {
   label: string
   sublabel: string
   count: number
   avgValence: number | null
+  avgGridY?: number | null
 }
 
 interface Props {
@@ -19,9 +20,12 @@ export default function TimeOfDayBars({ periods }: Props) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 10, height: BAR_H, position: 'relative' }}>
-        {periods.map(({ label, count, avgValence }) => {
+        {periods.map(({ label, count, avgValence, avgGridY }) => {
           const barH = count > 0 ? Math.max((count / maxCount) * BAR_H, 8) : 3
-          const color = count > 0 ? getValenceColor(avgValence) : 'var(--bg-subtle)'
+          const color =
+            count > 0 && avgValence !== null
+              ? gridColorMix(avgValence, avgGridY ?? null, 72, 'var(--bg-card)')
+              : 'var(--bg-subtle)'
           return (
             <div key={label} style={{ flex: 1, position: 'relative' }}>
               {count > 0 && (

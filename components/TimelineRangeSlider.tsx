@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Entry } from '@/lib/types'
-import { getValenceColor } from '@/lib/types'
+import { gridColorRgb } from '@/lib/gridColors'
 import { cn } from '@/lib/cn'
 import {
   dateToRatio,
@@ -56,12 +56,19 @@ export function TimelineRangeSlider({
 
   const dayMarkers = useMemo(() => {
     return [...byDay.entries()].map(([date, dayEntries]) => {
-      const avgX =
-        dayEntries.reduce((s, e) => s + (e.grid_x ?? 0), 0) / dayEntries.length
+      const withX = dayEntries.filter(e => e.grid_x !== null)
+      if (!withX.length) {
+        return { date, ratio: dateToRatio(date, bounds), color: 'var(--text-muted)', count: dayEntries.length }
+      }
+      const withY = dayEntries.filter(e => e.grid_y !== null)
+      const avgX = withX.reduce((s, e) => s + (e.grid_x ?? 0), 0) / withX.length
+      const avgY = withY.length
+        ? withY.reduce((s, e) => s + (e.grid_y ?? 0), 0) / withY.length
+        : 0
       return {
         date,
         ratio: dateToRatio(date, bounds),
-        color: getValenceColor(Math.round(avgX)),
+        color: gridColorRgb(avgX, avgY),
         count: dayEntries.length,
       }
     })

@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/cn'
+import { GridTintBackground } from '@/components/GridTintBackground'
 import { entryCardBackground, entryCardBorderColor } from '@/lib/entryCardTint'
 import type { Entry } from '@/lib/types'
 import type { ReactNode } from 'react'
@@ -16,16 +17,21 @@ export function EntryCardShell({ entry, children, className, padding = 'sm' }: P
   return (
     <div
       className={cn(
-        'rounded-card border shadow-card',
+        'relative overflow-hidden rounded-card border shadow-card',
         padding === 'sm' ? 'px-3.5 pb-3 pt-2' : 'px-4 pb-4 pt-2.5 md:px-[18px] md:pb-[18px] md:pt-3',
         className,
       )}
       style={{
-        background: entryCardBackground(entry),
-        borderColor: entryCardBorderColor(entry),
+        background: entryCardBackground(entry, padding === 'sm'),
+        borderColor: entryCardBorderColor(entry, padding === 'sm'),
       }}
     >
-      {children}
+      <GridTintBackground
+        x={entry.grid_x}
+        y={entry.grid_y}
+        preset={padding === 'sm' ? 'card-compact' : 'card'}
+      />
+      <div className="relative z-[1]">{children}</div>
     </div>
   )
 }

@@ -15,7 +15,7 @@ const base =
 const variants: Record<ButtonVariant, string> = {
   primary: [
     'bg-primary text-primary-fg border border-transparent',
-    'hover:bg-[var(--primary-hover)]',
+    'primary-hover-dimensions',
     'active:scale-[0.97]',
   ].join(' '),
   gold: [

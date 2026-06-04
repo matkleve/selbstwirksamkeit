@@ -56,9 +56,9 @@ export default function TrajectoryGridChart({ entries }: Props) {
       </div>
 
       <div className="relative aspect-square w-full overflow-hidden rounded-field bg-subtle p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]">
-        <div className="absolute inset-3">
+        <div className="absolute inset-0">
           <div
-            className="pointer-events-none absolute inset-0 bg-center [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px]"
+            className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
             aria-hidden
           />
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 size-full">

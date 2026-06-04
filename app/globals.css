@@ -41,13 +41,19 @@
   --color-nav-active:    var(--nav-active-fg);
   --color-nav-active-bg: var(--nav-active-bg);
 
-  /* Valence (charts, bars) */
+  /* Valence (1D fallback when only grid_x) */
   --color-v-pos-strong: var(--valence-pos-strong);
   --color-v-pos-mid:    var(--valence-pos-mid);
   --color-v-pos-weak:   var(--valence-pos-weak);
   --color-v-neg-strong: var(--valence-neg-strong);
   --color-v-neg-mid:    var(--valence-neg-mid);
   --color-v-neutral:    var(--valence-neutral);
+
+  /* Grid poles (Ember & Jade — calendar, quadrant bars, cards) */
+  --color-grid-neg-ich:    var(--grid-neg-ich);
+  --color-grid-pos-ich:    var(--grid-pos-ich);
+  --color-grid-neg-andere: var(--grid-neg-andere);
+  --color-grid-pos-andere: var(--grid-pos-andere);
 }
 
 @theme {
@@ -86,7 +92,27 @@
   --valence-neg-weak:   #E0B09A;
   --valence-neutral:    #C4B9AE;
 
+  --grid-neg-ich:    rgb(185, 100, 72);
+  --grid-pos-ich:    rgb(88, 152, 118);
+  --grid-neg-andere: rgb(172, 108, 128);
+  --grid-pos-andere: rgb(88, 138, 178);
+
   --grid-dot: rgba(0,0,0,0.11);
+
+  /* Grid dimension poles (lib/gridZones.ts) — ±ich / ±andere */
+  --grid-pole-neg-ich: rgb(185, 100, 72);
+  --grid-pole-pos-ich: rgb(88, 152, 118);
+  --grid-pole-neg-andere: rgb(172, 108, 128);
+  --grid-pole-pos-andere: rgb(88, 138, 178);
+
+  /* Primary hover: airy color clouds over button base (low opacity) */
+  --grid-mist-hover-base: var(--primary);
+  --grid-mist-hover-image:
+    radial-gradient(ellipse 150% 130% at 8% 55%, rgb(185 100 72 / 0.38), transparent 76%),
+    radial-gradient(ellipse 140% 150% at 96% 32%, rgb(88 138 178 / 0.34), transparent 74%),
+    radial-gradient(ellipse 160% 110% at 50% 108%, rgb(88 152 118 / 0.32), transparent 72%),
+    radial-gradient(ellipse 130% 140% at 84% 68%, rgb(172 108 128 / 0.3), transparent 75%),
+    radial-gradient(ellipse 100% 90% at 42% 38%, rgb(88 138 178 / 0.18), transparent 70%);
 
   --field-bg:        var(--bg-field);
   --field-bg-hover:  #F0EDE8;
@@ -133,7 +159,25 @@
   --valence-neg-weak:   #EAB89A;
   --valence-neutral:    #504840;
 
+  --grid-neg-ich:    rgb(185, 100, 72);
+  --grid-pos-ich:    rgb(88, 152, 118);
+  --grid-neg-andere: rgb(172, 108, 128);
+  --grid-pos-andere: rgb(88, 138, 178);
+
   --grid-dot: rgba(255,255,255,0.09);
+
+  --grid-pole-neg-ich: rgb(198, 112, 84);
+  --grid-pole-pos-ich: rgb(98, 168, 132);
+  --grid-pole-neg-andere: rgb(188, 118, 140);
+  --grid-pole-pos-andere: rgb(98, 152, 194);
+
+  --grid-mist-hover-base: var(--primary);
+  --grid-mist-hover-image:
+    radial-gradient(ellipse 150% 130% at 10% 52%, rgb(198 112 84 / 0.28), transparent 78%),
+    radial-gradient(ellipse 140% 150% at 94% 34%, rgb(98 152 194 / 0.26), transparent 76%),
+    radial-gradient(ellipse 160% 110% at 48% 106%, rgb(98 168 132 / 0.24), transparent 74%),
+    radial-gradient(ellipse 130% 140% at 82% 70%, rgb(188 118 140 / 0.22), transparent 77%),
+    radial-gradient(ellipse 100% 90% at 44% 40%, rgb(98 152 194 / 0.14), transparent 72%);
 
   --field-bg:           #2A2724;
   --field-bg-hover:     #322E2A;
@@ -161,6 +205,50 @@
 
 /* ── Layout + component helpers ── */
 @layer components {
+  /* Primary CTA hover: soft overlapping dimension clouds */
+  .primary-hover-dimensions {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .primary-hover-dimensions:hover:not(:disabled) {
+    background-color: var(--grid-mist-hover-base);
+    background-image: var(--grid-mist-hover-image);
+    background-size: 125% 125%, 120% 120%, 130% 130%, 118% 118%, 110% 110%;
+    background-position: 0% 50%, 100% 40%, 50% 100%, 85% 70%, 45% 45%;
+    animation: primary-mist-drift 16s ease-in-out infinite alternate;
+    color: #fafaf8;
+    text-shadow: 0 1px 2px rgb(28 25 23 / 0.18);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 14px rgb(0 0 0 / 0.12);
+  }
+
+  .dark .primary-hover-dimensions:hover:not(:disabled),
+  .dark .btn-primary:hover:not(:disabled) {
+    color: var(--primary-fg);
+    text-shadow: none;
+    border-color: rgb(255 255 255 / 0.1);
+    box-shadow:
+      0 0 0 1px rgb(255 255 255 / 0.06),
+      0 4px 18px rgb(0 0 0 / 0.22);
+  }
+
+  @keyframes primary-mist-drift {
+    0% {
+      background-position: 0% 52%, 100% 38%, 48% 102%, 84% 72%, 42% 42%;
+    }
+    100% {
+      background-position: 12% 58%, 88% 44%, 44% 96%, 76% 76%, 50% 48%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .primary-hover-dimensions:hover:not(:disabled) {
+      animation: none;
+    }
+  }
+
   .page {
     min-height: 100vh;
     background-color: var(--bg-base);
@@ -261,10 +349,21 @@
     color: var(--primary-fg);
     border: 1px solid transparent;
     cursor: pointer;
-    transition: background-color 150ms ease, transform 100ms ease;
+    transition: background 200ms ease, color 150ms ease, transform 100ms ease;
   }
 
-  .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+  .btn-primary.primary-hover-dimensions:hover:not(:disabled),
+  .btn-primary:hover:not(:disabled) {
+    background-color: var(--grid-mist-hover-base);
+    background-image: var(--grid-mist-hover-image);
+    background-size: 125% 125%, 120% 120%, 130% 130%, 118% 118%, 110% 110%;
+    background-position: 0% 50%, 100% 40%, 50% 100%, 85% 70%, 45% 45%;
+    animation: primary-mist-drift 16s ease-in-out infinite alternate;
+    color: #fafaf8;
+    text-shadow: 0 1px 2px rgb(28 25 23 / 0.18);
+    border-color: rgb(255 255 255 / 0.06);
+    box-shadow: 0 2px 14px rgb(0 0 0 / 0.12);
+  }
   .btn-primary:active:not(:disabled) { transform: scale(0.97); }
   .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
@@ -736,5 +835,125 @@
 
   a[href] {
     cursor: pointer;
+  }
+
+  /* Grid tint — coloured smoke + hero (cards, buttons, …) */
+  .grid-tint {
+    isolation: isolate;
+  }
+
+  .grid-tint-smoke {
+    position: absolute;
+    inset: 0;
+    mix-blend-mode: soft-light;
+    opacity: 0.92;
+  }
+
+  .grid-tint-blob {
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+
+  .grid-tint-blob--smoke {
+    filter: blur(56px);
+  }
+
+  .grid-tint-blob--hero {
+    z-index: 1;
+    filter: blur(34px);
+    mix-blend-mode: normal;
+  }
+
+  .grid-tint-blob--1 {
+    animation: grid-tint-drift-1 38s ease-in-out infinite;
+  }
+
+  .grid-tint-blob--2 {
+    animation: grid-tint-drift-2 44s ease-in-out infinite;
+  }
+
+  .grid-tint-blob--3 {
+    animation: grid-tint-drift-3 36s ease-in-out infinite;
+  }
+
+  .grid-tint-blob--4 {
+    animation: grid-tint-drift-4 42s ease-in-out infinite;
+  }
+
+  .grid-tint-blob--hero.grid-tint-blob--0 {
+    animation: grid-tint-drift-0 48s ease-in-out infinite;
+  }
+
+  .grid-tint--paused .grid-tint-blob {
+    animation-play-state: paused;
+  }
+
+  @media (max-width: 520px) {
+    .grid-tint-blob--smoke {
+      filter: blur(40px);
+    }
+
+    .grid-tint-blob--hero {
+      filter: blur(26px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .grid-tint-blob {
+      animation: none !important;
+    }
+  }
+}
+
+@keyframes grid-tint-drift-0 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(calc(-50% + 4%), calc(-50% - 3%)) scale(1.05);
+  }
+}
+
+@keyframes grid-tint-drift-1 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  50% {
+    transform: translate(calc(-50% - 9%), calc(-50% + 7%)) scale(1.04);
+  }
+}
+
+@keyframes grid-tint-drift-2 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  45% {
+    transform: translate(calc(-50% + 10%), calc(-50% + 5%)) scale(1.06);
+  }
+}
+
+@keyframes grid-tint-drift-3 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  55% {
+    transform: translate(calc(-50% - 5%), calc(-50% - 9%)) scale(1.03);
+  }
+}
+
+@keyframes grid-tint-drift-4 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1.02);
+  }
+  50% {
+    transform: translate(calc(-50% + 6%), calc(-50% - 8%)) scale(0.98);
   }
 }

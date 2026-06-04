@@ -1,4 +1,11 @@
-/** Map grid (−5…+5) to percentage position in the Feld square. */
+/** Keeps the marker dot (+ glow) inside the rounded field at ±5. */
+export const GRID_DOT_EDGE_INSET = 8
+
+/** Map grid (−5…+5) to % position with edge inset for markers. */
 export function gridPct(x: number, y: number) {
-  return { left: ((x + 5) / 10) * 100, top: ((5 - y) / 10) * 100 }
+  const span = 100 - 2 * GRID_DOT_EDGE_INSET
+  return {
+    left: GRID_DOT_EDGE_INSET + ((x + 5) / 10) * span,
+    top: GRID_DOT_EDGE_INSET + ((5 - y) / 10) * span,
+  }
 }
