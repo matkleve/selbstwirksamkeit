@@ -3,8 +3,11 @@
  * Mirror detector test — real Supabase data.
  *
  * Usage:
- *   npx tsx scripts/test-mirror.ts
- *   npx tsx scripts/test-mirror.ts --email you@example.com
+ *   npm run test:mirror
+ *   npm run test:mirror -- --email you@example.com
+ *
+ * With NEXT_PUBLIC_MIRROR_DEV_MODE=true in .env.local:
+ *   defaults to mirror-test@local.dev on local Supabase (supabase start)
  *
  * Env: NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (or local supabase status)
  */
@@ -24,6 +27,7 @@ import type { Entry } from '../lib/types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
+const DEV_MIRROR_EMAIL = 'mirror-test@local.dev'
 
 const STRENGTH_ORDER = { strong: 0, moderate: 1, weak: 2 } as const
 
@@ -62,14 +66,15 @@ function loadDotEnv(path: string): Record<string, string> {
   return out
 }
 
-function loadSupabaseEnv(): { url: string; key: string } {
-  const fromLocal = loadDotEnv(resolve(ROOT, '.env.local'))
-  let url = process.env.SUPABASE_URL
-  let key = process.env.SUPABASE_SERVICE_ROLE_KEY
+function isMirrorDevMode(fromLocal: Record<string, string>): boolean {
+  return (process.env.NEXT_PUBLIC_MIRROR_DEV_MODE ?? fromLocal.NEXT_PUBLIC_MIRROR_DEV_MODE) === 'true'
+}
 
-  // Prefer local Supabase CLI when running
+function loadLocalSupabaseEnv(): { url: string; key: string } | null {
   try {
     const raw = execSync('supabase status -o env 2>/dev/null', { cwd: ROOT, encoding: 'utf8' })
+    let url: string | undefined
+    let key: string | undefined
     for (const line of raw.split('\n')) {
       const m = line.match(/^([A-Z_]+)=(.*)$/)
       if (!m) continue
@@ -77,8 +82,31 @@ function loadSupabaseEnv(): { url: string; key: string } {
       if (m[1] === 'API_URL') url = v
       if (m[1] === 'SERVICE_ROLE_KEY') key = v
     }
+    return url && key ? { url, key } : null
   } catch {
-    /* not local */
+    return null
+  }
+}
+
+function loadSupabaseEnv(forceLocal = false): { url: string; key: string } {
+  const fromLocal = loadDotEnv(resolve(ROOT, '.env.local'))
+
+  if (forceLocal) {
+    const local = loadLocalSupabaseEnv()
+    if (!local) {
+      console.error('NEXT_PUBLIC_MIRROR_DEV_MODE=true requires local Supabase (supabase start)')
+      process.exit(1)
+    }
+    return local
+  }
+
+  let url = process.env.SUPABASE_URL
+  let key = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  const local = loadLocalSupabaseEnv()
+  if (local) {
+    url = local.url
+    key = local.key
   }
 
   if (!url) {
@@ -222,9 +250,12 @@ async function resolveUserId(supabase: SupabaseClient, email: string | null): Pr
 
 async function main() {
   const args = process.argv.slice(2)
-  const email = args.includes('--email') ? args[args.indexOf('--email') + 1] ?? null : null
+  const fromLocal = loadDotEnv(resolve(ROOT, '.env.local'))
+  const devMode = isMirrorDevMode(fromLocal)
+  const emailArg = args.includes('--email') ? args[args.indexOf('--email') + 1] ?? null : null
+  const email = emailArg ?? (devMode ? DEV_MIRROR_EMAIL : null)
 
-  const { url, key } = loadSupabaseEnv()
+  const { url, key } = loadSupabaseEnv(devMode)
   const supabase = createClient(url, key, { auth: { persistSession: false } })
 
   const userId = await resolveUserId(supabase, email)
@@ -242,6 +273,7 @@ async function main() {
   const ts = new Date().toLocaleString('de-DE')
   console.log('─────────────────────────────────────')
   console.log(`MIRROR TEST — ${ts}`)
+  if (devMode) console.log(`Dev mode: ${email ?? 'first user with entries'} @ ${url}`)
   console.log(`Einträge gesamt: ${entries.length}`)
   console.log('─────────────────────────────────────')
   console.log('')

@@ -8,7 +8,10 @@ export interface WgarmEntry {
   created_at: Date
   grid_x: number
   grid_y: number
-  mood_tags: string[]
+  person: string | null
+  location: string | null
+  activity: string | null
+  body_state: string | null
   hour_of_day: number
   day_of_week: number
   text: string
@@ -41,6 +44,7 @@ interface SemanticCluster {
   member_embeddings: number[][]
   label: string
   valence_sum: number
+  valenceBias: 'positiv' | 'negativ' | 'mixed'
   timestamps: Date[]
 }
 
@@ -71,6 +75,52 @@ export interface WgarmResult {
 }
 
 const VALENCE_ITEMS = new Set(['valence:negativ', 'valence:positiv', 'valence:neutral'])
+const MIN_SPAN_DAYS = 7
+
+const TIME_LABELS: Record<string, string> = {
+  nacht: 'nachts',
+  morgen: 'morgens',
+  mittag: 'tagsüber',
+  abend: 'abends',
+  spaet: 'spät abends',
+}
+
+const WEEKDAY_LABELS: Record<string, string> = {
+  weekend: 'am Wochenende',
+  woche: 'unter der Woche',
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function formatItemLabel(item: string): string {
+  if (item.startsWith('time:')) return TIME_LABELS[item.slice(5)!] ?? item.slice(5)!
+  if (item.startsWith('weekday:')) return WEEKDAY_LABELS[item.slice(8)!] ?? item.slice(8)!
+  if (item.startsWith('tag:person:')) return capitalize(item.slice('tag:person:'.length))
+  if (item.startsWith('tag:mood:')) return capitalize(item.slice('tag:mood:'.length))
+  if (item.startsWith('tag:loc:')) return capitalize(item.slice('tag:loc:'.length))
+  if (item.startsWith('tag:act:')) return capitalize(item.slice('tag:act:'.length))
+  return ''
+}
+
+function clusterValenceBias(cluster: SemanticCluster, entries: WgarmEntry[]): 'positiv' | 'negativ' | 'mixed' {
+  const members = cluster.member_ids
+    .map(id => entries.find(e => e.id === id))
+    .filter((e): e is WgarmEntry => !!e)
+  const pos = members.filter(e => e.grid_x > 0.3).length
+  const neg = members.filter(e => e.grid_x < -0.3).length
+  if (pos > 0 && neg > 0) return 'mixed'
+  const avg = cluster.valence_sum / cluster.member_ids.length
+  if (avg > 0.3) return 'positiv'
+  if (avg < -0.3) return 'negativ'
+  return 'mixed'
+}
+
+function formatSpanWeeks(spanDays: number): string {
+  const weeks = Math.round(spanDays / 7 * 10) / 10
+  return weeks === 1 ? '1 Woche' : `${weeks} Wochen`
+}
 
 function cosineSimilarity(a: number[], b: number[]): number {
   let dot = 0
@@ -125,6 +175,7 @@ function buildSemanticClusters(
         member_embeddings: [],
         label: '',
         valence_sum: 0,
+        valenceBias: 'mixed',
         timestamps: [],
       }
       clusters.push(bestCluster)
@@ -146,14 +197,18 @@ function buildSemanticClusters(
 function labelClusters(clusters: SemanticCluster[], entries: WgarmEntry[]): void {
   const byId = new Map(entries.map(e => [e.id, e]))
   for (const c of clusters) {
+    c.valenceBias = clusterValenceBias(c, entries)
+    if (c.valenceBias === 'mixed') {
+      c.label = ''
+      continue
+    }
     const counts = new Map<string, number>()
     for (const id of c.member_ids) {
-      for (const tag of byId.get(id)?.mood_tags ?? []) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1)
-      }
+      const bs = byId.get(id)?.body_state
+      if (bs) counts.set(bs, (counts.get(bs) ?? 0) + 1)
     }
     const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 2).map(([t]) => t)
-    c.label = top.length ? top.join(' + ') : `Cluster ${c.id}`
+    c.label = top.length ? top.join(' + ') : ''
   }
 }
 
@@ -178,7 +233,10 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   else if (entry.grid_x > 0.3) items.push('valence:positiv')
   else items.push('valence:neutral')
 
-  for (const tag of entry.mood_tags) items.push(`tag:${tag.toLowerCase()}`)
+  if (entry.person) items.push(`tag:person:${entry.person.toLowerCase()}`)
+  if (entry.body_state) items.push(`tag:mood:${entry.body_state.toLowerCase()}`)
+  if (entry.location) items.push(`tag:loc:${entry.location.toLowerCase()}`)
+  if (entry.activity) items.push(`tag:act:${entry.activity.toLowerCase()}`)
 
   const h = entry.hour_of_day
   if (h < 6) items.push('time:nacht')
@@ -323,32 +381,36 @@ function signalStrength(rule: AssociationRule): 'weak' | 'moderate' | 'strong' {
   return 'weak'
 }
 
-function generateText(rule: AssociationRule, clusters: SemanticCluster[]): string {
+function generateText(rule: AssociationRule, clusters: SemanticCluster[]): string | null {
   const ant = rule.antecedent
   const cons = rule.consequent[0] ?? ''
   const confPct = Math.round(rule.confidence * 100)
-  const weeks = Math.round(rule.span_days / 7 * 10) / 10
   const count = rule.occurrence_count
+  const weeksStr = formatSpanWeeks(rule.span_days)
   const escalationNote = rule.is_escalating ? ' Die Häufigkeit nimmt zu.' : ''
 
-  let label = ''
+  let cluster: SemanticCluster | undefined
   for (const item of ant) {
     if (item.startsWith('cluster:')) {
-      const cid = item.split(':')[1]
-      label = clusters.find(c => c.id === cid)?.label ?? ''
+      cluster = clusters.find(c => c.id === item.split(':')[1])
       break
     }
   }
 
-  const persons = ant.filter(i => i.startsWith('tag:')).map(i => i.split(':')[1]!.charAt(0).toUpperCase() + i.split(':')[1]!.slice(1))
-  const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.split(':')[1]!)
-  const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.split(':')[1]!)
+  const label = cluster?.label ?? ''
+  const clusterBias = cluster?.valenceBias ?? 'mixed'
 
-  if (label && cons === 'valence:negativ') {
-    return `Das Thema "${label}" taucht seit ${weeks} Wochen regelmäßig auf — ${count}× beschrieben.${escalationNote}`
+  const persons = ant.filter(i => i.startsWith('tag:person:')).map(i => capitalize(i.slice('tag:person:'.length)))
+  const moods = ant.filter(i => i.startsWith('tag:mood:')).map(i => capitalize(i.slice('tag:mood:'.length)))
+  const locations = ant.filter(i => i.startsWith('tag:loc:')).map(i => capitalize(i.slice('tag:loc:'.length)))
+  const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.slice(5)!)
+  const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.slice(8)!)
+
+  if (label && clusterBias === 'negativ' && cons === 'valence:negativ') {
+    return `Das Thema „${label}" taucht seit ${weeksStr} regelmäßig auf — ${count}× beschrieben.${escalationNote}`
   }
-  if (label && cons === 'valence:positiv') {
-    return `"${label}" erscheint als wiederkehrende positive Kraft — ${count}× in ${weeks} Wochen.`
+  if (label && clusterBias === 'positiv' && cons === 'valence:positiv') {
+    return `„${label}" erscheint als wiederkehrende positive Kraft — ${count}× in ${weeksStr}.`
   }
   if (persons.length && cons === 'valence:negativ') {
     return `Wenn du mit ${persons.join(', ')} zusammen bist, fühlst du dich in ${confPct}% der Fälle unwohl.`
@@ -356,17 +418,72 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
   if (persons.length && cons === 'valence:positiv') {
     return `Einträge mit ${persons.join(', ')} sind in ${confPct}% der Fälle positiv.`
   }
+  if (moods.length && cons === 'valence:negativ') {
+    return `Wenn du ${moods.join(' oder ')} fühlst, sind deine Einträge in ${confPct}% der Fälle negativ.`
+  }
+  if (moods.length && cons === 'valence:positiv') {
+    return `Wenn du ${moods.join(' oder ')} fühlst, sind deine Einträge in ${confPct}% der Fälle positiv.`
+  }
+  if (locations.length && cons === 'valence:negativ') {
+    return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle negativere Zustände.`
+  }
+  if (locations.length && cons === 'valence:positiv') {
+    return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle positivere Zustände.`
+  }
   if (timeItems.length && cons === 'valence:negativ') {
-    return `Deine ${timeItems[0]}-Einträge zeigen systematisch negativere Zustände als zu anderen Tageszeiten.`
+    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
+    return `Deine Einträge ${t} zeigen systematisch negativere Zustände als zu anderen Tageszeiten.`
+  }
+  if (timeItems.length && cons === 'valence:positiv') {
+    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
+    return `Deine Einträge ${t} hängen in ${confPct}% der Fälle mit positiveren Zuständen zusammen.`
   }
   if (weekdayItems.length && cons === 'valence:negativ') {
-    const w = weekdayItems[0] === 'weekend' ? 'am Wochenende' : 'unter der Woche'
+    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
     return `Du notierst ${w} häufiger negative Zustände (${confPct}% der Fälle).`
   }
+  if (weekdayItems.length && cons === 'valence:positiv') {
+    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
+    return `Du notierst ${w} häufiger positive Zustände (${confPct}% der Fälle).`
+  }
 
-  const antStr = ant.filter(a => !a.startsWith('cluster:')).join(', ')
-  const valenceStr = cons === 'valence:negativ' ? 'negativen' : 'positiven'
-  return `Mir ist aufgefallen: ${antStr} hängt in ${confPct}% der Fälle mit ${valenceStr} Zuständen zusammen.`
+  const antLabels = ant.filter(a => !a.startsWith('cluster:')).map(formatItemLabel).filter(Boolean)
+  if (!antLabels.length) return null
+
+  const valenceStr =
+    cons === 'valence:negativ' ? 'negativeren'
+    : cons === 'valence:neutral' ? 'neutraleren'
+    : 'positiveren'
+  return `Mir ist aufgefallen: ${antLabels.join(', ')} hängt in ${confPct}% der Fälle mit ${valenceStr} Zuständen zusammen.`
+}
+
+function isEligibleRule(rule: AssociationRule, clusters: SemanticCluster[]): boolean {
+  if (rule.span_days < MIN_SPAN_DAYS) return false
+
+  const hasCluster = rule.antecedent.some(a => a.startsWith('cluster:'))
+  const nonClusterAnt = rule.antecedent.filter(a => !a.startsWith('cluster:'))
+  if (hasCluster && nonClusterAnt.length === 0) {
+    const cid = rule.antecedent.find(a => a.startsWith('cluster:'))?.split(':')[1]
+    const cluster = clusters.find(c => c.id === cid)
+    if (!cluster?.label || cluster.valenceBias === 'mixed') return false
+  }
+
+  return !!rule.template_text
+}
+
+function dedupeRulesByDominance(rules: AssociationRule[]): AssociationRule[] {
+  const sorted = [...rules].sort((a, b) => b.lift - a.lift)
+  const kept: AssociationRule[] = []
+  for (const rule of sorted) {
+    const superseded = kept.some(
+      k =>
+        k.consequent[0] === rule.consequent[0]
+        && k.antecedent.every(a => rule.antecedent.includes(a))
+        && k.antecedent.length < rule.antecedent.length,
+    )
+    if (!superseded) kept.push(rule)
+  }
+  return kept
 }
 
 function dedupeRules(rules: AssociationRule[]): AssociationRule[] {
@@ -408,10 +525,12 @@ export function runWgarmEc(
 
   let rules = rawRules.map(r => {
     const ar = annotateRule(r, entries, entryToCluster, clusters)
-    ar.template_text = generateText(ar, clusters)
+    ar.template_text = generateText(ar, clusters) ?? ''
     return ar
   })
 
+  rules = rules.filter(r => isEligibleRule(r, clusters))
+  rules = dedupeRulesByDominance(rules)
   rules = dedupeRules(rules)
 
   const mirror_candidates: WgarmMirrorCandidate[] = rules.map(r => ({
@@ -473,14 +592,16 @@ export function toWgarmEntry(e: {
   if (!embedding?.length) return null
 
   const dt = new Date(e.created_at)
-  const tags = [e.person, e.location, e.activity, e.body_state].filter(Boolean) as string[]
 
   return {
     id: e.id,
     created_at: dt,
     grid_x: (e.grid_x ?? 0) / 5,
     grid_y: (e.grid_y ?? 0) / 5,
-    mood_tags: tags,
+    person: e.person,
+    location: e.location,
+    activity: e.activity,
+    body_state: e.body_state,
     hour_of_day: dt.getHours(),
     day_of_week: dt.getDay() === 0 ? 6 : dt.getDay() - 1,
     text: e.text,

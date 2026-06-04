@@ -144,12 +144,19 @@ When unset: existing logic (`mirror_candidates` first, then live detection).
 
 ## Test script
 
-`scripts/test-mirror.ts` — run with `npx tsx scripts/test-mirror.ts`
+`scripts/test-mirror.ts` — run with `npm run test:mirror`
 
 - MUST connect via existing Supabase env vars
 - MUST run all Phase-1 detectors against real DB data immediately
 - MUST run WGARM-EC when ≥10 entries have embeddings (`lib/wgarmEc.ts`, no Python subprocess)
 - MUST print all candidates sorted by `signal_strength`
+
+When `NEXT_PUBLIC_MIRROR_DEV_MODE=true` (read from `.env.local`):
+
+- `npm run test:mirror` without `--email` MUST default to user `mirror-test@local.dev`
+- MUST connect to local Supabase (`supabase status`), not production URL from `.env.local`
+- Local Supabase MUST be running (`supabase start`); script MUST exit with a clear error if not
+- Explicit `--email` still overrides the default user; connection stays local while dev mode is on
 
 ---
 

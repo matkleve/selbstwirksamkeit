@@ -52,49 +52,40 @@ weak:     everything else above minimum thresholds
 
 MUST NOT run with < 10 entries.
 
+## Temporal span
+
+MUST NOT emit a mirror candidate when `span_days < 7` (pattern lacks meaningful time distance).
+
+## Tag namespaces (transaction items)
+
+| Field | Item prefix | Template branch |
+|---|---|---|
+| `person` | `tag:person:{name}` | Person template |
+| `body_state` | `tag:mood:{value}` | Mood template |
+| `location` | `tag:loc:{value}` | Location template |
+| `activity` | `tag:act:{value}` | Default / combined |
+
+MUST NOT show raw item keys (`time:abend`, `tag:mood:calm`) in `template_text`. Use German labels (`abends`, `Calm`).
+
+## Cluster labels
+
+Cluster label MUST only be set when `valenceBias` is unambiguous (`positiv` or `negativ`, not `mixed`).  
+Label source: dominant `body_state` tags in cluster members (not person names).
+
+Cluster-only rules without a usable label MUST NOT become mirror candidates.
+
 ## Mirror invariants
 
 MUST NOT show positive counterexamples in Mirror context. MUST NOT claim causality.
 
 ---
 
-## Known template bugs (MUST fix before Phase 2 production)
+## Template bugs (fixed in `lib/wgarmEc.ts`)
 
-The current `generate_text()` implementation in `services/wgarm-ec/algorithm.py` has three documented defects. These MUST be resolved before WGARM-EC output is shown in Mirror.
+Previously documented defects — resolved in TypeScript port:
 
-### Bug 1 — Person template applied to mood tags
-
-**Symptom:** All `tag:*` antecedents are treated as person names.
-
-```python
-persons = [i.split(":")[1].capitalize() for i in ant if i.startswith("tag:")]
-# → "Wenn du mit Müde zusammen bist, fühlst du dich unwohl."
-```
-
-**Expected:** Person tags (from `entries.person`) MUST use the person template. Mood/feeling tags (body_state, freitext-derived tags) MUST use a separate template or fall through to default.
-
-**Fix requirement:** Tag namespace MUST distinguish `tag:person:{name}` vs `tag:mood:{value}` at transaction-build time, or filter by known person-entity list.
-
-### Bug 2 — Empty antecedent string in default template
-
-**Symptom:** When antecedent contains only `cluster:*` items and no cluster label is set, the default branch produces:
-
-```
-Mir ist aufgefallen:  hängt in 100% der Fälle mit positiven Zuständen zusammen.
-```
-
-**Cause:** Default template excludes cluster items from `ant_str` but cluster-only rules have nothing else to join.
-
-**Fix requirement:** If `label` is empty and antecedent is cluster-only, MUST use cluster template with generated label (from anchor entries) or MUST NOT emit the rule as a mirror candidate.
-
-### Bug 3 — Missing rule deduplication
-
-**Symptom:** FP-Growth produces overlapping rules with identical or near-identical template text, e.g.:
-
-- `{cluster:C3} → {valence:positiv}`
-- `{cluster:C3, tag:stolz} → {valence:positiv}`
-- `{tag:stolz} → {valence:positiv}`
-
-All three may surface as separate `mirror_candidates` with redundant Mirror text.
-
-**Fix requirement:** Before writing to `mirror_candidates`, rules MUST be deduplicated by `(consequent, template_text)` keeping the highest-lift rule, or by antecedent subset dominance (drop rules whose antecedent is a strict superset of a higher-lift sibling).
+1. **Person vs mood tags** — namespaced items (`tag:person:` / `tag:mood:`) with separate templates.
+2. **Empty antecedent in default template** — cluster-only rules without label are filtered out; default branch uses human-readable labels only.
+3. **Rule deduplication** — subset-dominance dedup (drop strict superset when higher-lift subset exists) plus `template_text` dedup.
+4. **Raw field names** — `formatItemLabel()` maps time/weekday/tag items to German text.
+5. **Short span** — `span_days < 7` rules are excluded.
