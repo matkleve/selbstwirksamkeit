@@ -7,6 +7,12 @@ export const MIRROR_LOADING_STEPS = [
   'Bereite deinen Spiegel vor…',
 ] as const
 
+/** Minimum loader duration when opened from landing (matches network loader step timing). */
+export const MIRROR_LOADER_MIN_MS = 3200
+
+export const MIRROR_EXHAUSTED_TEXT =
+  'Du hast alle aktuellen Erkenntnisse gesehen. Nächste Woche gibt es neue.'
+
 export const MIRROR_REMINDER_OPTIONS = ['Heute', '3 Tage', 'Diese Woche', 'Kein Reminder'] as const
 
 export const MIRROR_REMINDER_INTROS = [

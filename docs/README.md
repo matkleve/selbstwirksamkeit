@@ -8,6 +8,7 @@ Spec **before** code. Bei Konflikt Spec aktualisieren oder Entscheidung in `docs
 |-------|--------|
 | `overview.md` | App-Überblick, Routen |
 | `pattern-mirror.md` | Mirror UI, Detektoren, DB |
+| `mirror-page.md` | `/mirror` Landing, Pre-Generated Candidates, History |
 | `insight-types.md` | Erkenntnistypen, Response Blocks, Templates |
 | `intention-reminders.md` | Reminder-Chips + Notification-Texte |
 | `wgarm-ec.md` | WGARM-EC Pipeline |

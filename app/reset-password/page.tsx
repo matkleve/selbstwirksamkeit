@@ -50,9 +50,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-canvas flex items-center justify-center px-5 py-12">
       <div className="w-full max-w-sm rounded-form bg-card border border-edge shadow-pop p-8">
         <div className="mb-8">
-          <h1 className="font-display text-2xl text-ink leading-tight mb-1">
-            Neues Passwort
-          </h1>
+          <h1 className="mb-1">Neues Passwort</h1>
           <p className="text-sm text-ink-2">Wähle ein neues Passwort für dein Konto.</p>
         </div>
 

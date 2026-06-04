@@ -13,8 +13,7 @@ import type { BodyState } from '@/lib/types'
 import type { DayPeriod } from '@/components/TimeOfDayBars'
 import { cn } from '@/lib/cn'
 import { EntryDisplay } from '@/components/entry'
-
-const sectionLabel = 'mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-ink-3'
+import { PageHeader } from '@/components/PageHeader'
 
 const QUADRANT_META = [
   { key: 'neg-other' as const, label: '− / andere', bar: 'bg-v-neg-mid' },
@@ -100,16 +99,27 @@ export default function DashboardView() {
 
   if (entries.length === 0) {
     return (
-      <Card className="py-10 text-center text-ink-3">
-        Noch keine Einträge.
-      </Card>
+      <>
+        <PageHeader
+          title="Dashboard"
+          description="Überblick über deine Woche, deine Einträge und wiederkehrende Muster."
+        />
+        <Card className="py-10 text-center text-ink-3">
+          Noch keine Einträge.
+        </Card>
+      </>
     )
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
+    <>
+      <PageHeader
+        title="Dashboard"
+        description="Überblick über deine Woche, deine Einträge und wiederkehrende Muster."
+      />
+      <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">
       <Card className="min-w-0 p-5">
-        <p className={sectionLabel}>Diese Woche</p>
+        <p className="section-label">Diese Woche</p>
         <div className="flex items-baseline gap-3">
           <span className="font-display text-4xl leading-none text-ink">{weekCount}</span>
           <span className="text-sm text-ink-2">
@@ -141,7 +151,7 @@ export default function DashboardView() {
       </Card>
 
       <Card className="min-w-0 p-5">
-        <p className={sectionLabel}>Letzte Einträge</p>
+        <p className="section-label">Letzte Einträge</p>
         <div className="mb-3.5 flex flex-col gap-2">
           {latestEntries.map(entry => (
             <EntryDisplay key={entry.id} entry={entry} variant="text" size="sm" lines={2} />
@@ -160,18 +170,18 @@ export default function DashboardView() {
       <TrajectoryPatternCard entries={entries} className="min-w-0" />
 
       <Card className="min-w-0 p-5">
-        <p className={sectionLabel}>Kalender</p>
+        <p className="section-label">Kalender</p>
         <CalendarHeatmap weeks={calWeeks} />
       </Card>
 
       <Card className="min-w-0 p-5">
-        <p className={sectionLabel}>Tageszeit</p>
+        <p className="section-label">Tageszeit</p>
         <TimeOfDayBars periods={periodData} />
       </Card>
 
       {bodyPatterns.length > 0 && (
         <Card className="min-w-0 p-5">
-          <p className={sectionLabel}>Körper-Muster</p>
+          <p className="section-label">Körper-Muster</p>
           {bodyPatterns.map((p, i) => (
             <p
               key={i}
@@ -186,5 +196,6 @@ export default function DashboardView() {
         </Card>
       )}
     </div>
+    </>
   )
 }

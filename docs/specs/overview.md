@@ -34,7 +34,7 @@ tracking beyond simple "good/bad" mood logging.
 | `/` | New entry (home) |
 | `/dashboard` | Analytics — balance, calendar heatmap, time-of-day, quadrant map |
 | `/motivation` | Research-backed insights + exercises from the user's own data |
-| `/notifications` | Reminder settings + notification history |
 | `/timeline` | Full scrollable entry list |
+| `/mirror` | Mirror landing — open insight, session history, reminders (see `mirror-page.md`) |
 | `/reset-password` | Auth flow |
 | `/auth/callback` | Supabase PKCE callback |

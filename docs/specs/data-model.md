@@ -40,7 +40,63 @@ Same structure as `persons`.
 | `timezone` | text | e.g. 'Europe/Berlin' |
 | `updated_at` | timestamptz | |
 
+### `mirror_sessions`
+
+Normative schema: `mirror-page.md` §4. Migration: `011_mirror_sessions_history.sql`.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid FK → auth.users | RLS |
+| `created_at` | timestamptz | |
+| `pattern_type` | text | Same as `mirror_candidates.source` |
+| `pattern_text` | text | Insight text shown |
+| `anchor_entry_ids` | uuid[] | Entries displayed in mirror |
+| `user_response` | text nullable | Reflection |
+| `intention_wenn` | text nullable | Wenn-Dann trigger |
+| `intention_dann` | text nullable | Wenn-Dann action |
+| `reminder_type` | text nullable | `today` \| `3days` \| `week` |
+| `is_favorited` | boolean | default false |
+| `signal_strength` | text | weak \| moderate \| strong |
+
+### `mirror_candidates`
+
+Pre-generated insights. Writers and fetch rules: `mirror-page.md` §2.
+
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid FK | RLS |
+| `entry_ids` | uuid[] | Anchor entries (= session `anchor_entry_ids`) |
+| `source` | text | tag_frequency \| grid_cluster \| embedding_temporal \| wgarm_ec \| … |
+| `signal_strength` | text | weak \| moderate \| strong — only strong/moderate stored by jobs |
+| `intro_text` | text nullable | Phase 1 display |
+| `question` | text nullable | Open question |
+| `template_text` | text nullable | WGARM-EC rule text |
+| `pattern_metadata` | jsonb nullable | |
+| `shown` | boolean | default false |
+| `shown_at` | timestamptz nullable | |
+| `user_reaction` | text nullable | confirmed \| dismissed |
+| `created_at` | timestamptz | |
+
+**Dedup key (60 days):** `(source, entry_ids)` must not be re-inserted if already present in `mirror_sessions` for that user within 60 days.
+
+### `implementation_intentions`
+| Column | Type | Notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid FK | |
+| `wenn_text` | text | |
+| `dann_text` | text | |
+| `wants_reminder` | boolean | |
+| `reminder_type` | text nullable | today \| 3days \| 7days \| until_entry |
+| `active` | boolean | |
+| `fired_count` | int | |
+| `expires_at` | timestamptz nullable | |
+| `created_at` | timestamptz | |
+
 ## RLS Policies
+
 All tables: `select/insert/update/delete` restricted to `auth.uid() = user_id`.
 
 ## Key Computed Values (application layer)

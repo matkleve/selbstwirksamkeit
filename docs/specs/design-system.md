@@ -47,7 +47,29 @@ the 2D grid. Very desaturated — only 10% opacity over card white.
 | neg/andere (x<0, y>0) | `rgb(168, 118, 128)` — dusty mauve |
 | pos/andere (x>0, y>0) | `rgb(140, 120, 188)` — muted violet |
 
-## Spacing & Radii
+### Typography
+
+**Semantic tags** (`@layer base` in `globals.css`) — site-wide, no extra classes needed:
+
+| Tag | Font | Notes |
+|---|---|---|
+| `h1` | DM Serif Display, italic, 1.5rem | Page titles |
+| `h2` | DM Serif Display, italic, 1.0625rem | Section headings |
+| `h3` | DM Sans, 1rem, medium | Subsection |
+| `h4`–`h6` | DM Sans, 0.875rem, medium, secondary | Minor headings |
+| `p` | inherits body | margin reset to 0 |
+| `blockquote` | DM Serif Display, italic, secondary | |
+| `header > h1 + p` | body, secondary | intro under page title |
+
+**Custom roles** (`@layer components`) — use when semantics don't fit:
+
+| Class | Use |
+|---|---|
+| `.section-label` | Uppercase card section caption (Dashboard, Motivation, …) |
+| `.text-lead` | Standalone intro paragraph |
+| `.text-quote` | Grid quote, entry excerpts, hints — display italic |
+
+Local overrides (Tailwind utilities, inline layout) are fine on top of the base tags.
 | Token | Value |
 |---|---|
 | `--radius-form` | `1.125rem` |

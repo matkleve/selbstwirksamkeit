@@ -224,10 +224,13 @@ export default function EntryCard() {
         {/* Stimmungsfeld: quote + valence grid */}
         <section className="entry-card-valence" aria-label="Stimmungsfeld">
           <div className="entry-card-quote">
-            <p style={{
-              opacity: quoteVisible ? 1 : 0,
-              transition: quoteVisible ? 'opacity 350ms ease' : 'opacity 250ms ease',
-            }}>
+            <p
+              className="text-quote"
+              style={{
+                opacity: quoteVisible ? 1 : 0,
+                transition: quoteVisible ? 'opacity 350ms ease' : 'opacity 250ms ease',
+              }}
+            >
               &ldquo;{quote}&rdquo;
             </p>
           </div>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getPasswordChecks, isPasswordValid } from '@/lib/utils'
 import { cn } from '@/lib/cn'
-import { Sprout } from 'lucide-react'
+import { Sprout, LogIn, UserPlus, Mail, Eye, EyeOff } from 'lucide-react'
 
 type Mode = 'login' | 'signup' | 'reset'
 
@@ -24,6 +24,7 @@ export function AuthForm() {
   const [mode, setMode] = useState<Mode>('login')
   const [authError, setAuthError] = useState('')
   const [resetSent, setResetSent] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const passwordChecks = getPasswordChecks(password)
   const passwordOk = isPasswordValid(password)
@@ -33,6 +34,7 @@ export function AuthForm() {
     setMode(next)
     setAuthError('')
     setResetSent(false)
+    setShowPassword(false)
   }
 
   async function handleAuth(e: React.FormEvent) {
@@ -87,7 +89,7 @@ export function AuthForm() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-8">
         <div className="flex flex-col gap-1">
-          <h1 className="font-display text-2xl text-ink leading-tight flex items-center gap-2">
+          <h1 className="flex items-center gap-2">
             <Sprout size={22} strokeWidth={1.75} className="text-ink-2 shrink-0" aria-hidden />
             Selbstwirksamkeit
           </h1>
@@ -117,12 +119,26 @@ export function AuthForm() {
 
           {mode !== 'reset' && (
             <Input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Passwort"
               value={password}
               onChange={e => { setPassword(e.target.value); setAuthError('') }}
               error={showPasswordHints && !passwordOk}
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="inline-flex size-8 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-subtle hover:text-ink"
+                  aria-label={showPassword ? 'Passwort verbergen' : 'Passwort anzeigen'}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} strokeWidth={1.75} aria-hidden />
+                  ) : (
+                    <Eye size={18} strokeWidth={1.75} aria-hidden />
+                  )}
+                </button>
+              }
             />
           )}
 
@@ -153,7 +169,22 @@ export function AuthForm() {
             className="w-full mt-1"
             disabled={mode === 'signup' && !passwordOk}
           >
-            {mode === 'login' ? 'Anmelden' : mode === 'signup' ? 'Registrieren' : 'Reset-Link senden'}
+            {mode === 'login' ? (
+              <>
+                <LogIn size={18} strokeWidth={1.75} aria-hidden />
+                Anmelden
+              </>
+            ) : mode === 'signup' ? (
+              <>
+                <UserPlus size={18} strokeWidth={1.75} aria-hidden />
+                Registrieren
+              </>
+            ) : (
+              <>
+                <Mail size={18} strokeWidth={1.75} aria-hidden />
+                Reset-Link senden
+              </>
+            )}
           </Button>
 
           <div className="flex flex-col gap-2 pt-1">

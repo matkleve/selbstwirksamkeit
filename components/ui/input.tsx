@@ -1,24 +1,31 @@
-import { type InputHTMLAttributes, forwardRef } from 'react'
+import { type InputHTMLAttributes, type ReactNode, forwardRef } from 'react'
 import { cn } from '@/lib/cn'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   error?: boolean
+  trailing?: ReactNode
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ error, className, ...props }, ref) => (
+  ({ error, trailing, className, ...props }, ref) => (
     <div
       className={cn(
         'field-shell',
+        trailing && 'relative',
         error && 'field-shell--error',
         className,
       )}
     >
       <input
         ref={ref}
-        className="field-input px-4 py-3"
+        className={cn('field-input px-4 py-3', trailing && 'pr-11')}
         {...props}
       />
+      {trailing ? (
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+          <div className="pointer-events-auto">{trailing}</div>
+        </div>
+      ) : null}
     </div>
   )
 )

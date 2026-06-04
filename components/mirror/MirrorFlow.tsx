@@ -9,7 +9,7 @@ import type { BlockState } from '@/components/mirror/MirrorFlow.types'
 import { useMirrorScroll } from '@/components/mirror/MirrorFlow.useScroll'
 import { useMirrorBlockAutoScroll } from '@/components/mirror/MirrorFlow.useBlockAutoScroll'
 import { useMirrorTimers } from '@/components/mirror/MirrorFlow.useTimers'
-import { useMirrorLoadingPhase, useMirrorSession } from '@/components/mirror/MirrorFlow.useLoading'
+import { useMirrorLoadingPhase, useMirrorSession, initBlockStates } from '@/components/mirror/MirrorFlow.useLoading'
 import { useMirrorNarrativeSchedule } from '@/components/mirror/MirrorFlow.useNarrativeSchedule'
 import {
   useMirrorSummaryReveal,
@@ -26,11 +26,23 @@ import {
 import { MirrorEmptyClose } from '@/components/mirror/MirrorFlow.emptyClose'
 import { intentionExpiresAt } from '@/lib/intentionReminderText'
 
-export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate | null }) {
+interface MirrorFlowProps {
+  candidate: MirrorCandidate | null
+  skipInitialLoader?: boolean
+  onClose?: () => void
+}
+
+export default function MirrorFlow({
+  candidate,
+  skipInitialLoader = false,
+  onClose,
+}: MirrorFlowProps) {
   const blocks = useMemo(() => buildNarrativeBlocks(candidate), [candidate])
   const [loadingStep, setLoadingStep] = useState(0)
-  const [phase, setPhase] = useState<'loading' | 'mirror'>('loading')
-  const [states, setStates] = useState<Record<string, BlockState>>({})
+  const [phase, setPhase] = useState<'loading' | 'mirror'>(skipInitialLoader ? 'mirror' : 'loading')
+  const [states, setStates] = useState<Record<string, BlockState>>(() =>
+    skipInitialLoader ? initBlockStates(blocks) : {},
+  )
   const [narrativeDone, setNarrativeDone] = useState(false)
   const [reflectionText, setReflectionText] = useState('')
   const [pastReflection, setPastReflection] = useState(false)
@@ -66,6 +78,7 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
     setShowSummary,
     setSummaryWords,
     setPhase,
+    !skipInitialLoader,
   )
   useMirrorSession(phase, candidate, sessionIdRef, supabase)
   useMirrorNarrativeSchedule(phase, blocks, candidate, sched, clear, setStates, setNarrativeDone)
@@ -95,7 +108,7 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
       const reminderMap = {
         Heute: 'today',
         '3 Tage': '3days',
-        'Diese Woche': '7days',
+        'Diese Woche': 'week',
       } as const
       const reminderType =
         duration && duration !== 'Kein Reminder'
@@ -105,10 +118,20 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
         wenn_text: wenn,
         dann_text: dann,
         wants_reminder: !!reminderType,
-        reminder_type: reminderType,
-        expires_at: reminderType ? intentionExpiresAt(reminderType) : null,
+        reminder_type: reminderType === 'week' ? '7days' : reminderType,
+        expires_at: reminderType ? intentionExpiresAt(reminderType === 'week' ? '7days' : reminderType) : null,
         active: true,
       })
+      if (sessionIdRef.current) {
+        await supabase
+          .from('mirror_sessions')
+          .update({
+            intention_wenn: wenn,
+            intention_dann: dann,
+            reminder_type: reminderType,
+          })
+          .eq('id', sessionIdRef.current)
+      }
     }
     setShowSummary(true)
     scrollDown(true)
@@ -139,7 +162,7 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
 
           {emptyState && narrativeDone && (
             <MirrorExpandShell open>
-              <MirrorEmptyClose />
+              <MirrorEmptyClose onClose={onClose} />
             </MirrorExpandShell>
           )}
 

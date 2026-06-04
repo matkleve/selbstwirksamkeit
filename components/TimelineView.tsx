@@ -5,6 +5,7 @@ import { ArrowDownAZ, SlidersHorizontal } from 'lucide-react'
 import TimelineCard from '@/components/TimelineCard'
 import { useEntries } from '@/components/EntriesProvider'
 import { EntryDisplay } from '@/components/entry'
+import { PageHeader } from '@/components/PageHeader'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/cn'
 import {
@@ -104,14 +105,24 @@ export default function TimelineView() {
 
   if (!entries.length) {
     return (
-      <Card className="py-12 text-center text-ink-3">
-        Noch keine Einträge.
-      </Card>
+      <>
+        <PageHeader
+          title="Verlauf"
+          description="Alle deine Einträge — durchsuchbar und filterbar nach Kategorie."
+        />
+        <Card className="py-12 text-center text-ink-3">
+          Noch keine Einträge.
+        </Card>
+      </>
     )
   }
 
   return (
     <>
+      <PageHeader
+        title="Verlauf"
+        description="Alle deine Einträge — durchsuchbar und filterbar nach Kategorie."
+      />
       <Card className="mb-3.5 space-y-3 p-4">
         <div className="flex items-center gap-2 text-ink-3">
           <SlidersHorizontal size={14} strokeWidth={1.75} aria-hidden />

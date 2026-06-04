@@ -3,10 +3,10 @@
 import { useMemo } from 'react'
 import Link from 'next/link'
 import { useEntries } from '@/components/EntriesProvider'
+import { PageHeader } from '@/components/PageHeader'
 import type { BodyState } from '@/lib/types'
 
 const card: React.CSSProperties = { background: 'var(--bg-card)', borderRadius: 12, boxShadow: 'var(--shadow-card)', border: '1px solid var(--border)', padding: 20, marginBottom: 14 }
-const label: React.CSSProperties = { fontSize: '0.6875rem', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }
 
 export default function MotivationView() {
   const { entries } = useEntries()
@@ -141,8 +141,12 @@ export default function MotivationView() {
 
   return (
     <>
+      <PageHeader
+        title="Stärke"
+        description="Wie sich deine Einträge über die Zeit anfühlen — und welche Themen und Kategorien dabei vorkommen."
+      />
       <div style={card}>
-        <p style={label}>Deine Stärken · Diese Woche</p>
+        <p className="section-label">Deine Stärken · Diese Woche</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: inspiration ? 16 : 0 }}>
           {[
             { num: masteryCount, text: 'Starke Momente\n(Valenz ≥ +3)' },
@@ -172,7 +176,7 @@ export default function MotivationView() {
 
       {enough && (
         <div style={card}>
-          <p style={label}>Was deine Daten zeigen</p>
+          <p className="section-label">Was deine Daten zeigen</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {bodyInsight && (
               <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
@@ -202,10 +206,8 @@ export default function MotivationView() {
 
       {exercise && (
         <div style={card}>
-          <p style={label}>Übung für heute</p>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.125rem', fontWeight: 400, color: 'var(--text-primary)', margin: '0 0 10px' }}>
-            {exercise.title}
-          </h2>
+          <p className="section-label">Übung für heute</p>
+          <h2 className="mb-2.5">{exercise.title}</h2>
           <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 12px' }}>
             {exercise.body}
           </p>
@@ -217,7 +219,7 @@ export default function MotivationView() {
 
       {reframeCandidate && (
         <div style={card}>
-          <p style={label}>Neuer Blick · Reframe-Übung</p>
+          <p className="section-label">Neuer Blick · Reframe-Übung</p>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 10 }}>
             Vor {Math.floor((now.getTime() - new Date(reframeCandidate.created_at).getTime()) / 86400000)} Tagen hast du geschrieben:
           </p>

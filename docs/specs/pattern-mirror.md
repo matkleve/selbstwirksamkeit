@@ -2,6 +2,7 @@
 
 Combines Phase-1 structural detectors, WGARM-EC association-rule engine, and Mirror invariants.
 
+**Page layout, landing, history, candidate fetch:** `mirror-page.md` (v1.0).  
 **Insight types, templates, and response blocks:** `insight-types.md` (v1.2).
 
 ---
@@ -110,9 +111,12 @@ Implementation MUST pause at these gates for explicit review:
 | After step | Deliverable | Proceed only when |
 |---|---|---|
 | Spec update | Diff of spec changes | Project lead confirms spec |
+| **`mirror-page.md` + migration 011** | **Spec + `mirror_sessions` schema** | **Project lead confirms (gate A)** |
 | Embedding spec (`embeddings.md`) | Mistral model + vector(1024) decision | Project lead confirms spec |
 | Phase 1 complete | Test run with real entries | Project lead confirms detectors |
 | Phase 5 (WGARM-EC job) | Example mirror_candidates | Project lead confirms before Mirror displays them |
+| **Landing + button (gate B)** | Screenshot | Project lead confirms |
+| **History + replay (gate C)** | Screenshot | Project lead confirms |
 | Phase 2 start | — | **Explicit confirmation required** — agents MUST NOT self-start Phase 2 |
 
 ---
@@ -124,7 +128,7 @@ Implementation MUST pause at these gates for explicit review:
 3. pgvector + `entries.embedding vector(1024)` — Mistral `mistral-embed` (see `embeddings.md`)
 4. Embedding on entry save (Edge Function, Mistral API)
 5. WGARM-EC weekly job (`services/wgarm-ec/`)
-6. Mirror frontend reads from `mirror_candidates` — never live-query as primary path
+6. Mirror frontend: landing page + pre-generated fetch — see `mirror-page.md` (replaces auto-start on `/mirror`)
 7. Remove positive counterexample logic from Mirror (moved to Stärke)
 
 Steps 3–7 are Phase 2. They MUST NOT be started until project lead explicitly confirms Phase 2 go-ahead.

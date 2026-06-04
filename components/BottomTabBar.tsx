@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, BarChart2, Sparkles, Bell, Eye } from 'lucide-react'
+import { Plus, BarChart2, Sparkles, Eye } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 const TABS = [
@@ -10,7 +10,6 @@ const TABS = [
   { href: '/dashboard', label: 'Dashboard', Icon: BarChart2 },
   { href: '/mirror', label: 'Spiegel', Icon: Eye },
   { href: '/motivation', label: 'Stärke', Icon: Sparkles },
-  { href: '/notifications', label: 'Erinnern', Icon: Bell },
 ] as const
 
 export default function BottomTabBar() {
