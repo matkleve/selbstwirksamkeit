@@ -101,23 +101,46 @@ function softenRgb(rgb: readonly [number, number, number], white = 0.14): [numbe
   ]
 }
 
-function auroraBlob(
-  atX: number,
-  atY: number,
-  rgb: readonly [number, number, number],
-  peak: number,
-  w: number,
-  h: number,
-) {
-  const c = softenRgb(rgb)
-  return `radial-gradient(ellipse ${w}% ${h}% at ${atX}% ${atY}%, ${rgba(c, peak)} 0%, ${rgba(c, peak * 0.5)} 38%, transparent 72%)`
+export type GridTintCloudAxis = 'valence' | 'referenz'
+export type GridTintCloudPhase = 0 | 1
+
+export type GridTintCloud = {
+  id: string
+  axis: GridTintCloudAxis
+  phase: GridTintCloudPhase
+  left: number
+  top: number
+  sizePct: number
+  rgb: readonly [number, number, number]
 }
 
-/** Static mesh: valence + referenz clouds + meet (stacked on compose-style wash). */
-export function gridTintAuroraMesh(
+/** @deprecated use GridTintCloud */
+export type GridTintBall = GridTintCloud
+/** @deprecated use GridTintCloudAxis */
+export type GridTintBallAxis = GridTintCloudAxis
+/** @deprecated use GridTintCloudPhase */
+export type GridTintBallPhase = GridTintCloudPhase
+
+function clampPct(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n))
+}
+
+/** Soft smoke puff — radial fade only (no glow / halo). */
+export function gridTintCloudFill(rgb: readonly [number, number, number]): string {
+  const [r, g, b] = softenRgb(rgb, 0.2)
+  return `radial-gradient(ellipse 100% 100% at 45% 42%, ${rgba([r, g, b], 0.26)} 0%, ${rgba([r, g, b], 0.1)} 42%, transparent 68%)`
+}
+
+/** @deprecated use gridTintCloudFill */
+export const gridTintBallGlow = (rgb: readonly [number, number, number]) => ({
+  background: gridTintCloudFill(rgb),
+})
+
+/** Two drifting puffs per axis — valence (bottom), referenz (left). */
+export function gridTintClouds(
   pos: GridPosition,
   preset: GridTintPreset = 'card',
-): string | null {
+): GridTintCloud[] | null {
   const cfg = PRESETS[preset]
   if (!cfg.mesh || pos.x === null) return null
 
@@ -127,34 +150,64 @@ export function gridTintAuroraMesh(
   const { left, top } = gridToPercent(x, y)
   const valence = gridValenceAxisRgb(x)
   const referenz = gridReferenzAxisRgb(y)
-  const meet = bilinearColor(x, y)
 
   return [
-    auroraBlob(left, 84, valence, 0.14 * s, 148, 132),
-    auroraBlob(6, top, referenz, 0.12 * s, 138, 142),
-    auroraBlob(left, top, meet, 0.1 * s, 118, 110),
-  ].join(', ')
+    {
+      id: 'v0',
+      axis: 'valence',
+      phase: 0,
+      left: clampPct(left, 18, 82),
+      top: 84,
+      sizePct: 30 * s,
+      rgb: valence,
+    },
+    {
+      id: 'v1',
+      axis: 'valence',
+      phase: 1,
+      left: clampPct(left + 14, 22, 88),
+      top: 92,
+      sizePct: 20 * s,
+      rgb: valence,
+    },
+    {
+      id: 'r0',
+      axis: 'referenz',
+      phase: 0,
+      left: 8,
+      top: clampPct(top, 14, 86),
+      sizePct: 28 * s,
+      rgb: referenz,
+    },
+    {
+      id: 'r1',
+      axis: 'referenz',
+      phase: 1,
+      left: 16,
+      top: clampPct(top - 10, 10, 80),
+      sizePct: 18 * s,
+      rgb: referenz,
+    },
+  ]
 }
 
-/** Drift overlays — one animated layer per axis (GPU transform only). */
+/** @deprecated use gridTintClouds */
+export const gridTintBalls = gridTintClouds
+
+/** @deprecated use gridTintAuroraMesh */
+export function gridTintAuroraMesh(
+  pos: GridPosition,
+  preset: GridTintPreset = 'card',
+): string | null {
+  return null
+}
+
+/** @deprecated use gridTintBalls */
 export function gridTintAuroraDrift(
   pos: GridPosition,
   preset: GridTintPreset = 'card',
 ): { a: string; b: string } | null {
-  const cfg = PRESETS[preset]
-  if (!cfg.mesh || pos.x === null) return null
-
-  const x = pos.x
-  const y = pos.y ?? 0
-  const s = cfg.meshScale * 0.85
-  const { left, top } = gridToPercent(x, y)
-  const valence = gridValenceAxisRgb(x)
-  const referenz = gridReferenzAxisRgb(y)
-
-  return {
-    a: auroraBlob(left - 8, 78, valence, 0.09 * s, 130, 118),
-    b: auroraBlob(14, top + 6, referenz, 0.08 * s, 122, 128),
-  }
+  return null
 }
 
 /** Same rgba wash as compose `cardTintShadow` (no extra mesh on the shell). */

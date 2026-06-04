@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useEntries } from '@/components/EntriesProvider'
 import { ENTRY_SELECT } from '@/lib/entry-fields'
-import { cardTintShadow } from '@/lib/gridZones'
+import { cardBoxShadow } from '@/lib/gridZones'
 import { createClient } from '@/lib/supabase'
 import { FEELINGS } from '@/lib/feelings'
 import { formatTime } from '@/lib/utils'
@@ -82,8 +82,7 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount once
   }, [])
 
-  const tintShadow = cardTintShadow(grid.x, grid.y)
-  const cardShadow = `0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05), ${tintShadow}`
+  const cardShadow = cardBoxShadow(grid.x, grid.y)
 
   const saveEntityNames = async (uid: string) => {
     if (person.trim()) {

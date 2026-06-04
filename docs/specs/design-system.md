@@ -49,13 +49,10 @@ the 2D grid. Very desaturated — only 10% opacity over card white.
 
 CSS variables: `--grid-neg-ich`, … → Tailwind `bg-grid-*`. Calendar heatmap and quadrant bars use `lib/gridColors.ts` (`bilinearColor`), not legacy `--valence-*` blue/orange.
 
-**Grid tint** (`lib/gridTint.ts`, `components/GridTintBackground.tsx`): same **~22% bilinear wash** as compose `EntryCard` (`cardTintShadow`), plus stacked **valence + referenz** aurora blobs at `(grid_x, grid_y)`. Two drift layers (transform only); **paused off-screen** on long lists. Presets: `card`, `card-compact`, `button`, `flat`.
+**Entry card tint:** compose + saved cards share `cardBoxShadow(x, y)` in `lib/gridZones.ts` — one bilinear mix at 22% via inset shadow. No cloud overlay on saved cards.
 
 ```tsx
-<div className="relative overflow-hidden rounded-card border" style={{ background: gridTintBackgroundStyle({ x, y }, 'button'), borderColor: gridTintBorderStyle({ x, y }, 'button') }}>
-  <GridTintBackground x={x} y={y} preset="button" />
-  <span className="relative z-[1]">…</span>
-</div>
+<div className="rounded-card bg-card" style={{ boxShadow: cardBoxShadow(x, y) }}>…</div>
 ```
 
 ### Typography

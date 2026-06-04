@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import {
-  gridTintAuroraDrift,
-  gridTintAuroraMesh,
+  gridTintCloudFill,
+  gridTintClouds,
   gridTintShouldAnimate,
   type GridPosition,
   type GridTintPreset,
@@ -16,8 +16,7 @@ export interface GridTintBackgroundProps extends GridPosition {
 }
 
 /**
- * Light valence/referenz clouds on top of compose tint — must stay subtle.
- * Pauses off-screen for long lists.
+ * Soft axis clouds (smoke puffs) on `cardBoxShadow` — drift only, no glow halos.
  */
 export function GridTintBackground({
   x: gridX,
@@ -26,15 +25,14 @@ export function GridTintBackground({
   className,
 }: GridTintBackgroundProps) {
   const pos = useMemo(() => ({ x: gridX, y: gridY }), [gridX, gridY])
-  const mesh = useMemo(() => gridTintAuroraMesh(pos, preset), [pos, preset])
-  const drift = useMemo(() => gridTintAuroraDrift(pos, preset), [pos, preset])
+  const clouds = useMemo(() => gridTintClouds(pos, preset), [pos, preset])
   const rootRef = useRef<HTMLDivElement>(null)
   const [animate, setAnimate] = useState(false)
   const shouldAnimate = gridTintShouldAnimate(preset)
 
   useEffect(() => {
     const el = rootRef.current
-    if (!el || !drift || !shouldAnimate) return
+    if (!el || !clouds?.length || !shouldAnimate) return
 
     const io = new IntersectionObserver(
       ([e]) => setAnimate(e.isIntersecting),
@@ -42,9 +40,9 @@ export function GridTintBackground({
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [drift, shouldAnimate])
+  }, [clouds, shouldAnimate])
 
-  if (!mesh && !drift) return null
+  if (!clouds?.length) return null
 
   return (
     <div
@@ -56,25 +54,22 @@ export function GridTintBackground({
       )}
       aria-hidden
     >
-      {mesh && (
+      {clouds.map(cloud => (
         <div
-          className="grid-tint-veil grid-tint-veil--mesh"
-          style={{ backgroundImage: mesh }}
+          key={cloud.id}
+          className={cn(
+            'grid-tint-cloud',
+            `grid-tint-cloud--${cloud.axis}`,
+            `grid-tint-cloud--p${cloud.phase}`,
+          )}
+          style={{
+            left: `${cloud.left}%`,
+            top: `${cloud.top}%`,
+            width: `${cloud.sizePct}%`,
+            background: gridTintCloudFill(cloud.rgb),
+          }}
         />
-      )}
-      {drift && (
-        <>
-          <div
-            className="grid-tint-veil grid-tint-veil--drift-a"
-            style={{ backgroundImage: drift.a }}
-          />
-          <div
-            className="grid-tint-veil grid-tint-veil--drift-b"
-            style={{ backgroundImage: drift.b }}
-          />
-        </>
-      )}
-      <div className="grid-tint-grain" />
+      ))}
     </div>
   )
 }

@@ -837,74 +837,109 @@
     cursor: pointer;
   }
 
-  /* Grid tint — two axis veils (valence + referenz) + grain; GPU transform only */
+  /* Grid tint — soft smoke puffs; screen blend; slight blur */
   .grid-tint {
     isolation: isolate;
     contain: paint;
   }
 
-  .grid-tint-veil {
+  .grid-tint-cloud {
     position: absolute;
-    inset: -30%;
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
-    background-position: center;
+    aspect-ratio: 1.15;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: screen;
+    filter: blur(10px);
     will-change: transform;
   }
 
-  .grid-tint-veil--mesh {
-    opacity: 0.5;
+  .dark .grid-tint-cloud {
+    mix-blend-mode: plus-lighter;
   }
 
-  .grid-tint-veil--drift-a {
-    opacity: 0.35;
-    animation: grid-tint-drift-a 32s ease-in-out infinite;
+  .grid-tint-cloud--valence.grid-tint-cloud--p0 {
+    animation: grid-tint-cloud-v0 20s ease-in-out infinite;
   }
 
-  .grid-tint-veil--drift-b {
-    opacity: 0.3;
-    mix-blend-mode: soft-light;
-    animation: grid-tint-drift-b 40s ease-in-out infinite;
+  .grid-tint-cloud--valence.grid-tint-cloud--p1 {
+    animation: grid-tint-cloud-v1 24s ease-in-out infinite;
+    animation-delay: -7s;
   }
 
-  .grid-tint-grain {
-    position: absolute;
-    inset: 0;
-    opacity: 0.028;
-    mix-blend-mode: multiply;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    background-size: 128px 128px;
+  .grid-tint-cloud--referenz.grid-tint-cloud--p0 {
+    animation: grid-tint-cloud-r0 22s ease-in-out infinite;
+    animation-delay: -3s;
   }
 
-  .grid-tint--paused .grid-tint-veil {
+  .grid-tint-cloud--referenz.grid-tint-cloud--p1 {
+    animation: grid-tint-cloud-r1 27s ease-in-out infinite;
+    animation-delay: -11s;
+  }
+
+  .grid-tint--paused .grid-tint-cloud {
     animation-play-state: paused;
     will-change: auto;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .grid-tint-veil--drift-a,
-    .grid-tint-veil--drift-b {
+    .grid-tint-cloud {
       animation: none !important;
+      filter: none;
     }
   }
 }
 
-@keyframes grid-tint-drift-a {
+@keyframes grid-tint-cloud-v0 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(-50%, -50%) translate(0, 0);
+  }
+  25% {
+    transform: translate(-50%, -50%) translate(36px, -22px);
   }
   50% {
-    transform: translate(4%, -3%) scale(1.06);
+    transform: translate(-50%, -50%) translate(-30px, 16px);
+  }
+  75% {
+    transform: translate(-50%, -50%) translate(22px, 26px);
   }
 }
 
-@keyframes grid-tint-drift-b {
+@keyframes grid-tint-cloud-v1 {
   0%,
   100% {
-    transform: translate(0, 0) scale(1);
+    transform: translate(-50%, -50%) translate(0, 0);
   }
-  50% {
-    transform: translate(-3%, 4%) scale(1.05);
+  33% {
+    transform: translate(-50%, -50%) translate(-28px, -18px);
+  }
+  66% {
+    transform: translate(-50%, -50%) translate(32px, 12px);
+  }
+}
+
+@keyframes grid-tint-cloud-r0 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0);
+  }
+  30% {
+    transform: translate(-50%, -50%) translate(-26px, 30px);
+  }
+  60% {
+    transform: translate(-50%, -50%) translate(20px, -24px);
+  }
+}
+
+@keyframes grid-tint-cloud-r1 {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translate(0, 0);
+  }
+  40% {
+    transform: translate(-50%, -50%) translate(24px, 28px);
+  }
+  70% {
+    transform: translate(-50%, -50%) translate(-32px, -14px);
   }
 }

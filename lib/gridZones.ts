@@ -276,3 +276,12 @@ export function cardTintShadow(
   const [r, g, b] = bilinearColor(x, y)
   return `inset 0 0 0 1000px rgba(${r},${g},${b},${opacity})`
 }
+
+/** Compose + saved entry cards — drop shadow + grid tint (single source of truth). */
+export function cardBoxShadow(
+  x: number,
+  y: number,
+  opacity = CARD_TINT_OPACITY,
+): string {
+  return `0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05), ${cardTintShadow(x, y, opacity)}`
+}

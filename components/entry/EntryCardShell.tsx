@@ -1,9 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/cn'
-import { GridTintBackground } from '@/components/GridTintBackground'
-import { entryCardBorderColor } from '@/lib/entryCardTint'
-import { cardTintShadow } from '@/lib/gridZones'
+import { cardBoxShadow } from '@/lib/gridZones'
 import type { Entry } from '@/lib/types'
 import type { ReactNode } from 'react'
 
@@ -14,32 +12,23 @@ interface Props {
   padding?: 'sm' | 'md'
 }
 
+/** Saved entry card — same bilinear tint as compose (`cardBoxShadow`). */
 export function EntryCardShell({ entry, children, className, padding = 'sm' }: Props) {
-  const tint =
+  const boxShadow =
     entry.grid_x !== null
-      ? cardTintShadow(entry.grid_x, entry.grid_y ?? 0)
-      : null
+      ? cardBoxShadow(entry.grid_x, entry.grid_y ?? 0)
+      : 'var(--shadow-card)'
 
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-card border',
-        !tint && 'shadow-card',
+        'rounded-card bg-card transition-[box-shadow] duration-300 ease-out',
         padding === 'sm' ? 'px-3.5 pb-3 pt-2' : 'px-4 pb-4 pt-2.5 md:px-[18px] md:pb-[18px] md:pt-3',
         className,
       )}
-      style={{
-        backgroundColor: 'var(--bg-card)',
-        borderColor: entryCardBorderColor(entry, padding === 'sm'),
-        boxShadow: tint ? `var(--shadow-card), ${tint}` : undefined,
-      }}
+      style={{ boxShadow }}
     >
-      <GridTintBackground
-        x={entry.grid_x}
-        y={entry.grid_y}
-        preset={padding === 'sm' ? 'card-compact' : 'card'}
-      />
-      <div className="relative z-[1]">{children}</div>
+      {children}
     </div>
   )
 }

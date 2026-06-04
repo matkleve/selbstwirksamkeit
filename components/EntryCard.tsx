@@ -6,7 +6,7 @@ import EntryGrid from './EntryGrid'
 import ReframeFlow from './ReframeFlow'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { getZone, zoneTexts, cardTintShadow } from '@/lib/gridZones'
+import { cardBoxShadow, getZone, zoneTexts } from '@/lib/gridZones'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
 import { formatTime } from '@/lib/utils'
 import { User, MapPin, Zap } from 'lucide-react'
@@ -84,8 +84,7 @@ export default function EntryCard() {
     return () => clearTimeout(t)
   }, [grid, lastZone])
 
-  const tintShadow = cardTintShadow(grid.x, grid.y)
-  const cardShadow = `0 1px 3px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05), ${tintShadow}`
+  const cardShadow = cardBoxShadow(grid.x, grid.y)
 
   const saveEntityNames = (uid: string) => {
     if (person.trim()) supabase.from('persons').upsert({ user_id: uid, name: person.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
