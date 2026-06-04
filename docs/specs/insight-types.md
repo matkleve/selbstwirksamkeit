@@ -36,7 +36,8 @@ RESPONSE BLOCKS     ← universell, immer gleich
 
 [🔔] Reminder
      MUST NOT erscheinen wenn Wenn-Dann leer
-     Chips: Heute · 3 Tage · Diese Woche · Kein Reminder
+     Chips: Heute · Ein paar Mal · Eine Weile · Lieber nicht
+     Reminder block MUST appear only after Weiter on Wenn-Dann (not while typing)
 
 [◎]  Summary
      "Du hast heute hingeschaut. Das zählt."

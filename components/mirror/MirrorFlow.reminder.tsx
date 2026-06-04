@@ -19,12 +19,12 @@ export function MirrorReminderChips({
       <div className="flex flex-wrap gap-1.5">
         {MIRROR_REMINDER_OPTIONS.map(opt => (
           <button
-            key={opt}
+            key={opt.label}
             type="button"
-            onClick={() => setDuration(duration === opt ? null : opt)}
+            onClick={() => setDuration(duration === opt.label ? null : opt.label)}
             className="cursor-pointer rounded-chip border-0 bg-transparent p-0"
           >
-            <Badge variant={duration === opt ? 'filled' : 'default'}>{opt}</Badge>
+            <Badge variant={duration === opt.label ? 'filled' : 'default'}>{opt.label}</Badge>
           </button>
         ))}
       </div>

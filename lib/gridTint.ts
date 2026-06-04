@@ -1,4 +1,8 @@
-import { bilinearColor } from '@/lib/gridZones'
+import {
+  bilinearColor,
+  gridReferenzAxisRgb,
+  gridValenceAxisRgb,
+} from '@/lib/gridZones'
 import { getValenceColor } from '@/lib/types'
 
 export type GridTintPreset = 'card' | 'card-compact' | 'button' | 'flat'
@@ -25,68 +29,36 @@ export type GridTintLayers = {
 
 const PRESETS = {
   card: {
-    baseMix: 14,
+    baseMix: 8,
     borderMix: 48,
     valenceBaseMix: 12,
-    smoke: true,
-    hero: true,
+    mesh: true,
     animate: true,
-    heroScale: 0.62,
-    heroOpacity: 0.62,
-    heroWidth: 48,
-    smokeWidth: 62,
-    smokeMix: 38,
-    smokeOffsets: [
-      { dx: -2.6, dy: 1.8, scale: 1.05, opacity: 0.24, variant: 1 as const },
-      { dx: 2.8, dy: -1.5, scale: 0.92, opacity: 0.2, variant: 2 as const },
-      { dx: 0.5, dy: 2.6, scale: 0.88, opacity: 0.18, variant: 3 as const },
-      { dx: -1.6, dy: -2.4, scale: 0.94, opacity: 0.21, variant: 4 as const },
-    ],
+    meshScale: 1,
   },
   'card-compact': {
-    baseMix: 13,
+    baseMix: 10,
     borderMix: 48,
     valenceBaseMix: 12,
-    smoke: false,
-    hero: false,
-    animate: false,
-    heroScale: 0,
-    heroOpacity: 0,
-    heroWidth: 0,
-    smokeWidth: 0,
-    smokeMix: 38,
-    smokeOffsets: [],
+    mesh: true,
+    animate: true,
+    meshScale: 0.58,
   },
   button: {
-    baseMix: 24,
+    baseMix: 12,
     borderMix: 55,
     valenceBaseMix: 18,
-    smoke: true,
-    hero: true,
+    mesh: true,
     animate: false,
-    heroScale: 0.5,
-    heroOpacity: 0.55,
-    heroWidth: 56,
-    smokeWidth: 70,
-    smokeMix: 42,
-    smokeOffsets: [
-      { dx: -2, dy: 1.2, scale: 0.85, opacity: 0.2, variant: 1 as const },
-      { dx: 2.2, dy: -1, scale: 0.78, opacity: 0.16, variant: 2 as const },
-    ],
+    meshScale: 0.85,
   },
   flat: {
     baseMix: 18,
     borderMix: 45,
     valenceBaseMix: 14,
-    smoke: false,
-    hero: false,
+    mesh: false,
     animate: false,
-    heroScale: 0,
-    heroOpacity: 0,
-    heroWidth: 0,
-    smokeWidth: 0,
-    smokeMix: 38,
-    smokeOffsets: [],
+    meshScale: 0,
   },
 } as const
 
@@ -95,10 +67,6 @@ function gridToPercent(x: number, y: number) {
     left: ((x + 5) / 10) * 100,
     top: ((5 - y) / 10) * 100,
   }
-}
-
-function clampGrid(v: number) {
-  return Math.max(-5, Math.min(5, v))
 }
 
 export function gridTintRgb(pos: GridPosition): [number, number, number] | null {
@@ -115,45 +83,105 @@ export function gridTintMix(
   return `color-mix(in srgb, rgb(${r}, ${g}, ${b}) ${amount}%, ${base})`
 }
 
+function rgba(rgb: readonly [number, number, number], alpha: number) {
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`
+}
+
+/** Pull grid colours toward card white — aurora look, not neon. */
+function pastelRgb(rgb: readonly [number, number, number], white = 0.38): [number, number, number] {
+  return [
+    Math.round(rgb[0] + (255 - rgb[0]) * white),
+    Math.round(rgb[1] + (255 - rgb[1]) * white),
+    Math.round(rgb[2] + (255 - rgb[2]) * white),
+  ]
+}
+
+export type GridTintVeilId = 'valence' | 'referenz' | 'blend'
+
+export type GridTintVeil = {
+  id: GridTintVeilId
+  backgroundImage: string
+  drift: 'a' | 'b' | 'none'
+}
+
+function veilGradient(
+  atX: number,
+  atY: number,
+  rgb: readonly [number, number, number],
+  peak: number,
+  w = 125,
+  h = 115,
+) {
+  const c = pastelRgb(rgb, 0.36)
+  return `radial-gradient(ellipse ${w}% ${h}% at ${atX}% ${atY}%, ${rgba(c, peak)} 0%, ${rgba(c, peak * 0.38)} 48%, transparent 76%)`
+}
+
+/**
+ * Two axis colours (valence + referenz) that meet at the grid point — like the 2D field.
+ */
+export function gridTintVeils(
+  pos: GridPosition,
+  preset: GridTintPreset = 'card',
+): GridTintVeil[] | null {
+  const cfg = PRESETS[preset]
+  if (!cfg.mesh || pos.x === null) return null
+
+  const x = pos.x
+  const y = pos.y ?? 0
+  const s = cfg.meshScale
+  const { left, top } = gridToPercent(x, y)
+
+  const valenceRgb = gridValenceAxisRgb(x)
+  const referenzRgb = gridReferenzAxisRgb(y)
+  const meetRgb = pastelRgb(bilinearColor(x, y), 0.3)
+
+  const veils: GridTintVeil[] = [
+    {
+      id: 'valence',
+      drift: 'a',
+      backgroundImage: veilGradient(left, 74, valenceRgb, 0.32 * s, 132, 118),
+    },
+    {
+      id: 'referenz',
+      drift: 'b',
+      backgroundImage: veilGradient(18, top, referenzRgb, 0.28 * s, 118, 128),
+    },
+    {
+      id: 'blend',
+      drift: 'none',
+      backgroundImage: veilGradient(left, top, meetRgb, 0.22 * s, 95, 88),
+    },
+  ]
+
+  if (preset === 'button') {
+    return veils.slice(0, 2)
+  }
+
+  return veils
+}
+
+/** @deprecated mesh replaces blob layers */
 export function gridTintLayers(
   pos: GridPosition,
   preset: GridTintPreset = 'card',
 ): GridTintLayers | null {
-  const cfg = PRESETS[preset]
-  if (!cfg.smoke && !cfg.hero) return null
-  if (pos.x === null) return null
-
+  if (!PRESETS[preset].mesh || pos.x === null) return null
   const x = pos.x
   const y = pos.y ?? 0
   const center = gridToPercent(x, y)
   const primary = bilinearColor(x, y)
-
-  const hero: GridTintBlob = {
-    left: center.left,
-    top: center.top,
-    rgb: primary,
-    opacity: cfg.heroOpacity,
-    scale: cfg.heroScale,
-    variant: 0,
-    layer: 'hero',
+  return {
+    smoke: [],
+    hero: {
+      left: center.left,
+      top: center.top,
+      rgb: primary,
+      opacity: 0,
+      scale: 1,
+      variant: 0,
+      layer: 'hero',
+    },
   }
-
-  const smoke = cfg.smokeOffsets.map(o => {
-    const sx = clampGrid(x + o.dx)
-    const sy = clampGrid(y + o.dy)
-    const p = gridToPercent(sx, sy)
-    return {
-      left: p.left,
-      top: p.top,
-      rgb: bilinearColor(sx, sy),
-      opacity: o.opacity,
-      scale: o.scale,
-      variant: o.variant,
-      layer: 'smoke' as const,
-    }
-  })
-
-  return { smoke, hero }
 }
 
 export function gridTintBackgroundStyle(

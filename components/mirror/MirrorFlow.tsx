@@ -24,6 +24,7 @@ import {
   MirrorSummarySection,
 } from '@/components/mirror/MirrorFlow.response'
 import { MirrorEmptyClose } from '@/components/mirror/MirrorFlow.emptyClose'
+import { reminderTypeForLabel } from '@/components/mirror/MirrorFlow.constants'
 import { intentionExpiresAt } from '@/lib/intentionReminderText'
 
 interface MirrorFlowProps {
@@ -49,6 +50,7 @@ export default function MirrorFlow({
   const [wennText, setWennText] = useState('')
   const [dannText, setDannText] = useState('')
   const [duration, setDuration] = useState<string | null>(null)
+  const [showReminderStep, setShowReminderStep] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [summaryWords, setSummaryWords] = useState(0)
 
@@ -63,6 +65,7 @@ export default function MirrorFlow({
     states,
     narrativeDone,
     pastReflection,
+    showReminderStep,
     showSummary,
     scrollAfterExpand,
   )
@@ -101,25 +104,29 @@ export default function MirrorFlow({
     scrollDown(true)
   }, [reflectionText, supabase, scrollDown])
 
-  const handleIntentionContinue = async () => {
+  const advanceFromIntentionFields = useCallback(() => {
     const wenn = wennText.trim()
     const dann = dannText.trim()
     if (wenn && dann) {
-      const reminderMap = {
-        Heute: 'today',
-        '3 Tage': '3days',
-        'Diese Woche': 'week',
-      } as const
-      const reminderType =
-        duration && duration !== 'Kein Reminder'
-          ? reminderMap[duration as keyof typeof reminderMap]
-          : null
+      setShowReminderStep(true)
+      scrollDown(true)
+      return
+    }
+    setShowSummary(true)
+    scrollDown(true)
+  }, [wennText, dannText, scrollDown])
+
+  const finishIntentionAndSummary = useCallback(async () => {
+    const wenn = wennText.trim()
+    const dann = dannText.trim()
+    if (wenn && dann) {
+      const reminderType = reminderTypeForLabel(duration)
       await supabase.from('implementation_intentions').insert({
         wenn_text: wenn,
         dann_text: dann,
         wants_reminder: !!reminderType,
-        reminder_type: reminderType === 'week' ? '7days' : reminderType,
-        expires_at: reminderType ? intentionExpiresAt(reminderType === 'week' ? '7days' : reminderType) : null,
+        reminder_type: reminderType,
+        expires_at: reminderType ? intentionExpiresAt(reminderType) : null,
         active: true,
       })
       if (sessionIdRef.current) {
@@ -128,16 +135,15 @@ export default function MirrorFlow({
           .update({
             intention_wenn: wenn,
             intention_dann: dann,
-            reminder_type: reminderType,
+            reminder_type: reminderType === '7days' ? 'week' : reminderType,
           })
           .eq('id', sessionIdRef.current)
       }
     }
     setShowSummary(true)
     scrollDown(true)
-  }
+  }, [wennText, dannText, duration, supabase, scrollDown])
 
-  const intentionComplete = Boolean(wennText.trim() && dannText.trim())
   const emptyState = !candidate
 
   return (
@@ -186,10 +192,11 @@ export default function MirrorFlow({
                   setWennText={setWennText}
                   dannText={dannText}
                   setDannText={setDannText}
-                  intentionComplete={intentionComplete}
+                  showReminderStep={showReminderStep}
                   duration={duration}
                   setDuration={setDuration}
-                  onContinue={() => void handleIntentionContinue()}
+                  onFieldsContinue={advanceFromIntentionFields}
+                  onReminderContinue={() => void finishIntentionAndSummary()}
                 />
               </MirrorExpandShell>
             </>

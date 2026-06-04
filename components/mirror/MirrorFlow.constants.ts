@@ -13,7 +13,22 @@ export const MIRROR_LOADER_MIN_MS = 3200
 export const MIRROR_EXHAUSTED_TEXT =
   'Du hast alle aktuellen Erkenntnisse gesehen. Nächste Woche gibt es neue.'
 
-export const MIRROR_REMINDER_OPTIONS = ['Heute', '3 Tage', 'Diese Woche', 'Kein Reminder'] as const
+/** UI labels — non-calendar; maps to DB `reminder_type` / expiry in MirrorFlow. */
+export const MIRROR_REMINDER_OPTIONS = [
+  { label: 'Heute', reminderType: 'today' as const },
+  { label: 'Ein paar Mal', reminderType: '3days' as const },
+  { label: 'Eine Weile', reminderType: '7days' as const },
+  { label: 'Lieber nicht', reminderType: null },
+] as const
+
+export type MirrorReminderLabel = (typeof MIRROR_REMINDER_OPTIONS)[number]['label']
+
+export function reminderTypeForLabel(
+  label: string | null,
+): 'today' | '3days' | '7days' | null {
+  if (!label) return null
+  return MIRROR_REMINDER_OPTIONS.find(o => o.label === label)?.reminderType ?? null
+}
 
 export const MIRROR_REMINDER_INTROS = [
   'Soll ich dich daran erinnern?',

@@ -1,15 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/cn'
 import {
-  gridTintBlobColor,
-  gridTintBlobWidth,
-  gridTintLayers,
   gridTintShouldAnimate,
+  gridTintVeils,
   type GridPosition,
-  type GridTintBlob,
   type GridTintPreset,
+  type GridTintVeil,
 } from '@/lib/gridTint'
 
 export interface GridTintBackgroundProps extends GridPosition {
@@ -17,35 +15,15 @@ export interface GridTintBackgroundProps extends GridPosition {
   className?: string
 }
 
-function renderBlob(
-  b: GridTintBlob,
-  preset: GridTintPreset,
-  key: string,
-) {
-  return (
-    <div
-      key={key}
-      className={cn(
-        'grid-tint-blob',
-        `grid-tint-blob--${b.variant}`,
-        b.layer === 'hero' ? 'grid-tint-blob--hero' : 'grid-tint-blob--smoke',
-      )}
-      style={{
-        left: `${b.left}%`,
-        top: `${b.top}%`,
-        width: `${gridTintBlobWidth(b, preset)}%`,
-        opacity: b.opacity,
-        backgroundColor: gridTintBlobColor(b.rgb, b.layer, preset),
-      }}
-    />
-  )
+function veilClass(veil: GridTintVeil) {
+  if (veil.drift === 'a') return 'grid-tint-veil grid-tint-veil--drift-a'
+  if (veil.drift === 'b') return 'grid-tint-veil grid-tint-veil--drift-b'
+  return 'grid-tint-veil'
 }
 
 /**
- * Coloured smoke + hero tint from grid position (Ember & Jade).
- * Place inside `position: relative; overflow: hidden` — content in `relative z-[1]`.
- *
- * Presets: `card` | `card-compact` | `button` | `flat`
+ * Two drifting axis colours (valence + referenz) + blend at the grid point.
+ * Animation pauses off-screen (safe for long entry lists).
  */
 export function GridTintBackground({
   x: gridX,
@@ -53,24 +31,25 @@ export function GridTintBackground({
   preset = 'card',
   className,
 }: GridTintBackgroundProps) {
-  const layers = gridTintLayers({ x: gridX, y: gridY }, preset)
+  const pos = useMemo(() => ({ x: gridX, y: gridY }), [gridX, gridY])
+  const veils = useMemo(() => gridTintVeils(pos, preset), [pos, preset])
   const rootRef = useRef<HTMLDivElement>(null)
   const [animate, setAnimate] = useState(false)
   const shouldAnimate = gridTintShouldAnimate(preset)
 
   useEffect(() => {
     const el = rootRef.current
-    if (!el || !layers || !shouldAnimate) return
+    if (!el || !veils?.length || !shouldAnimate) return
 
     const io = new IntersectionObserver(
       ([e]) => setAnimate(e.isIntersecting),
-      { rootMargin: '80px 0px', threshold: 0.05 },
+      { rootMargin: '64px 0px', threshold: 0.02 },
     )
     io.observe(el)
     return () => io.disconnect()
-  }, [layers, shouldAnimate, gridX, gridY, preset])
+  }, [veils, shouldAnimate])
 
-  if (!layers) return null
+  if (!veils?.length) return null
 
   return (
     <div
@@ -82,10 +61,14 @@ export function GridTintBackground({
       )}
       aria-hidden
     >
-      <div className="grid-tint-smoke">
-        {layers.smoke.map((b, i) => renderBlob(b, preset, `s-${i}`))}
-      </div>
-      {renderBlob(layers.hero, preset, 'hero')}
+      {veils.map(veil => (
+        <div
+          key={veil.id}
+          className={veilClass(veil)}
+          style={{ backgroundImage: veil.backgroundImage }}
+        />
+      ))}
+      <div className="grid-tint-grain" />
     </div>
   )
 }

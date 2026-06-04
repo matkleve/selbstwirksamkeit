@@ -116,12 +116,14 @@ export const zoneTexts: Record<ZoneKey, string[]> = {
 // ── Bilinear colour interpolation for card tinting ──
 // Pole colours: very desaturated, rendered at 10% opacity via inset box-shadow
 
-const POLES = {
+export const GRID_POLES = {
   neg_ich:    [185, 100,  72] as const,  // terracotta
   pos_ich:    [ 88, 152, 118] as const,  // sage
   neg_andere: [172, 108, 128] as const,  // dusk rose
   pos_andere: [ 88, 138, 178] as const,  // sky
-}
+} as const
+
+const POLES = GRID_POLES
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
 function lerpRgb(
@@ -231,6 +233,20 @@ function axisLeanColor(x: number, y: number): [number, number, number] {
   const ichMid = lerpRgb(POLES.neg_ich, POLES.pos_ich, 0.5)
   const andereMid = lerpRgb(POLES.neg_andere, POLES.pos_andere, 0.5)
   return lerpRgb(ichMid, andereMid, expandAxis(y))
+}
+
+/** Valence only (horizontal axis, ich row): terracotta ↔ sage. */
+export function gridValenceAxisRgb(x: number): [number, number, number] {
+  const tx = expandAxis(x)
+  return lerpRgb(POLES.neg_ich, POLES.pos_ich, tx)
+}
+
+/** Referenz only (vertical axis): ich row ↔ andere row. */
+export function gridReferenzAxisRgb(y: number): [number, number, number] {
+  const ty = expandAxis(y)
+  const ich = lerpRgb(POLES.neg_ich, POLES.pos_ich, 0.5)
+  const andere = lerpRgb(POLES.neg_andere, POLES.pos_andere, 0.5)
+  return lerpRgb(ich, andere, ty)
 }
 
 export function bilinearColor(x: number, y: number): [number, number, number] {

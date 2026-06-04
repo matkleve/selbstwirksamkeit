@@ -4,10 +4,19 @@ RFC 2119 | Companion: `docs/science/implementation-intentions.md`
 
 ---
 
+## UI — Reminder block timing
+
+The Reminder block MUST appear only **after** the user taps **Weiter** on the
+Wenn-Dann row (both fields filled). MUST NOT show while the user is still editing
+Wenn/Dann.
+
+Second **Weiter** on the Reminder row saves the intention (optional chip) and
+continues to Summary.
+
 ## UI — Intro vor Reminder-Chips
 
-When Wenn **and** Dann are filled, the Reminder block MUST show one intro line
-**above** the chips (same timeline row, not a separate block).
+When the Reminder block is visible, it MUST show one intro line **above** the
+chips (same timeline row, not a separate block).
 
 One of four variants, chosen at random when the block mounts:
 
@@ -72,7 +81,7 @@ Text builder: `lib/intentionReminderText.ts`.
 
 | Field | Role |
 |-------|------|
-| `wants_reminder` | User opted in via chip (not „Kein Reminder") |
+| `wants_reminder` | User opted in via chip (not „Lieber nicht") |
 | `reminder_type` | `today` · `3days` · `7days` |
 | `fired_count` | Incremented on each delivery |
 | `expires_at` | Set on insert from `reminder_type` |
@@ -85,11 +94,14 @@ Delivery scheduler: future work (cron / push). Text rules MUST be enforced in
 
 ## Chip → expiry
 
-| Chip | `reminder_type` | `expires_at` |
-|------|-----------------|--------------|
+| Chip (UI label) | `reminder_type` | `expires_at` |
+|-----------------|-----------------|--------------|
 | Heute | `today` | End of local day |
-| 3 Tage | `3days` | `created_at + 3d` |
-| Diese Woche | `7days` | `created_at + 7d` |
-| Kein Reminder | — | `wants_reminder = false` |
+| Ein paar Mal | `3days` | `created_at + 3d` (max 3 fires) |
+| Eine Weile | `7days` | `created_at + 7d` |
+| Lieber nicht | — | `wants_reminder = false` |
+
+UI labels MUST NOT use calendar phrasing („3 Tage“, „Diese Woche“) — non-direktive,
+duration-agnostic copy.
 
 Max **3** notification fires per intention regardless of chip duration.

@@ -6,10 +6,12 @@ import {
   gridTintLayers,
   gridTintMix,
   gridTintRgb,
+  gridTintVeils,
   type GridPosition,
   type GridTintBlob,
   type GridTintLayers,
   type GridTintPreset,
+  type GridTintVeil,
 } from '@/lib/gridTint'
 
 export type {
@@ -17,6 +19,8 @@ export type {
   GridTintBlob,
   GridTintLayers,
   GridTintPreset,
+  GridTintVeil,
+  GridTintVeilId,
 }
 
 export {
@@ -26,6 +30,7 @@ export {
   gridTintLayers,
   gridTintMix,
   gridTintRgb,
+  gridTintVeils,
 }
 
 /** @deprecated use gridTintMix */

@@ -176,7 +176,7 @@ Normative language per RFC 2119. **Response block order and invariants:** `insig
 - Reflexion: `Textarea`, placeholder `…`, link **„→ weiter ohne Antwort"** — MUST NOT show confirmation after continue
 - Wenn-Dann placeholders: „es 21 Uhr wird · ich heimkomme" / „atme ich dreimal durch"
 - Save MUST stay disabled until both Wenn and Dann are filled
-- Reminder chips MUST NOT appear until both Wenn-Dann fields are filled
+- Reminder block MUST NOT appear until user taps **Weiter** on Wenn-Dann (both fields filled)
 - Summary MUST be the last visible block; MUST NOT use fanfare after save
 - Reflexion text MUST persist to `mirror_sessions.user_response`
 - MUST use existing `Input`, `Button`, `Badge`, `Textarea`

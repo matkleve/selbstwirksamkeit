@@ -49,7 +49,7 @@ the 2D grid. Very desaturated — only 10% opacity over card white.
 
 CSS variables: `--grid-neg-ich`, … → Tailwind `bg-grid-*`. Calendar heatmap and quadrant bars use `lib/gridColors.ts` (`bilinearColor`), not legacy `--valence-*` blue/orange.
 
-**Grid tint** (`lib/gridTint.ts`, `components/GridTintBackground.tsx`): smoke + hero from `grid_x`/`grid_y`. Presets: `card`, `card-compact`, `button`, `flat`. Use on any `relative overflow-hidden` surface; pair with `gridTintBackgroundStyle()` for flat base mix.
+**Grid tint** (`lib/gridTint.ts`, `components/GridTintBackground.tsx`): **two axis veils** — valence (horizontal, terracotta↔sage) + referenz (vertical, ich↔andere) — plus a soft blend at `(grid_x, grid_y)`. Slow CSS `transform` drift; **paused off-screen** via `IntersectionObserver` (safe for long lists). Presets: `card`, `card-compact`, `button`, `flat`.
 
 ```tsx
 <div className="relative overflow-hidden rounded-card border" style={{ background: gridTintBackgroundStyle({ x, y }, 'button'), borderColor: gridTintBorderStyle({ x, y }, 'button') }}>

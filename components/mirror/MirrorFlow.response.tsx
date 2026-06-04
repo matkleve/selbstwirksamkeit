@@ -75,20 +75,22 @@ export function MirrorIntentionSection({
   setWennText,
   dannText,
   setDannText,
-  intentionComplete,
+  showReminderStep,
   duration,
   setDuration,
-  onContinue,
+  onFieldsContinue,
+  onReminderContinue,
 }: {
   blocksLength: number
   wennText: string
   setWennText: (v: string) => void
   dannText: string
   setDannText: (v: string) => void
-  intentionComplete: boolean
+  showReminderStep: boolean
   duration: string | null
   setDuration: (v: string | null) => void
-  onContinue: () => void
+  onFieldsContinue: () => void
+  onReminderContinue: () => void
 }) {
   return (
     <>
@@ -111,13 +113,16 @@ export function MirrorIntentionSection({
             </div>
           ))}
 
-          <MirrorWeiterButton onClick={onContinue} />
+          <MirrorWeiterButton onClick={onFieldsContinue} />
         </div>
       </MirrorTimelineRow>
 
-      <MirrorExpandShell open={intentionComplete}>
+      <MirrorExpandShell open={showReminderStep}>
         <MirrorTimelineRow markerType="reminder" markerIdx={blocksLength + 2}>
-          <MirrorReminderChips duration={duration} setDuration={setDuration} />
+          <div className="flex flex-col gap-3">
+            <MirrorReminderChips duration={duration} setDuration={setDuration} />
+            <MirrorWeiterButton onClick={onReminderContinue} />
+          </div>
         </MirrorTimelineRow>
       </MirrorExpandShell>
     </>

@@ -9,6 +9,7 @@ export function useMirrorBlockAutoScroll(
   states: Record<string, BlockState>,
   narrativeDone: boolean,
   pastReflection: boolean,
+  showReminderStep: boolean,
   showSummary: boolean,
   scrollAfterExpand: () => void,
 ) {
@@ -16,6 +17,7 @@ export function useMirrorBlockAutoScroll(
   const seenSectionsRef = useRef({
     narrativeDone: false,
     pastReflection: false,
+    showReminderStep: false,
     showSummary: false,
   })
 
@@ -40,9 +42,13 @@ export function useMirrorBlockAutoScroll(
       seen.pastReflection = true
       scrollAfterExpand()
     }
+    if (showReminderStep && !seen.showReminderStep) {
+      seen.showReminderStep = true
+      scrollAfterExpand()
+    }
     if (showSummary && !seen.showSummary) {
       seen.showSummary = true
       scrollAfterExpand()
     }
-  }, [phase, narrativeDone, pastReflection, showSummary, scrollAfterExpand])
+  }, [phase, narrativeDone, pastReflection, showReminderStep, showSummary, scrollAfterExpand])
 }
