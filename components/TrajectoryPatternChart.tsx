@@ -132,10 +132,7 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
                   width={M.left - 6}
                   height={12}
                 >
-                  <div
-                    xmlns="http://www.w3.org/1999/xhtml"
-                    className="flex h-full items-center justify-end text-ink-3"
-                  >
+                  <div className="flex h-full items-center justify-end text-ink-3">
                     {tick > 0 ? (
                       <Users size={10} strokeWidth={1.5} aria-hidden />
                     ) : (

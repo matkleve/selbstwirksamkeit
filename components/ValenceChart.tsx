@@ -42,7 +42,7 @@ function CustomTooltip(props: { active?: boolean; payload?: Array<{ payload: Cha
       </div>
       {d.text && (
         <div style={{ color: 'var(--text-secondary)', lineHeight: 1.45 }}>
-          „{d.text.slice(0, 80)}{d.text.length > 80 ? '…' : ''}"
+          „{d.text.slice(0, 80)}{d.text.length > 80 ? '…' : ''}“
         </div>
       )}
     </div>

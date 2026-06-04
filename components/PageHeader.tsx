@@ -13,7 +13,7 @@ export function PageHeader({ title, description, action, className }: Props) {
     <header
       className={cn(
         'mb-8',
-        action && 'flex items-start justify-between gap-4',
+        action ? 'flex items-start justify-between gap-4' : undefined,
         className,
       )}
     >

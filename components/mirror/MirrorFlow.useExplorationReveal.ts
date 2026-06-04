@@ -54,7 +54,7 @@ export function useMirrorExplorationReveal(
         [block.id]: p[block.id] ?? emptyExplorationBlockReveal(),
       }))
 
-      let d = MIRROR_EXPLORATION_REVEAL.startDelay
+      let d: number = MIRROR_EXPLORATION_REVEAL.startDelay
       sched(() => scrollAfterExpand(), d)
 
       const introLen = splitRevealWords(block.intro).length

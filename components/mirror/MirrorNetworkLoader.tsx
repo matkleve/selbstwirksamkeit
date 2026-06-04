@@ -329,20 +329,21 @@ export function MirrorNetworkLoader({
     t0Ref.current = null
     const ctx = setupCanvas(c)
     if (!ctx) return
+    const canvasCtx = ctx
 
     function draw(ts: number) {
       if (!t0Ref.current) t0Ref.current = ts
       const t = (ts - t0Ref.current) / 1000
       const { gold, background } = readTheme()
-      ctx.clearRect(0, 0, BASE, BASE)
+      canvasCtx.clearRect(0, 0, BASE, BASE)
 
       const cp = Math.min(1, t / 0.4)
       const cpu = 1 + 0.03 * Math.sin(t * 1.4)
       const hubHalf = CR * cp * cpu
 
-      ctx.strokeStyle = gold
-      ctx.lineWidth = 0.75
-      ctx.lineCap = 'round'
+      canvasCtx.strokeStyle = gold
+      canvasCtx.lineWidth = 0.75
+      canvasCtx.lineCap = 'round'
 
       EDGES.forEach(([i, j], ei) => {
         const prog = ease(edgeProg(ei, t))
@@ -352,9 +353,9 @@ export function MirrorNetworkLoader({
         const trimmed = trimEndpoints(na.x, na.y, na.half, nb.x, nb.y, nb.half)
         if (!trimmed) return
         const p1 = curveControl(trimmed.p0, trimmed.p2, ei)
-        ctx.globalAlpha = edgeDepthAlpha(i, j) * prog
-        strokeQuadratic(ctx, trimmed.p0, p1, trimmed.p2, prog)
-        ctx.globalAlpha = 1
+        canvasCtx.globalAlpha = edgeDepthAlpha(i, j) * prog
+        strokeQuadratic(canvasCtx, trimmed.p0, p1, trimmed.p2, prog)
+        canvasCtx.globalAlpha = 1
       })
 
       NODES.forEach((node, i) => {
@@ -366,29 +367,29 @@ export function MirrorNetworkLoader({
         const rMask = cornerRadiusForHalf(maskHalf)
         const rIn = cornerRadiusForHalf(inner)
 
-        pathRoundedSquare(ctx, node.x, node.y, maskHalf, rMask)
-        ctx.fillStyle = background
-        ctx.fill()
+        pathRoundedSquare(canvasCtx, node.x, node.y, maskHalf, rMask)
+        canvasCtx.fillStyle = background
+        canvasCtx.fill()
 
-        pathRoundedSquare(ctx, node.x, node.y, inner, rIn)
-        ctx.fillStyle = rgba(node.rgb, p)
-        ctx.fill()
+        pathRoundedSquare(canvasCtx, node.x, node.y, inner, rIn)
+        canvasCtx.fillStyle = rgba(node.rgb, p)
+        canvasCtx.fill()
       })
 
       const hubR = cornerRadiusForHalf(hubHalf)
       const hubPad = 1.5
 
-      pathRoundedSquare(ctx, CX, CY, hubHalf + hubPad, cornerRadiusForHalf(hubHalf + hubPad))
-      ctx.fillStyle = background
-      ctx.globalAlpha = 1
-      ctx.fill()
+      pathRoundedSquare(canvasCtx, CX, CY, hubHalf + hubPad, cornerRadiusForHalf(hubHalf + hubPad))
+      canvasCtx.fillStyle = background
+      canvasCtx.globalAlpha = 1
+      canvasCtx.fill()
 
-      pathRoundedSquare(ctx, CX, CY, hubHalf, hubR)
-      ctx.strokeStyle = gold
-      ctx.globalAlpha = 0.9 * cp
-      ctx.lineWidth = 1
-      ctx.stroke()
-      ctx.globalAlpha = 1
+      pathRoundedSquare(canvasCtx, CX, CY, hubHalf, hubR)
+      canvasCtx.strokeStyle = gold
+      canvasCtx.globalAlpha = 0.9 * cp
+      canvasCtx.lineWidth = 1
+      canvasCtx.stroke()
+      canvasCtx.globalAlpha = 1
 
       rafRef.current = requestAnimationFrame(draw)
     }

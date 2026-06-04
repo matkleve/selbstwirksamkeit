@@ -19,6 +19,7 @@ import {
   type GridTintBall,
   type GridTintCloud,
   type GridTintVeil,
+  type GridTintVeilId,
 } from '@/lib/gridTint'
 
 export type {

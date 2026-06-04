@@ -10,7 +10,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     <div
       className={cn(
         'field-shell',
-        error && 'field-shell--error',
+        error ? 'field-shell--error' : undefined,
         className,
       )}
     >

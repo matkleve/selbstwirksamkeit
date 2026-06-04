@@ -11,14 +11,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     <div
       className={cn(
         'field-shell',
-        trailing && 'relative',
-        error && 'field-shell--error',
+        trailing ? 'relative' : undefined,
+        error ? 'field-shell--error' : undefined,
         className,
       )}
     >
       <input
         ref={ref}
-        className={cn('field-input px-4 py-3', trailing && 'pr-11')}
+        className={cn('field-input px-4 py-3', trailing ? 'pr-11' : undefined)}
         {...props}
       />
       {trailing ? (
