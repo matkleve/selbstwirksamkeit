@@ -2,25 +2,25 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
-import type { PatternResult, PatternBlock } from '@/lib/patternDetection'
+import type { MirrorCandidate } from '@/lib/patternDetection'
 
 const LOADING_STEPS = [
-  'Lese deine letzten Einträge…',
-  'Erkenne Muster…',
+  'Lese deine Einträge…',
+  'Suche nach Mustern…',
   'Gleiche Zeiträume ab…',
   'Bereite deinen Spiegel vor…',
 ]
 
 type InternalBlock =
-  | (PatternBlock & { id: string })
+  | { id: string; type: 'text'; text: string; muted?: boolean }
+  | { id: string; type: 'entry'; entry: MirrorCandidate['entries'][number] }
   | { id: string; type: 'question'; text: string }
   | { id: string; type: 'decision' }
-  | { id: string; type: 'summary'; text: string; muted: true }
 
 interface BlockState {
   visible: boolean
   wordCount: number
-  entryPhase: 'hidden' | 'date' | 'text' | 'chips'
+  entryPhase: 'hidden' | 'date' | 'text'
 }
 
 function fmtDate(s: string) {
@@ -30,14 +30,10 @@ function fmtTime(s: string) {
   return new Date(s).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
 }
 
-const MARKER: Record<string, string> = {
-  question: '?', decision: '→', summary: '◎', entry: '❝',
-}
-function markerFor(type: string, idx: number) {
-  return MARKER[type] ?? (idx === 0 ? '◦' : '·')
-}
+const MARKER: Record<string, string> = { question: '?', decision: '→', entry: '❝' }
+const markerFor = (type: string, idx: number) => MARKER[type] ?? (idx === 0 ? '◦' : '·')
 
-export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
+export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate | null }) {
   const [loadingStep, setLoadingStep] = useState(0)
   const [phase, setPhase] = useState<'loading' | 'mirror'>('loading')
   const [states, setStates] = useState<Record<string, BlockState>>({})
@@ -58,15 +54,17 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = [] }
   const scrollDown = () => setTimeout(() => scrollRef.current?.scrollTo({ top: 99999, behavior: 'smooth' }), 60)
 
-  // Build block list
-  const blocks: InternalBlock[] = [
-    ...pattern.blocks.map((b, i) => ({ ...b, id: `b${i}` })),
-    ...(pattern.question ? [{ id: 'question', type: 'question' as const, text: pattern.question }] : []),
+  const blocks: InternalBlock[] = candidate ? [
+    { id: 'intro', type: 'text', text: candidate.introText },
+    ...candidate.entries.map((e, i) => ({ id: `entry-${i}`, type: 'entry' as const, entry: e })),
+    { id: 'question', type: 'question', text: candidate.question },
     { id: 'decision', type: 'decision' as const },
-    { id: 'summary', type: 'summary' as const, text: 'Du hast heute hingeschaut. Das zählt.', muted: true as const },
+    { id: 'summary', type: 'text', text: 'Du hast heute hingeschaut. Das zählt.', muted: true },
+  ] : [
+    { id: 'empty', type: 'text', text: 'Noch zu wenige Muster. Schreib weiter — ich schaue dann nochmal.', muted: true },
   ]
 
-  // Loading phase
+  // Loading
   useEffect(() => {
     clear()
     LOADING_STEPS.forEach((_, i) => { if (i > 0) sched(() => setLoadingStep(i), i * 820) })
@@ -93,33 +91,28 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
       }, d)
       d += 320
 
-      if (block.type === 'entry' && 'entry' in block && block.entry) {
+      if (block.type === 'entry') {
         sched(() => setStates(p => ({ ...p, [block.id]: { ...p[block.id], entryPhase: 'date' } })), d)
         d += 240
-        const text = block.entry.text.slice(0, 120)
-        text.split(' ').forEach((_, wi) => {
+        const words = block.entry.text.slice(0, 120).split(' ')
+        words.forEach((_, wi) => {
           sched(() => {
             setStates(p => ({ ...p, [block.id]: { ...p[block.id], wordCount: wi + 1, entryPhase: 'text' } }))
-            if (wi === text.split(' ').length - 1) scrollDown()
+            if (wi === words.length - 1) scrollDown()
           }, d + wi * 85)
         })
-        d += text.split(' ').length * 85 + 260
-        if ('chips' in block && block.chips?.length) {
-          sched(() => {
-            setStates(p => ({ ...p, [block.id]: { ...p[block.id], entryPhase: 'chips' } }))
-          }, d); d += 340
-        }
+        d += words.length * 85 + 280
       }
 
-      const textBlock = block as { text?: string }
-      if (textBlock.text && block.type !== 'entry' && block.type !== 'decision') {
-        textBlock.text.split(' ').forEach((_, wi) => {
+      if ((block.type === 'text' || block.type === 'question') && block.text) {
+        const words = block.text.split(' ')
+        words.forEach((_, wi) => {
           sched(() => {
             setStates(p => ({ ...p, [block.id]: { ...p[block.id], wordCount: wi + 1 } }))
-            if (wi === textBlock.text!.split(' ').length - 1) scrollDown()
+            if (wi === words.length - 1) scrollDown()
           }, d + wi * 88)
         })
-        d += textBlock.text.split(' ').length * 88 + 300
+        d += words.length * 88 + 300
       }
 
       if (block.type === 'decision') {
@@ -130,9 +123,9 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
-  const words = (id: string, text: string) =>
+  const visWords = (id: string, text: string) =>
     text.split(' ').slice(0, states[id]?.wordCount ?? 0).join(' ')
-  const typing = (id: string, text: string) =>
+  const isTyping = (id: string, text: string) =>
     (states[id]?.wordCount ?? 0) < text.split(' ').length
 
   const handleSave = async () => {
@@ -148,17 +141,16 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
   }
 
   const GOLD = 'var(--mirror-gold)'
-  const SPINE = 'rgba(200,168,75,0.3)'
+  const SPINE = 'rgba(200,168,75,0.28)'
 
-  const markerNode = (type: string, idx: number, extra?: string) => (
+  const dot = (type: string, idx: number, color?: string) => (
     <div style={{
       position: 'absolute', left: -33, top: 2,
       width: 18, height: 18, borderRadius: '50%',
-      background: 'var(--bg-base)',
-      border: `1px solid ${SPINE}`,
+      background: 'var(--bg-base)', border: `1px solid ${SPINE}`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: type === 'question' ? 9 : 8,
-      color: extra ?? GOLD, fontWeight: 700, zIndex: 2,
+      color: color ?? GOLD, fontWeight: 700, zIndex: 2,
     }}>
       {markerFor(type, idx)}
     </div>
@@ -167,35 +159,24 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
   return (
     <>
       <style>{`
-        @keyframes mirrorSlideUp {
-          from { opacity:0; transform:translateY(14px); }
-          to   { opacity:1; transform:none; }
-        }
-        @keyframes mirrorFadeIn {
-          from { opacity:0; transform:translateY(5px); }
-          to   { opacity:1; transform:none; }
-        }
-        @keyframes mirrorFade { from{opacity:0} to{opacity:1} }
-        @keyframes mirrorBlink { 0%,100%{opacity:0} 50%{opacity:.4} }
-        @keyframes mirrorDot {
-          0%,80%,100%{transform:scale(.5);opacity:.2}
-          40%{transform:scale(1);opacity:.9}
-        }
+        @keyframes mSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+        @keyframes mFadeIn  { from{opacity:0;transform:translateY(5px)}  to{opacity:1;transform:none} }
+        @keyframes mFade    { from{opacity:0} to{opacity:1} }
+        @keyframes mBlink   { 0%,100%{opacity:0} 50%{opacity:.4} }
+        @keyframes mDot     { 0%,80%,100%{transform:scale(.5);opacity:.2} 40%{transform:scale(1);opacity:.9} }
       `}</style>
 
       {/* Loading overlay */}
       {phase === 'loading' && (
         <div style={{
-          position: 'fixed', inset: 0, zIndex: 100,
-          background: '#0D0A07',
+          position: 'fixed', inset: 0, zIndex: 100, background: '#0D0A07',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 44,
         }}>
           <div style={{
             width: 54, height: 54, borderRadius: '50%',
             border: '1.5px solid #2A1E10',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
           }}>🪞</div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 210 }}>
@@ -205,11 +186,9 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
                   display: 'flex', gap: 10, alignItems: 'center',
                   fontSize: '0.8125rem', letterSpacing: '0.015em',
                   color: loadingStep === i ? GOLD : 'rgba(200,168,75,0.28)',
-                  animation: 'mirrorFadeIn 0.4s ease forwards',
+                  animation: 'mFadeIn 0.4s ease forwards',
                 }}>
-                  <span style={{ fontSize: 9, width: 12, opacity: .7 }}>
-                    {loadingStep > i ? '✓' : '·'}
-                  </span>
+                  <span style={{ fontSize: 9, width: 12, opacity: .7 }}>{loadingStep > i ? '✓' : '·'}</span>
                   {step}
                 </div>
               ) : null
@@ -221,7 +200,7 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
               <div key={i} style={{
                 width: 4, height: 4, borderRadius: '50%',
                 background: 'rgba(200,168,75,0.35)',
-                animation: `mirrorDot 1.4s ease ${i * 0.2}s infinite`,
+                animation: `mDot 1.4s ease ${i * 0.2}s infinite`,
               }} />
             ))}
           </div>
@@ -234,9 +213,7 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
         style={{
           opacity: phase === 'mirror' ? 1 : 0,
           transition: 'opacity 0.7s ease',
-          position: 'relative',
-          paddingLeft: 40,
-          paddingTop: 4,
+          position: 'relative', paddingLeft: 40, paddingTop: 4,
         }}
       >
         {/* Spine */}
@@ -253,32 +230,44 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
           return (
             <div key={block.id} style={{
               position: 'relative', marginBottom: 22,
-              animation: 'mirrorSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
+              animation: 'mSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
             }}>
-              {markerNode(block.type, idx)}
+              {dot(block.type, idx)}
 
-              {/* TEXT / QUESTION / SUMMARY */}
-              {(block.type === 'text' || block.type === 'question' || block.type === 'summary') && (block as {text?: string}).text && (
+              {/* TEXT / SUMMARY */}
+              {block.type === 'text' && (
                 <p style={{
                   margin: 0,
                   fontFamily: 'var(--font-display), Georgia, serif',
-                  fontSize: block.type === 'question' ? '1rem' : '1.0625rem',
-                  fontStyle: block.type === 'question' ? 'italic' : 'normal',
-                  lineHeight: 1.55, fontWeight: 400,
-                  color: (block as {muted?: boolean}).muted ? 'var(--text-muted)' : 'var(--text-secondary)',
+                  fontSize: '1.0625rem', lineHeight: 1.55, fontWeight: 400,
+                  color: block.muted ? 'var(--text-muted)' : 'var(--text-secondary)',
                 }}>
-                  {words(block.id, (block as {text: string}).text)}
-                  {typing(block.id, (block as {text: string}).text) && (
-                    <span style={{ animation: 'mirrorBlink 0.9s ease infinite' }}>|</span>
+                  {visWords(block.id, block.text)}
+                  {isTyping(block.id, block.text) && (
+                    <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
+                  )}
+                </p>
+              )}
+
+              {/* QUESTION */}
+              {block.type === 'question' && (
+                <p style={{
+                  margin: 0,
+                  fontFamily: 'var(--font-display), Georgia, serif',
+                  fontSize: '1rem', fontStyle: 'italic', lineHeight: 1.55,
+                  color: 'var(--text-secondary)',
+                }}>
+                  {visWords(block.id, block.text)}
+                  {isTyping(block.id, block.text) && (
+                    <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
                   )}
                 </p>
               )}
 
               {/* ENTRY */}
-              {block.type === 'entry' && 'entry' in block && block.entry && (() => {
+              {block.type === 'entry' && (() => {
                 const ep = st.entryPhase
                 const text = block.entry.text.slice(0, 120)
-                const chipsArr = ('chips' in block && block.chips) ? block.chips : []
                 return (
                   <div style={{
                     borderRadius: 10, background: 'var(--bg-subtle)',
@@ -287,7 +276,7 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
                     {ep !== 'hidden' && (
                       <div style={{
                         display: 'flex', justifyContent: 'space-between', marginBottom: 6,
-                        animation: 'mirrorFade 0.35s ease forwards',
+                        animation: 'mFade 0.35s ease forwards',
                       }}>
                         <span style={{
                           fontSize: '0.6875rem', fontWeight: 500, color: 'var(--text-muted)',
@@ -298,36 +287,19 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
                         </span>
                       </div>
                     )}
-                    {(ep === 'text' || ep === 'chips') && (
+                    {ep === 'text' && (
                       <p style={{
                         margin: 0,
                         fontFamily: 'var(--font-display), Georgia, serif',
                         fontSize: '0.9375rem', fontStyle: 'italic',
-                        color: 'var(--text-secondary)', lineHeight: 1.5,
-                        minHeight: 20,
+                        color: 'var(--text-secondary)', lineHeight: 1.5, minHeight: 20,
                       }}>
-                        "{words(block.id, text)}
-                        {typing(block.id, text)
-                          ? <span style={{ animation: 'mirrorBlink 0.9s ease infinite' }}>|</span>
+                        "{visWords(block.id, text)}
+                        {isTyping(block.id, text)
+                          ? <span style={{ animation: 'mBlink 0.9s ease infinite' }}>|</span>
                           : '"'
                         }
                       </p>
-                    )}
-                    {ep === 'chips' && chipsArr.length > 0 && (
-                      <div style={{
-                        display: 'flex', gap: 5, marginTop: 8, flexWrap: 'wrap',
-                        animation: 'mirrorFade 0.35s ease forwards',
-                      }}>
-                        {chipsArr.map(c => (
-                          <span key={c} style={{
-                            fontSize: '0.6875rem', fontWeight: 500,
-                            color: 'var(--valence-neg-mid)',
-                            background: 'rgba(196,96,58,0.07)',
-                            borderRadius: 20, padding: '2px 8px',
-                            border: '1px solid rgba(196,96,58,0.15)',
-                          }}>{c}</span>
-                        ))}
-                      </div>
                     )}
                   </div>
                 )
@@ -341,24 +313,19 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
                     border: '1px solid var(--border)', background: 'transparent',
                     color: 'var(--text-muted)', fontSize: '0.8125rem',
                     fontFamily: 'inherit', cursor: 'pointer',
-                  }}>
-                    Schließen
-                  </button>
+                  }}>Schließen</button>
                   <button onClick={() => { setShowForm(true); scrollDown() }} style={{
                     flex: 1, padding: '9px 0', borderRadius: 9,
-                    border: 'none', background: GOLD, color: 'white',
+                    border: 'none', background: GOLD, color: '#fff',
                     fontSize: '0.8125rem', fontWeight: 500,
                     fontFamily: 'inherit', cursor: 'pointer',
-                  }}>
-                    Wenn-Dann →
-                  </button>
+                  }}>Wenn-Dann →</button>
                 </div>
               )}
               {block.type === 'decision' && showForm && (
                 <p style={{
-                  margin: 0, fontSize: '0.8125rem',
-                  color: 'var(--text-muted)', fontStyle: 'italic',
-                  fontFamily: 'var(--font-display), Georgia, serif',
+                  margin: 0, fontSize: '0.8125rem', color: 'var(--text-muted)',
+                  fontStyle: 'italic', fontFamily: 'var(--font-display), Georgia, serif',
                 }}>Intention gesetzt ↓</p>
               )}
             </div>
@@ -369,17 +336,14 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
         {showForm && !saved && (
           <div style={{
             position: 'relative', marginBottom: 22,
-            animation: 'mirrorSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
+            animation: 'mSlideUp 0.42s cubic-bezier(.34,1.4,.64,1) forwards',
           }}>
-            {markerNode('intention', 99)}
-
+            {dot('intention', 99)}
             {[
-              { label: 'Wenn', value: wennText, set: setWennText, ph: 'es 21 Uhr wird · ich müde werde' },
-              { label: 'Dann', value: dannText, set: setDannText, ph: 'atme ich dreimal durch' },
+              { label: 'Wenn', value: wennText, set: setWennText, ph: 'dieses Muster wieder auftaucht' },
+              { label: 'Dann', value: dannText, set: setDannText, ph: 'tue ich…' },
             ].map(row => (
-              <div key={row.label} style={{
-                display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12,
-              }}>
+              <div key={row.label} style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 12 }}>
                 <span style={{
                   fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)',
                   letterSpacing: '0.08em', textTransform: 'uppercase', flexShrink: 0, width: 36,
@@ -426,23 +390,16 @@ export default function MirrorFlow({ pattern }: { pattern: PatternResult }) {
                 cursor: wennText && dannText ? 'pointer' : 'default',
                 transition: 'background 0.2s, color 0.2s',
               }}
-            >
-              Intention speichern
-            </button>
+            >Intention speichern</button>
           </div>
         )}
 
         {saved && (
-          <div style={{
-            position: 'relative', marginBottom: 22,
-            animation: 'mirrorFade 0.4s ease forwards',
-          }}>
-            {markerNode('saved', 99, 'var(--hint-ok)')}
+          <div style={{ position: 'relative', marginBottom: 22, animation: 'mFade 0.4s ease forwards' }}>
+            {dot('saved', 99, 'var(--hint-ok)')}
             <p style={{
-              margin: 0,
-              fontFamily: 'var(--font-display), Georgia, serif',
-              fontSize: '0.9375rem', fontStyle: 'italic',
-              color: 'var(--hint-ok)',
+              margin: 0, fontFamily: 'var(--font-display), Georgia, serif',
+              fontSize: '0.9375rem', fontStyle: 'italic', color: 'var(--hint-ok)',
             }}>
               Wenn {wennText}, dann {dannText}.
             </p>
