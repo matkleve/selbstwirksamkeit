@@ -379,6 +379,29 @@
   }
 }
 
+/* Mirror page — prototype dark canvas + scoped tokens for MirrorFlow */
+.mirror-page {
+  --mirror-bg: #0d0a07;
+  --bg-base: var(--mirror-bg);
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.72);
+  --text-muted: rgba(255, 255, 255, 0.42);
+  --bg-subtle: rgba(255, 255, 255, 0.06);
+  --border: rgba(200, 168, 75, 0.2);
+  margin: -20px -16px;
+  padding: 20px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+  min-height: calc(100dvh - 52px);
+  background: var(--mirror-bg);
+}
+
+@media (min-width: 768px) {
+  .mirror-page {
+    margin: -20px -24px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
 /* ── Base — inside @layer so Tailwind utilities win ── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }

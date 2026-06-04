@@ -135,7 +135,7 @@ test('funktioniert auch mit body_state statt person', () => {
   ]
   const r = detectTagFrequency(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('tired'), `introText fehlt body_state: ${r!.introText}`)
+  assert(r!.introText.includes('müde'), `introText fehlt body_state: ${r!.introText}`)
 })
 
 test('gibt null zurück bei leerer Liste', () => {
@@ -161,7 +161,7 @@ test('findet nx_ny Quadrant (schwer, selbstbezogen)', () => {
   ]
   const r = detectGridCluster(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('schwer, auf dich bezogen'), `falsches Label: ${r!.introText}`)
+  assert(r!.introText.includes('schwer und auf dich bezogen'), `falsches Label: ${r!.introText}`)
   assert(r!.introText.includes('seit'), `Zeitspanne fehlt: ${r!.introText}`)
 })
 
@@ -197,7 +197,7 @@ test('wählt Quadrant mit meisten Einträgen', () => {
   ]
   const r = detectGridCluster(entries)
   assert(r !== null, 'erwartete Kandidaten')
-  assert(r!.introText.includes('schwer, auf dich bezogen'), `sollte nx_ny wählen: ${r!.introText}`)
+  assert(r!.introText.includes('schwer und auf dich bezogen'), `sollte nx_ny wählen: ${r!.introText}`)
 })
 
 console.log(`\n${'─'.repeat(40)}`)

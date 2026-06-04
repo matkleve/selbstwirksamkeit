@@ -14,12 +14,14 @@ No free text analysis, no embeddings, no NLP.
 - Same tag type (person / location / activity / body_state) appears ≥3× across full entry history
 - Input: structured tags + `created_at` — **no time-window filter**
 - Signal: `mirror_candidates.source = 'tag_frequency'`
-- Output describes interval + span: „müde kommt alle ~5 Tage vor — 8× seit Januar"
+- Output describes interval + span in **Mirror voice** (not Dashboard stats): „müde kommt alle ~5 Tage vor — 8× seit Januar"
+- `body_state` MUST use German labels (`ruhig`, `müde`, `gestresst`), not English enum values
 
 **Detector 2 — Grid cluster**
 - ≥3 entries in the same valence quadrant (±ich / ±andere) across full entry history
 - Input: `grid_x`, `grid_y`, `created_at` — **no time-window filter**
 - Signal: `mirror_candidates.source = 'grid_cluster'`
+- Output in Mirror voice: „Du kehrst immer wieder zu Momenten zurück, die sich positiv und anderen zugewandt anfühlen — 58×, alle ~6 Tage, seit Mai 2025." (no „Einträge lagen im Bereich …")
 
 ### Phase 2 — WGARM-EC (weekly, ≥50 entries with embeddings)
 

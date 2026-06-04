@@ -14,6 +14,20 @@ export interface MirrorCandidate {
 
 const RECENT_MS = 7 * 24 * 60 * 60 * 1000
 
+const BODY_STATE_LABELS: Record<string, string> = {
+  stressed: 'gestresst',
+  calm: 'ruhig',
+  tired: 'müde',
+}
+
+function tagLabel(field: keyof Entry, val: string): string {
+  if (field === 'body_state') return BODY_STATE_LABELS[val] ?? val
+  if (field === 'person') return `mit ${val}`
+  if (field === 'location') return `am ${val}`
+  if (field === 'activity') return `beim ${val}`
+  return val
+}
+
 function sortByDate(entries: Entry[]): Entry[] {
   return [...entries].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
@@ -73,8 +87,7 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
       if (!val) continue
       const key = `${field}:${val}`
       if (!buckets.has(key)) {
-        const label = field === 'body_state' ? val : `${prep} ${val}`.trim()
-        buckets.set(key, { label, hits: [] })
+        buckets.set(key, { label: tagLabel(field, val), hits: [] })
       }
       buckets.get(key)!.hits.push(e)
     }
@@ -106,10 +119,10 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
 
 export function detectGridCluster(entries: Entry[]): MirrorCandidate | null {
   const QUADRANT_LABELS: Record<string, string> = {
-    px_py: 'positiv, auf andere bezogen',
-    px_ny: 'positiv, auf dich bezogen',
-    nx_py: 'schwer, auf andere bezogen',
-    nx_ny: 'schwer, auf dich bezogen',
+    px_py: 'positiv und anderen zugewandt',
+    px_ny: 'positiv und auf dich bezogen',
+    nx_py: 'schwer und anderen zugewandt',
+    nx_ny: 'schwer und auf dich bezogen',
   }
 
   const buckets = new Map<string, Entry[]>()
@@ -144,7 +157,7 @@ export function detectGridCluster(entries: Entry[]): MirrorCandidate | null {
     source: 'grid_cluster',
     signalStrength: count >= 5 ? 'strong' : 'moderate',
     count,
-    introText: `${count} Einträge lagen im Bereich ${label} — ${intervalPart}, ${since}.`,
+    introText: `Du kehrst immer wieder zu Momenten zurück, die sich ${label} anfühlen — ${count}×, ${intervalPart}, ${since}.`,
     question: 'Was haben diese Momente gemeinsam?',
   }
 }

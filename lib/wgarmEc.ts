@@ -77,6 +77,12 @@ export interface WgarmResult {
 const VALENCE_ITEMS = new Set(['valence:negativ', 'valence:positiv', 'valence:neutral'])
 const MIN_SPAN_DAYS = 7
 
+const MOOD_LABELS: Record<string, string> = {
+  stressed: 'gestresst',
+  calm: 'ruhig',
+  tired: 'müde',
+}
+
 const TIME_LABELS: Record<string, string> = {
   nacht: 'nachts',
   morgen: 'morgens',
@@ -98,7 +104,10 @@ function formatItemLabel(item: string): string {
   if (item.startsWith('time:')) return TIME_LABELS[item.slice(5)!] ?? item.slice(5)!
   if (item.startsWith('weekday:')) return WEEKDAY_LABELS[item.slice(8)!] ?? item.slice(8)!
   if (item.startsWith('tag:person:')) return capitalize(item.slice('tag:person:'.length))
-  if (item.startsWith('tag:mood:')) return capitalize(item.slice('tag:mood:'.length))
+  if (item.startsWith('tag:mood:')) {
+    const raw = item.slice('tag:mood:'.length)
+    return MOOD_LABELS[raw] ?? capitalize(raw)
+  }
   if (item.startsWith('tag:loc:')) return capitalize(item.slice('tag:loc:'.length))
   if (item.startsWith('tag:act:')) return capitalize(item.slice('tag:act:'.length))
   return ''
@@ -401,7 +410,10 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
   const clusterBias = cluster?.valenceBias ?? 'mixed'
 
   const persons = ant.filter(i => i.startsWith('tag:person:')).map(i => capitalize(i.slice('tag:person:'.length)))
-  const moods = ant.filter(i => i.startsWith('tag:mood:')).map(i => capitalize(i.slice('tag:mood:'.length)))
+  const moods = ant.filter(i => i.startsWith('tag:mood:')).map(i => {
+    const raw = i.slice('tag:mood:'.length)
+    return MOOD_LABELS[raw] ?? capitalize(raw)
+  })
   const locations = ant.filter(i => i.startsWith('tag:loc:')).map(i => capitalize(i.slice('tag:loc:'.length)))
   const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.slice(5)!)
   const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.slice(8)!)
@@ -501,10 +513,12 @@ export function runWgarmEc(
 ): WgarmResult {
   const {
     clusterThreshold = 0.73,
-    minSupport = 0.15,
     minConfidence = 0.60,
     minLift = 1.30,
   } = opts
+  const configuredSupport = opts.minSupport ?? 0.15
+  // Smaller histories need lower support (min 3 hits); cap at spec default 0.15
+  const minSupport = Math.min(configuredSupport, Math.max(0.08, 10 / entries.length))
 
   if (entries.length < 10) {
     return {
