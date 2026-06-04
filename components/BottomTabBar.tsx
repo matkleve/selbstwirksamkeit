@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Plus, BarChart2, Sparkles, Bell } from 'lucide-react'
+import { Plus, BarChart2, Sparkles, Bell, Eye } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 const TABS = [
   { href: '/', label: 'Neu', Icon: Plus },
   { href: '/dashboard', label: 'Dashboard', Icon: BarChart2 },
+  { href: '/mirror', label: 'Spiegel', Icon: Eye, accent: 'mirror' as const },
   { href: '/motivation', label: 'Stärke', Icon: Sparkles },
   { href: '/notifications', label: 'Erinnern', Icon: Bell },
 ] as const
@@ -24,8 +25,9 @@ export default function BottomTabBar() {
       )}
       aria-label="Hauptnavigation"
     >
-      {TABS.map(({ href, label, Icon }) => {
+      {TABS.map(({ href, label, Icon, ...rest }) => {
         const active = path === href
+        const mirrorAccent = 'accent' in rest && rest.accent === 'mirror' && active
         return (
           <Link
             key={href}
@@ -36,6 +38,7 @@ export default function BottomTabBar() {
               'no-underline transition-[color,background-color] duration-150',
               active ? 'bg-subtle text-ink' : 'bg-transparent text-ink-3',
             )}
+            style={mirrorAccent ? { color: 'var(--mirror-gold)' } : undefined}
           >
             <Icon size={19} strokeWidth={active ? 2 : 1.5} />
             <span

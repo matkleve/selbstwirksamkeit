@@ -95,6 +95,7 @@
   --primary-hover:   #35302C;
   --danger:          #C4603A;
   --hint-ok:         #5A8A6A;
+  --mirror-gold:     #C8A84B;
 }
 
 .dark {
@@ -132,6 +133,7 @@
   --primary-hover:   #D4CBC0;
   --danger:          #D4886A;
   --hint-ok:         #7AB890;
+  --mirror-gold:     #D4B86A;
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
