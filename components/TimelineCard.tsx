@@ -1,5 +1,6 @@
 'use client'
 
+import { cn } from '@/lib/cn'
 import type { Entry } from '@/lib/types'
 import { getQuadrant } from '@/lib/types'
 import { EntryCardShell } from '@/components/entry/EntryCardShell'
@@ -10,9 +11,10 @@ import { EntryDisplay } from '@/components/entry'
 
 interface TimelineCardProps {
   entry: Entry
+  className?: string
 }
 
-export default function TimelineCard({ entry }: TimelineCardProps) {
+export default function TimelineCard({ entry, className }: TimelineCardProps) {
   const quadrant = getQuadrant(entry)
   const quadrantText = quadrant
     ? quadrantTexts[quadrant][entry.id.charCodeAt(0) % quadrantTexts[quadrant].length]
@@ -28,7 +30,7 @@ export default function TimelineCard({ entry }: TimelineCardProps) {
   const bodyHint = entry.body_state ? getBodyStateHint(entry.body_state, entry.grid_x) : null
 
   return (
-    <EntryCardShell entry={entry} padding="md">
+    <EntryCardShell entry={entry} padding="md" className={cn('min-w-0', className)}>
       <EntryDisplay entry={entry} variant="full" size="md" lines="none" card={false} showDate>
         {gridLabel && (
           <p className="mb-1 text-xs text-ink-3">({gridLabel})</p>

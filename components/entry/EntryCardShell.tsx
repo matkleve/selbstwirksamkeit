@@ -22,7 +22,7 @@ export function EntryCardShell({ entry, children, className, padding = 'sm' }: P
   return (
     <div
       className={cn(
-        'rounded-card bg-card transition-[box-shadow] duration-300 ease-out',
+        'w-full min-w-0 rounded-card bg-card transition-[box-shadow] duration-300 ease-out',
         padding === 'sm' ? 'px-3.5 pb-3 pt-2' : 'px-4 pb-4 pt-2.5 md:px-[18px] md:pb-[18px] md:pt-3',
         className,
       )}

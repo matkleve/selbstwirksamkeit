@@ -177,39 +177,48 @@ export default function TimelineView() {
           </div>
 
           {density === 'full' ? (
-        <div className="flex flex-col gap-2.5">
-          {filtered.map(entry => (
-            <TimelineCard key={entry.id} entry={entry} />
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {filtered.map(entry => (
-            <div key={entry.id}>
-              {density === 'text' && (
-                <EntryDisplay
-                  entry={entry}
-                  variant="text"
-                  size="sm"
-                  lines={2}
-                  showDate
-                />
-              )}
-              {density === 'compact' && (
-                <EntryDisplay entry={entry} variant="compact" size="sm" lines={2} showDate />
-              )}
-              {density === 'chips' && (
-                <EntryDisplay
-                  entry={entry}
-                  variant="chips-closed"
-                  size="sm"
-                  lines={2}
-                  showDate
-                />
-              )}
+            <div className="grid grid-cols-2 gap-2.5">
+              {filtered.map(entry => (
+                <TimelineCard key={entry.id} entry={entry} className="min-w-0" />
+              ))}
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              {filtered.map(entry => (
+                <div key={entry.id} className="min-w-0">
+                  {density === 'text' && (
+                    <EntryDisplay
+                      entry={entry}
+                      variant="text"
+                      size="sm"
+                      lines={2}
+                      showDate
+                      className="min-w-0"
+                    />
+                  )}
+                  {density === 'compact' && (
+                    <EntryDisplay
+                      entry={entry}
+                      variant="compact"
+                      size="sm"
+                      lines={2}
+                      showDate
+                      className="min-w-0"
+                    />
+                  )}
+                  {density === 'chips' && (
+                    <EntryDisplay
+                      entry={entry}
+                      variant="chips-closed"
+                      size="sm"
+                      lines={2}
+                      showDate
+                      className="min-w-0"
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}
