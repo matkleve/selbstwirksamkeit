@@ -77,6 +77,7 @@
   --primary-fg: #FAFAF8;
   --danger:     #C4603A;
   --hint-ok:    #5A8A6A;
+  --mirror-gold: #C8A84B;
 }
 
 .dark {
@@ -104,6 +105,7 @@
   --primary-fg: #1C1917;
   --danger:     #D4886A;
   --hint-ok:    #7AB890;
+  --mirror-gold: #D4B86A;
 }
 
 /* ── Layout + component helpers ── */
