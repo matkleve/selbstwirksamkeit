@@ -21,6 +21,7 @@ interface Props {
   align?: 'left' | 'right'
   minWidth?: number
   role?: 'menu' | 'listbox'
+  itemTone?: 'default' | 'nav'
   /** When false, parent handles position (e.g. fixed portal) */
   anchored?: boolean
   /** Prefer over `item.icon` when Lucide refs must render in the parent module */
@@ -34,6 +35,7 @@ export function DropdownPanel({
   align = 'left',
   minWidth = 220,
   role = 'menu',
+  itemTone = 'default',
   renderIcon,
   anchored = true,
 }: Props) {
@@ -78,9 +80,16 @@ export function DropdownPanel({
                   role={role === 'listbox' ? 'option' : 'menuitem'}
                   onClick={entry.onClick}
                   className={[
-                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm',
-                    'font-[inherit] transition-colors hover:bg-subtle active:bg-subtle',
-                    entry.destructive ? 'text-danger' : 'text-ink',
+                    'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-[inherit]',
+                    itemTone === 'nav'
+                      ? [
+                          'nav-interactive nav-interactive--ink',
+                          entry.destructive && 'nav-interactive--destructive',
+                        ].filter(Boolean).join(' ')
+                      : [
+                          'transition-colors hover:bg-subtle active:bg-subtle',
+                          entry.destructive ? 'text-danger' : 'text-ink',
+                        ].join(' '),
                   ].join(' ')}
                 >
                   {(() => {
@@ -89,11 +98,11 @@ export function DropdownPanel({
                           size: 15,
                           strokeWidth: 1.75,
                           'aria-hidden': true,
-                          className: 'size-[15px] text-ink-2',
+                          className: 'size-[15px] shrink-0',
                         })
                       : null)
                     return iconNode ? (
-                      <span className="inline-flex size-[15px] shrink-0 items-center justify-center text-ink-2">
+                      <span className="inline-flex size-[15px] shrink-0 items-center justify-center">
                         {iconNode}
                       </span>
                     ) : (

@@ -38,6 +38,8 @@
   --color-primary-fg:  var(--primary-fg);
   --color-danger:      var(--danger);
   --color-hint-ok:     var(--hint-ok);
+  --color-nav-active:    var(--nav-active-fg);
+  --color-nav-active-bg: var(--nav-active-bg);
 
   /* Valence (charts, bars) */
   --color-v-pos-strong: var(--valence-pos-strong);
@@ -98,6 +100,8 @@
   --mirror-gold:     #C8A84B;
   --mirror-gold-bg:  #F3EBD4;
   --mirror-gold-bg-hover: #EDE3C4;
+  --nav-active-fg:   #3B7DD8;
+  --nav-active-bg:   #E4EDF8;
 
   /* Semantic aliases (Mirror spec / shadcn compat) */
   --background: var(--bg-base);
@@ -144,6 +148,8 @@
   --mirror-gold:     #D4B86A;
   --mirror-gold-bg:  #2E2818;
   --mirror-gold-bg-hover: #3A3320;
+  --nav-active-fg:   #5B9AE8;
+  --nav-active-bg:   #1E2A3D;
 
   --background: var(--bg-base);
   --foreground: var(--text-primary);
@@ -181,6 +187,37 @@
     font-size: 1.25rem;
     color: var(--text-primary);
     font-weight: 400;
+  }
+
+  .nav-interactive {
+    color: var(--text-muted);
+    background-color: transparent;
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .nav-interactive:hover,
+  .nav-interactive:active {
+    background-color: var(--mirror-gold-bg);
+    color: var(--mirror-gold);
+  }
+
+  .nav-interactive[data-active] {
+    background-color: var(--nav-active-bg);
+    color: var(--nav-active-fg);
+  }
+
+  .nav-interactive[data-active]:hover,
+  .nav-interactive[data-active]:active {
+    background-color: var(--mirror-gold-bg);
+    color: var(--mirror-gold);
+  }
+
+  .nav-interactive--ink {
+    color: var(--text-primary);
+  }
+
+  .nav-interactive--destructive {
+    color: var(--danger);
   }
 
   .card {

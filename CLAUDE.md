@@ -23,7 +23,26 @@ npm run build    # Production build (also generates public/sw.js via next-pwa)
 npm run lint     # ESLint via next lint
 ```
 
-No test suite exists in this project.
+No test suite exists in this project. Standalone tests:
+
+```bash
+npx tsx lib/__tests__/patternDetection.test.ts
+npx tsx lib/__tests__/insightText.test.ts
+npx tsx lib/__tests__/intentionReminderText.test.ts
+npm run test:mirror
+```
+
+## Documentation
+
+See **`docs/README.md`**.
+
+- **Specs** (`docs/specs/`) — normative; spec before code (RFC 2119)
+- **Science** (`docs/science/`) — rationale for Mirror, reminders, patterns
+- **Decision log** (`docs/diary/YYYY-MM-DD.md`) — one file per day; see `docs/diary/README.md`
+
+Key specs: `pattern-mirror.md`, `insight-types.md`, `intention-reminders.md`, `wgarm-ec.md`.
+
+After significant decisions, append an entry to today's diary file.
 
 ## Environment
 
@@ -67,6 +86,13 @@ Light/dark/system preference is stored in `localStorage` under `selbstwirksamkei
 ### Database
 
 Supabase Postgres with RLS — users only see their own rows. Migrations in `supabase/migrations/`. The `categories` column is `text[]` (migration 002 replaced the old single `category text` column).
+
+Mirror-related tables: `mirror_sessions`, `mirror_candidates`, `implementation_intentions` — see `docs/specs/pattern-mirror.md`, `docs/specs/data-model.md`.
+
+### Mirror code layout
+
+- Entry: `components/MirrorFlow.tsx` (re-export) → `components/mirror/MirrorFlow.tsx`
+- Submodules: `components/mirror/MirrorFlow.*.tsx`, `lib/patternDetection.ts`, `lib/mirror-resolve.ts`, `lib/intentionReminderText.ts`
 
 ## PWA
 

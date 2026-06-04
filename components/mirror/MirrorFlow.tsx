@@ -24,6 +24,7 @@ import {
   MirrorSummarySection,
 } from '@/components/mirror/MirrorFlow.response'
 import { MirrorEmptyClose } from '@/components/mirror/MirrorFlow.emptyClose'
+import { intentionExpiresAt } from '@/lib/intentionReminderText'
 
 export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate | null }) {
   const blocks = useMemo(() => buildNarrativeBlocks(candidate), [candidate])
@@ -91,16 +92,21 @@ export default function MirrorFlow({ candidate }: { candidate: MirrorCandidate |
     const wenn = wennText.trim()
     const dann = dannText.trim()
     if (wenn && dann) {
-      const reminderMap: Record<string, string> = {
+      const reminderMap = {
         Heute: 'today',
         '3 Tage': '3days',
         'Diese Woche': '7days',
-      }
+      } as const
+      const reminderType =
+        duration && duration !== 'Kein Reminder'
+          ? reminderMap[duration as keyof typeof reminderMap]
+          : null
       await supabase.from('implementation_intentions').insert({
         wenn_text: wenn,
         dann_text: dann,
-        wants_reminder: !!duration && duration !== 'Kein Reminder',
-        reminder_type: duration ? (reminderMap[duration] ?? null) : null,
+        wants_reminder: !!reminderType,
+        reminder_type: reminderType,
+        expires_at: reminderType ? intentionExpiresAt(reminderType) : null,
         active: true,
       })
     }

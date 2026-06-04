@@ -37,11 +37,8 @@ export default function MenuDropdown() {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        className={[
-          'flex size-[34px] cursor-pointer items-center justify-center rounded-lg border border-edge',
-          'text-ink-2 transition-colors hover:bg-subtle',
-          open ? 'bg-subtle' : 'bg-transparent',
-        ].join(' ')}
+        data-active={open ? '' : undefined}
+        className="nav-interactive nav-interactive--ink flex size-[34px] cursor-pointer items-center justify-center rounded-lg border border-edge"
         aria-label="Menü"
         aria-expanded={open}
         aria-haspopup="menu"
@@ -53,6 +50,7 @@ export default function MenuDropdown() {
         <DropdownPanel
           align="right"
           minWidth={190}
+          itemTone="nav"
           items={[
             { type: 'item', id: 'profile', label: 'Profil', icon: User, onClick: close },
             { type: 'item', id: 'settings', label: 'Einstellungen', icon: Settings, onClick: close },

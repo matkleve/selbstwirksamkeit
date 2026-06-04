@@ -1,0 +1,25 @@
+---
+description: Specs, science, and diary protocol for decisions
+alwaysApply: true
+---
+
+# Dokumentation
+
+Siehe `docs/README.md`.
+
+## Spec vor Code
+
+- Normative Specs: `docs/specs/` (RFC 2119)
+- Mirror: `docs/specs/pattern-mirror.md`, `docs/specs/insight-types.md`
+- Reminder: `docs/specs/intention-reminders.md`, `lib/intentionReminderText.ts`
+- Wissenschaft: `docs/science/` (Begründung, nicht normativ)
+
+Spec lesen bevor Mirror-, Reminder- oder Detektor-Code geändert wird.
+
+## Entscheidungsprotokoll
+
+- Ordner: `docs/diary/`
+- **Ein File pro Tag:** `YYYY-MM-DD.md`
+- Format: `docs/diary/README.md`
+
+Nach wichtigen Entscheidungen Eintrag im heutigen Tagesfile anlegen oder anhängen — nicht in eine einzelne `diary.md`.
