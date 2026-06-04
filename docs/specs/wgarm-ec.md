@@ -18,6 +18,13 @@ WGARM-EC replaces naive embedding-pair similarity for Phase 2 pattern detection:
 
 Output: `mirror_candidates` rows with `source = 'wgarm_ec'`, `template_text`, `pattern_metadata`.
 
+## Weekly job
+
+- Edge Function: `run-wgarm-ec` (TypeScript, uses `lib/wgarmEc.ts`)
+- Schedule: pg_cron `0 3 * * 0` (Sunday 03:00 UTC) via migration `010_wgarm_cron.sql`
+- MUST persist top moderate+ candidates (max 3, deduped by `template_text`) with `shown = false`
+- Dev mode (`NEXT_PUBLIC_MIRROR_DEV_MODE=true`): WGARM-EC runs on every Mirror page load
+
 ## Embeddings
 
 Entry embeddings MUST be generated via Mistral `mistral-embed` (1024 dimensions).  

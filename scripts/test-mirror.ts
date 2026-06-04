@@ -10,7 +10,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { execSync, spawnSync } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -19,11 +19,11 @@ import {
   type MirrorCandidate,
   type MirrorSource,
 } from '../lib/patternDetection'
+import { runWgarmEc, toWgarmEntry } from '../lib/wgarmEc'
 import type { Entry } from '../lib/types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
-const WGARM_DIR = resolve(ROOT, 'services/wgarm-ec')
 
 const STRENGTH_ORDER = { strong: 0, moderate: 1, weak: 2 } as const
 
@@ -67,14 +67,15 @@ function loadSupabaseEnv(): { url: string; key: string } {
   let url = process.env.SUPABASE_URL
   let key = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+  // Prefer local Supabase CLI when running
   try {
     const raw = execSync('supabase status -o env 2>/dev/null', { cwd: ROOT, encoding: 'utf8' })
     for (const line of raw.split('\n')) {
       const m = line.match(/^([A-Z_]+)=(.*)$/)
       if (!m) continue
       const v = m[2].replace(/^"|"$/g, '')
-      if (m[1] === 'API_URL') url = url || v
-      if (m[1] === 'SERVICE_ROLE_KEY') key = key || v
+      if (m[1] === 'API_URL') url = v
+      if (m[1] === 'SERVICE_ROLE_KEY') key = v
     }
   } catch {
     /* not local */
@@ -93,103 +94,35 @@ function loadSupabaseEnv(): { url: string; key: string } {
   return { url, key }
 }
 
-// ── WGARM-EC ────────────────────────────────────────────────────────────────
+// ── WGARM-EC (TypeScript) ───────────────────────────────────────────────────
 
-function parseEmbedding(raw: number[] | string | null | undefined): number[] | null {
-  if (!raw) return null
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string') {
-    try {
-      return JSON.parse(raw) as number[]
-    } catch {
-      return null
-    }
-  }
-  return null
-}
+function runWgarmEcCandidates(entries: EntryRow[]): TestCandidate[] {
+  const wgarmEntries = entries.map(toWgarmEntry).filter(Boolean)
+  if (wgarmEntries.length < 10) return []
 
-function toWgarmPayload(entries: EntryRow[]) {
-  return entries.map(e => {
-    const dt = new Date(e.created_at)
-    const tags = [e.person, e.location, e.activity, e.body_state].filter(Boolean) as string[]
-    return {
-      id: e.id,
-      created_at: e.created_at,
-      grid_x: (e.grid_x ?? 0) / 5,
-      grid_y: (e.grid_y ?? 0) / 5,
-      mood_tags: tags,
-      hour_of_day: dt.getHours(),
-      day_of_week: dt.getDay() === 0 ? 6 : dt.getDay() - 1,
-      text: e.text,
-      embedding: parseEmbedding(e.embedding),
-    }
-  })
-}
-
-function runWgarmEc(entries: EntryRow[]): TestCandidate[] {
-  const withEmb = entries.filter(e => parseEmbedding(e.embedding))
-  if (withEmb.length === 0) return []
-
-  const payload = JSON.stringify({ entries: toWgarmPayload(withEmb) })
-
-  const attempts: { cmd: string; args: string[]; cwd?: string; input?: string }[] = [
-    { cmd: 'python3', args: ['run_json.py'], cwd: WGARM_DIR, input: payload },
-    {
-      cmd: 'docker',
-      args: ['run', '--rm', '-i', 'wgarm-ec-test', 'python', 'run_json.py'],
-      cwd: WGARM_DIR,
-      input: payload,
-    },
-  ]
-
-  for (const { cmd, args, cwd, input } of attempts) {
-    const r = spawnSync(cmd, args, {
-      cwd,
-      input,
-      encoding: 'utf8',
-      maxBuffer: 20 * 1024 * 1024,
-    })
-    if (r.status !== 0) continue
-    try {
-      const parsed = JSON.parse(r.stdout) as {
-        error?: string
-        candidates: Array<{
-          entry_ids: string[]
-          source: MirrorSource
-          signal_strength: 'weak' | 'moderate' | 'strong'
-          template_text: string
-          antecedent: string[]
-          consequent: string[]
-          confidence: number | null
-          lift: number | null
-          span_days: number
-          occurrence_count: number
-          anchor_entry_ids: string[]
-        }>
-      }
-      if (parsed.error) return []
-      const byId = new Map(entries.map(e => [e.id, e]))
-      return parsed.candidates.map(c => ({
-        source: c.source,
-        signalStrength: c.signal_strength,
-        templateText: c.template_text,
-        antecedent: c.antecedent.join(', ') || '—',
-        consequent: c.consequent.join(', ') || '—',
-        confidence: c.confidence,
-        lift: c.lift,
-        spanDays: c.span_days,
-        occurrenceCount: c.occurrence_count,
-        displayEntries: (c.anchor_entry_ids.length ? c.anchor_entry_ids : c.entry_ids.slice(0, 3))
-          .map(id => byId.get(id))
-          .filter((e): e is Entry => !!e),
-      }))
-    } catch {
-      continue
-    }
+  const result = runWgarmEc(wgarmEntries)
+  if (result.error) {
+    console.error(`WGARM-EC: ${result.error}`)
+    return []
   }
 
-  console.error('(WGARM-EC skipped: python3/docker unavailable or numpy missing)')
-  return []
+  const byId = new Map(entries.map(e => [e.id, e]))
+  return result.mirror_candidates.map(c => ({
+    source: c.source,
+    signalStrength: c.signal_strength,
+    templateText: c.template_text,
+    antecedent: c.pattern_metadata.antecedent.join(', ') || '—',
+    consequent: c.pattern_metadata.consequent.join(', ') || '—',
+    confidence: c.pattern_metadata.confidence,
+    lift: c.pattern_metadata.lift,
+    spanDays: c.pattern_metadata.span_days,
+    occurrenceCount: c.pattern_metadata.occurrence_count,
+    displayEntries: (c.pattern_metadata.anchor_entry_ids.length
+      ? c.pattern_metadata.anchor_entry_ids
+      : c.entry_ids.slice(0, 3))
+      .map(id => byId.get(id))
+      .filter((e): e is Entry => !!e),
+  }))
 }
 
 // ── Phase 1 → TestCandidate ─────────────────────────────────────────────────
@@ -315,7 +248,7 @@ async function main() {
 
   const candidates: TestCandidate[] = [
     ...detectAllPhase1(entries).map(c => phase1ToTest(c, byId)),
-    ...runWgarmEc(entries),
+    ...runWgarmEcCandidates(entries),
   ].sort((a, b) => STRENGTH_ORDER[a.signalStrength] - STRENGTH_ORDER[b.signalStrength])
 
   if (candidates.length === 0) {

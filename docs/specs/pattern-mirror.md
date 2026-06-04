@@ -132,6 +132,8 @@ Steps 3–7 are Phase 2. They MUST NOT be started until project lead explicitly 
 When `NEXT_PUBLIC_MIRROR_DEV_MODE=true`:
 
 - Mirror MUST re-run Phase-1 detectors on every page open
+- Mirror MUST run WGARM-EC on every page open when ≥10 entries have embeddings
+- Mirror MUST pick the strongest candidate across Phase-1 + WGARM-EC for display
 - Mirror MUST NOT read from `mirror_candidates` for display
 - Results MUST still be persisted to `mirror_candidates` (for analysis)
 - Client loading animation MUST be identical in dev and production mode
@@ -146,7 +148,7 @@ When unset: existing logic (`mirror_candidates` first, then live detection).
 
 - MUST connect via existing Supabase env vars
 - MUST run all Phase-1 detectors against real DB data immediately
-- MUST run WGARM-EC when embeddings are present (Python subprocess)
+- MUST run WGARM-EC when ≥10 entries have embeddings (`lib/wgarmEc.ts`, no Python subprocess)
 - MUST print all candidates sorted by `signal_strength`
 
 ---
