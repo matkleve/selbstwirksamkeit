@@ -41,3 +41,46 @@ MUST NOT run with < 10 entries.
 ## Mirror invariants
 
 MUST NOT show positive counterexamples in Mirror context. MUST NOT claim causality.
+
+---
+
+## Known template bugs (MUST fix before Phase 2 production)
+
+The current `generate_text()` implementation in `services/wgarm-ec/algorithm.py` has three documented defects. These MUST be resolved before WGARM-EC output is shown in Mirror.
+
+### Bug 1 — Person template applied to mood tags
+
+**Symptom:** All `tag:*` antecedents are treated as person names.
+
+```python
+persons = [i.split(":")[1].capitalize() for i in ant if i.startswith("tag:")]
+# → "Wenn du mit Müde zusammen bist, fühlst du dich unwohl."
+```
+
+**Expected:** Person tags (from `entries.person`) MUST use the person template. Mood/feeling tags (body_state, freitext-derived tags) MUST use a separate template or fall through to default.
+
+**Fix requirement:** Tag namespace MUST distinguish `tag:person:{name}` vs `tag:mood:{value}` at transaction-build time, or filter by known person-entity list.
+
+### Bug 2 — Empty antecedent string in default template
+
+**Symptom:** When antecedent contains only `cluster:*` items and no cluster label is set, the default branch produces:
+
+```
+Mir ist aufgefallen:  hängt in 100% der Fälle mit positiven Zuständen zusammen.
+```
+
+**Cause:** Default template excludes cluster items from `ant_str` but cluster-only rules have nothing else to join.
+
+**Fix requirement:** If `label` is empty and antecedent is cluster-only, MUST use cluster template with generated label (from anchor entries) or MUST NOT emit the rule as a mirror candidate.
+
+### Bug 3 — Missing rule deduplication
+
+**Symptom:** FP-Growth produces overlapping rules with identical or near-identical template text, e.g.:
+
+- `{cluster:C3} → {valence:positiv}`
+- `{cluster:C3, tag:stolz} → {valence:positiv}`
+- `{tag:stolz} → {valence:positiv}`
+
+All three may surface as separate `mirror_candidates` with redundant Mirror text.
+
+**Fix requirement:** Before writing to `mirror_candidates`, rules MUST be deduplicated by `(consequent, template_text)` keeping the highest-lift rule, or by antecedent subset dominance (drop rules whose antecedent is a strict superset of a higher-lift sibling).

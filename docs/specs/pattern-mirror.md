@@ -23,6 +23,8 @@ No free text analysis, no embeddings, no NLP.
 
 ### Phase 2 — WGARM-EC (weekly, ≥50 entries with embeddings)
 
+**Gate:** Phase 2 MUST NOT begin until Phase 1 is verified correct **and** explicitly confirmed by project lead. Agents MUST NOT self-authorize Phase 2 start.
+
 See `wgarm-ec.md` for the full algorithm spec.
 
 - On entry save: embed text with context prefix `"[{tags}] {text}"` → `entries.embedding vector(1536)`
@@ -87,6 +89,29 @@ antworte mit pattern_found: false.
 
 ---
 
+## Workflow (RFC 2119)
+
+Normative language in this document follows [RFC 2119](https://datatracker.ietf.org/doc/html/rfc2119): **MUST**, **MUST NOT**, **SHOULD**, **MAY**.
+
+### Spec before code
+
+1. Spec changes MUST be written and shown before implementation begins.
+2. Agents MUST NOT implement features from assumptions — only from documented spec decisions.
+3. When spec and code diverge, spec wins; code MUST be updated or spec MUST be amended first.
+
+### Stop points
+
+Implementation MUST pause at these gates for explicit review:
+
+| After step | Deliverable | Proceed only when |
+|---|---|---|
+| Spec update | Diff of spec changes | Project lead confirms spec |
+| Phase 1 complete | Test run with real entries | Project lead confirms detectors |
+| Phase 5 (WGARM-EC job) | Example mirror_candidates | Project lead confirms before Mirror displays them |
+| Phase 2 start | — | **Explicit confirmation required** — agents MUST NOT self-start Phase 2 |
+
+---
+
 ## Implementation order
 
 1. `mirror_candidates` + `mirror_sessions` + `implementation_intentions` migrations
@@ -96,6 +121,8 @@ antworte mit pattern_found: false.
 5. WGARM-EC weekly job (`services/wgarm-ec/`)
 6. Mirror frontend reads from `mirror_candidates` — never live-query as primary path
 7. Remove positive counterexample logic from Mirror (moved to Stärke)
+
+Steps 3–7 are Phase 2. They MUST NOT be started until project lead explicitly confirms Phase 2 go-ahead.
 
 ---
 

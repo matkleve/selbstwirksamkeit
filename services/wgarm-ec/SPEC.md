@@ -262,3 +262,27 @@ weak:     alles andere über den Mindest-Schwellenwerten
 - MUST NOT Kausalität behaupten (nur Assoziation)
 - MUST NOT bei < 10 Entries ausgeführt werden (zu wenig Basis)
 - MUST NOT Zeitfenster vordefinieren — die gesamte Entry-History MUST verwendet werden
+
+---
+
+## 11. Bekannte Template-Bugs (MUST fix vor Phase-2-Produktion)
+
+Die aktuelle `generate_text()`-Implementierung hat drei dokumentierte Defekte. Diese MUST behoben sein, bevor WGARM-EC-Output in Mirror angezeigt wird.
+
+### 11.1 Person-Template auf Mood-Tags
+
+**Symptom:** Alle `tag:*`-Antecedents werden als Personennamen behandelt → *„Wenn du mit Müde zusammen bist …"*
+
+**Fix:** Transaction-Build MUST `tag:person:{name}` vs. `tag:mood:{value}` unterscheiden, oder Person-Template nur bei bekannten Entity-Tags anwenden.
+
+### 11.2 Leerer antecedent_str im Default-Template
+
+**Symptom:** Cluster-only-Regeln ohne gesetztes Label → *„Mir ist aufgefallen:  hängt in 100% …"*
+
+**Fix:** Cluster-Label MUST vor Template-Generierung gesetzt sein; sonst Regel MUST NOT als mirror_candidate emittiert werden.
+
+### 11.3 Fehlende Regel-Deduplizierung
+
+**Symptom:** Überlappende Regeln mit identischem/near-identischem Template-Text erscheinen als mehrere Kandidaten.
+
+**Fix:** Vor Persistierung MUST dedupliziert werden — höchster Lift pro `(consequent, template_text)`, oder Superset-Regeln verwerfen.
