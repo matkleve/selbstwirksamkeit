@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { Info, Star } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Info, Star, MoreVertical, RefreshCw, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
+import { DropdownPanel } from '@/components/DropdownPanel'
+import { EntryDisplay } from '@/components/entry/EntryDisplay'
 import type { MirrorSessionRow } from '@/lib/mirror-session'
 import type { Entry } from '@/lib/types'
-import { EntryDisplay } from '@/components/entry/EntryDisplay'
 
 interface Props {
   sessions: MirrorSessionRow[]
@@ -65,6 +67,100 @@ function formatSessionDate(iso: string) {
   })
 }
 
+const MENU_GAP = 6
+
+interface SessionMenuProps {
+  session: MirrorSessionRow
+  onRedo: () => Promise<void>
+  onDelete: () => Promise<void>
+}
+
+function SessionMenu({ session: _session, onRedo, onDelete }: SessionMenuProps) {
+  const [open, setOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const updatePosition = useCallback(() => {
+    const btn = buttonRef.current
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    setMenuPos({ top: rect.bottom + MENU_GAP, left: rect.right })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, updatePosition])
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      if (buttonRef.current?.contains(e.target as Node)) return
+      if (menuRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const items = [
+    {
+      type: 'item' as const,
+      id: 'redo',
+      label: 'Erneut machen',
+      icon: RefreshCw,
+      onClick: () => { setOpen(false); void onRedo() },
+    },
+    { type: 'separator' as const },
+    {
+      type: 'item' as const,
+      id: 'delete',
+      label: 'Löschen',
+      icon: Trash2,
+      destructive: true,
+      onClick: () => { setOpen(false); void onDelete() },
+    },
+  ]
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => { open ? setOpen(false) : (updatePosition(), setOpen(true)) }}
+        className={cn(
+          'flex size-7 items-center justify-center rounded-md text-ink-3 transition-colors',
+          'hover:bg-subtle hover:text-ink-2',
+          open && 'bg-subtle text-ink-2',
+        )}
+        aria-label="Session-Menü"
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        <MoreVertical size={16} strokeWidth={1.75} />
+      </button>
+
+      {open && menuPos && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed z-[200]"
+          style={{ top: menuPos.top, left: menuPos.left, transform: 'translateX(-100%)' }}
+        >
+          <DropdownPanel align="right" minWidth={170} anchored={false} items={items} />
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props) {
   const supabase = createClient()
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -74,9 +170,29 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
     setBusyId(session.id)
     const next = !session.is_favorited
     await supabase.from('mirror_sessions').update({ is_favorited: next }).eq('id', session.id)
-    onSessionsChange?.(
-      sessions.map(s => (s.id === session.id ? { ...s, is_favorited: next } : s)),
-    )
+    onSessionsChange?.(sessions.map(s => s.id === session.id ? { ...s, is_favorited: next } : s))
+    setBusyId(null)
+  }
+
+  const handleRedo = async (session: MirrorSessionRow) => {
+    setBusyId(session.id)
+    // Reset associated candidate so it re-enters the queue
+    if (session.pattern_type && session.anchor_entry_ids?.length) {
+      await supabase
+        .from('mirror_candidates')
+        .update({ shown: false, shown_at: null, user_reaction: null })
+        .eq('source', session.pattern_type)
+        .contains('entry_ids', session.anchor_entry_ids)
+    }
+    await supabase.from('mirror_sessions').delete().eq('id', session.id)
+    onSessionsChange?.(sessions.filter(s => s.id !== session.id))
+    setBusyId(null)
+  }
+
+  const handleDelete = async (session: MirrorSessionRow) => {
+    setBusyId(session.id)
+    await supabase.from('mirror_sessions').delete().eq('id', session.id)
+    onSessionsChange?.(sessions.filter(s => s.id !== session.id))
     setBusyId(null)
   }
 
@@ -97,13 +213,18 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
 
         const typeInfo = session.pattern_type ? PATTERN_TYPE_INFO[session.pattern_type] : null
         const infoOpen = openInfoId === session.id
+        const busy = busyId === session.id
 
         return (
           <li
             key={session.id}
-            className="rounded-card border border-edge bg-card p-4 shadow-[var(--shadow-card)]"
+            className={cn(
+              'rounded-card border border-edge bg-card p-4 shadow-[var(--shadow-card)]',
+              busy && 'opacity-60 pointer-events-none',
+            )}
           >
-            <div className="mb-3 flex items-start justify-between gap-3">
+            {/* Header row */}
+            <div className="mb-3 flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
                   <time className="text-[0.6875rem] font-medium uppercase tracking-wide text-ink-3">
@@ -127,20 +248,30 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
                   <p className="mt-1 text-sm leading-snug text-ink">{session.pattern_text}</p>
                 )}
               </div>
-              <button
-                type="button"
-                aria-label={session.is_favorited ? 'Favorit entfernen' : 'Als Favorit markieren'}
-                disabled={busyId === session.id}
-                onClick={() => void toggleFavorite(session)}
-                className={cn(
-                  'shrink-0 rounded-lg p-1.5 transition-colors',
-                  session.is_favorited ? 'text-[var(--mirror-gold)]' : 'text-ink-3 hover:text-ink-2',
-                )}
-              >
-                <Star size={18} strokeWidth={1.5} fill={session.is_favorited ? 'currentColor' : 'none'} />
-              </button>
+
+              {/* Actions: star + three-dot menu */}
+              <div className="flex shrink-0 items-center gap-0.5">
+                <button
+                  type="button"
+                  aria-label={session.is_favorited ? 'Favorit entfernen' : 'Als Favorit markieren'}
+                  disabled={busy}
+                  onClick={() => void toggleFavorite(session)}
+                  className={cn(
+                    'rounded-lg p-1.5 transition-colors',
+                    session.is_favorited ? 'text-[var(--mirror-gold)]' : 'text-ink-3 hover:text-ink-2',
+                  )}
+                >
+                  <Star size={18} strokeWidth={1.5} fill={session.is_favorited ? 'currentColor' : 'none'} />
+                </button>
+                <SessionMenu
+                  session={session}
+                  onRedo={() => handleRedo(session)}
+                  onDelete={() => handleDelete(session)}
+                />
+              </div>
             </div>
 
+            {/* Info panel */}
             {infoOpen && typeInfo && (
               <div className="mb-3 rounded-lg bg-[var(--muted)] px-3 py-2.5">
                 <div className="mb-1 flex items-baseline justify-between gap-2">
@@ -155,6 +286,7 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
               </div>
             )}
 
+            {/* Anchor entries — proper EntryDisplay component with menu */}
             {anchors.length > 0 && (
               <div className="mb-3 flex flex-col gap-2">
                 {anchors.map(entry => (
@@ -163,8 +295,8 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
                     entry={entry}
                     variant="compact"
                     size="sm"
-                    menu={false}
-                    card={false}
+                    card={true}
+                    menu={true}
                     lines={2}
                   />
                 ))}
