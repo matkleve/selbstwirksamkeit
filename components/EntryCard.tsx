@@ -348,7 +348,7 @@ export default function EntryCard() {
           {saveError && (
             <p
               role="alert"
-              className="mb-3 rounded-lg border border-[var(--danger)] px-3 py-2.5 text-sm text-danger"
+              className="mb-3 rounded-lg border border-danger px-3 py-2.5 text-sm text-danger"
               style={{ background: 'color-mix(in srgb, var(--danger) 8%, transparent)' }}
             >
               {saveError}

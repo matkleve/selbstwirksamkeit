@@ -32,7 +32,7 @@ function MarkerIcon({ type, idx }: { type: string; idx: number }) {
 function SpineMarker({ type, idx }: { type: string; idx: number }) {
   return (
     <div
-      className="relative z-[2] flex size-5 shrink-0 items-center justify-center rounded-full border border-edge bg-[var(--background)] text-ink-2"
+      className="relative z-[2] flex size-5 shrink-0 items-center justify-center rounded-full border border-edge bg-canvas text-ink-2"
       aria-hidden
     >
       <MarkerIcon type={type} idx={idx} />

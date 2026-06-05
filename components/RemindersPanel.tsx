@@ -34,7 +34,7 @@ export function RemindersPanel({ onClose }: Props) {
   }
 
   return (
-    <div className="flex max-h-[min(85dvh,640px)] flex-col overflow-hidden rounded-card border border-edge bg-card shadow-[var(--shadow-pop)]">
+    <div className="flex max-h-[min(85dvh,640px)] flex-col overflow-hidden rounded-card border border-edge bg-card shadow-pop">
       <div className="flex items-center justify-between border-b border-edge px-5 py-4">
         <h2>Erinnerungen</h2>
         <button

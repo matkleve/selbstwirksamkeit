@@ -51,7 +51,7 @@ export function EntryMetaPopover({ icon: Icon, label, count, items, size = 'sm' 
           role="dialog"
           className={cn(
             'absolute bottom-[calc(100%+6px)] left-0 z-50 min-w-[140px]',
-            'rounded-xl border border-edge bg-card p-2 shadow-[var(--shadow-pop)]',
+            'rounded-xl border border-edge bg-card p-2 shadow-pop',
           )}
         >
           <p className="mb-1.5 px-2 text-[0.625rem] font-medium uppercase tracking-wide text-ink-3">

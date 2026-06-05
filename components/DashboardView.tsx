@@ -162,7 +162,7 @@ export default function DashboardView() {
           <p className="section-label mb-0">Letzte Einträge</p>
           <Link
             href="/timeline"
-            className="shrink-0 text-sm text-[var(--valence-pos-strong)] underline underline-offset-[3px] transition-colors hover:text-[var(--mirror-gold)]"
+            className="shrink-0 text-sm text-v-pos-strong underline underline-offset-[3px] transition-colors hover:text-mirror-gold"
           >
             Alle Einträge →
           </Link>

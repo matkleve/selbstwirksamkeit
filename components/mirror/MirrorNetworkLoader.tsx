@@ -419,7 +419,7 @@ export function MirrorNetworkLoader({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-[var(--background)] px-3 max-sm:gap-3 max-sm:px-3.5"
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-canvas px-3 max-sm:gap-3 max-sm:px-3.5"
       aria-live="polite"
       aria-busy="true"
     >

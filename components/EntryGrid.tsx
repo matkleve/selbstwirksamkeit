@@ -119,7 +119,7 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      className="relative aspect-square w-full overflow-hidden rounded-[var(--radius-field)] cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+      className="relative aspect-square w-full overflow-hidden rounded-field cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
       aria-label="Stimmungsfeld"
     >
       <div className={`${axisLabelClass} inset-x-0 top-2 justify-center`}>

@@ -217,7 +217,7 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
 
         {multiYear && (
           <div
-            className="pointer-events-none absolute top-1.5 right-1 z-20 flex flex-col gap-0.5 rounded-md border border-edge bg-card px-2 py-1 shadow-[var(--shadow-pop)]"
+            className="pointer-events-none absolute top-1.5 right-1 z-20 flex flex-col gap-0.5 rounded-md border border-edge bg-card px-2 py-1 shadow-pop"
             aria-label="Jahre"
           >
             {series.map(s => (
@@ -240,7 +240,7 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
 
         {tip && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-2">
-            <div className="rounded-lg border border-edge bg-card px-2.5 py-1.5 text-[0.6875rem] shadow-[var(--shadow-pop)]">
+            <div className="rounded-lg border border-edge bg-card px-2.5 py-1.5 text-[0.6875rem] shadow-pop">
               <p className="mb-0.5 text-ink-3">{tip.slotLabel}</p>
               {tip.lines.map(l => (
                 <p key={l.year} className="tabular-nums text-ink">

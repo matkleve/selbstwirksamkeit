@@ -189,7 +189,7 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
         <div className="fixed inset-0 z-[110] flex items-start justify-center p-4 pt-14">
           <button
             type="button"
-            className="absolute inset-0 bg-[var(--background)]/80 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-canvas/80 backdrop-blur-[2px]"
             aria-label="Schließen"
             onClick={() => setRemindersOpen(false)}
           />

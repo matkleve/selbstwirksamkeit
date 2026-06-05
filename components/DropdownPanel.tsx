@@ -58,7 +58,7 @@ export function DropdownPanel({
     <div
       role={role}
       className={[
-        'z-50 overflow-hidden rounded-xl border border-edge bg-card shadow-[var(--shadow-card)]',
+        'z-50 overflow-hidden rounded-xl border border-edge bg-card shadow-card',
         anchored && 'absolute top-[calc(100%+6px)]',
         anchored && (align === 'right' ? 'right-0' : 'left-0'),
       ].join(' ')}

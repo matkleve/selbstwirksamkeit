@@ -171,7 +171,7 @@ export default function TrajectoryPatternGridChart({ series, slots }: Props) {
 
         {multiYear && (
           <div
-            className="pointer-events-none absolute top-[1.125rem] right-[1.125rem] z-20 flex flex-col gap-0.5 rounded border border-edge bg-card px-1.5 py-0.5 shadow-[var(--shadow-pop)]"
+            className="pointer-events-none absolute top-[1.125rem] right-[1.125rem] z-20 flex flex-col gap-0.5 rounded border border-edge bg-card px-1.5 py-0.5 shadow-pop"
             aria-label="Jahre"
           >
             {series.map(s => (
@@ -188,7 +188,7 @@ export default function TrajectoryPatternGridChart({ series, slots }: Props) {
 
         {tip && (
           <div className="pointer-events-none absolute inset-x-3 top-5 z-30 flex justify-center">
-            <div className="rounded-lg border border-edge bg-card px-2 py-1 text-[0.6875rem] shadow-[var(--shadow-pop)]">
+            <div className="rounded-lg border border-edge bg-card px-2 py-1 text-[0.6875rem] shadow-pop">
               <p className="text-ink-3">{tip.slotLabel}</p>
               {tip.lines.map(l => (
                 <p key={l.year} className="tabular-nums text-ink">

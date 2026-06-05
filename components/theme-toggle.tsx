@@ -28,7 +28,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
       className={cn(
         'inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-edge bg-transparent',
         'text-ink-2 transition-colors',
-        'hover:border-[var(--field-border-hover)] hover:bg-subtle hover:text-ink',
+        'hover:border-field-border-hover hover:bg-subtle hover:text-ink',
         className,
       )}
     >

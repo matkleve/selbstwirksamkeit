@@ -11,7 +11,7 @@ interface Props {
 }
 
 const KIND_CONFIG = {
-  new: { label: 'Neu', icon: Sparkles, color: 'text-[var(--accent)]' },
+  new: { label: 'Neu', icon: Sparkles, color: 'text-accent' },
   improved: { label: 'Verbessert', icon: TrendingUp, color: 'text-ink-2' },
   fixed: { label: 'Behoben', icon: Wrench, color: 'text-ink-3' },
 } as const
@@ -22,7 +22,7 @@ function VersionBlock({ entry, current }: { entry: ChangelogEntry; current: bool
       <div className="mb-3 flex items-baseline gap-2.5">
         <span className="text-base font-semibold text-ink">v{entry.version}</span>
         {current && (
-          <span className="rounded-full bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-0.5 text-[0.6875rem] font-medium text-[var(--accent)]">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] px-2 py-0.5 text-[0.6875rem] font-medium text-accent">
             aktuell
           </span>
         )}
@@ -74,7 +74,7 @@ export function ChangelogPanel({ onClose }: Props) {
         aria-label="Schließen"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-md rounded-t-2xl bg-card shadow-[var(--shadow-card)] sm:rounded-2xl">
+      <div className="relative z-10 w-full max-w-md rounded-t-2xl bg-card shadow-card sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-edge px-4 py-3.5">
           <div>
             <span className="text-sm font-semibold text-ink">Selbstwirksamkeit</span>

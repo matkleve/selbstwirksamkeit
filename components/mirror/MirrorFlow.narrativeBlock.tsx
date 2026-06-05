@@ -34,7 +34,7 @@ export function MirrorNarrativeBlock({
           visibleCount={wordProgress(block.id, block.text)}
           showCursor={isWordTyping(block.id, block.text)}
           className={cn(
-            'font-display text-[1.0625rem] leading-snug text-[var(--foreground)]',
+            'font-display text-[1.0625rem] leading-snug text-ink',
             block.muted ? 'text-ink-3' : 'text-ink-2',
           )}
         />

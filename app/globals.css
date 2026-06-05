@@ -46,6 +46,9 @@
   --color-mirror-gold-bg:     var(--mirror-gold-bg);
   --color-mirror-gold-hover:  var(--mirror-gold-bg-hover);
 
+  /* Accent (nav-active blue alias) */
+  --color-accent: var(--accent);
+
   /* Field */
   --color-field-border-hover: var(--field-border-hover);
 
@@ -136,6 +139,7 @@
   --mirror-gold-bg-hover: #EDE3C4;
   --nav-active-fg:   #3B7DD8;
   --nav-active-bg:   #E4EDF8;
+  --accent:          var(--nav-active-fg);
 
   /* Semantic aliases (Mirror spec / shadcn compat) */
   --background: var(--bg-base);
@@ -203,11 +207,13 @@
   --mirror-gold-bg-hover: #3A3320;
   --nav-active-fg:   #5B9AE8;
   --nav-active-bg:   #1E2A3D;
+  --accent:          var(--nav-active-fg);
 
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card:       var(--bg-card);
   --muted:      var(--bg-subtle);
+  --muted-foreground: var(--text-muted);
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);

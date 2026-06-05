@@ -227,7 +227,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
           <li
             key={session.id}
             className={cn(
-              'rounded-card border border-edge bg-card shadow-[var(--shadow-card)]',
+              'rounded-card border border-edge bg-card shadow-card',
               busy && 'pointer-events-none opacity-60',
             )}
           >
@@ -272,7 +272,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
                   onClick={() => void toggleFavorite(session)}
                   className={cn(
                     'rounded-lg p-1.5 transition-colors',
-                    session.is_favorited ? 'text-[var(--mirror-gold)]' : 'text-ink-3 hover:text-ink-2',
+                    session.is_favorited ? 'text-mirror-gold' : 'text-ink-3 hover:text-ink-2',
                   )}
                 >
                   <Star size={18} strokeWidth={1.5} fill={session.is_favorited ? 'currentColor' : 'none'} />
@@ -295,7 +295,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
               <div className="px-4 pb-4">
                 {/* Info panel */}
                 {infoOpen && typeInfo && (
-                  <div className="mb-3 rounded-lg bg-[var(--muted)] px-3 py-2.5">
+                  <div className="mb-3 rounded-lg bg-subtle px-3 py-2.5">
                     <div className="mb-1 flex items-baseline justify-between gap-2">
                       <span className="text-xs font-medium text-ink-2">{typeInfo.label}</span>
                       {session.signal_strength && (

@@ -173,8 +173,8 @@ export function TimelineRangeSlider({
             className={cn(
               'pointer-events-none absolute inset-y-0 rounded-md border',
               isDragging
-                ? 'border-[var(--mirror-gold)] bg-[color-mix(in_srgb,var(--mirror-gold-bg)_55%,transparent)]'
-                : 'border-[var(--nav-active-fg)] bg-[color-mix(in_srgb,var(--nav-active-bg)_55%,transparent)]',
+                ? 'border-mirror-gold bg-[color-mix(in_srgb,var(--mirror-gold-bg)_55%,transparent)]'
+                : 'border-nav-active bg-[color-mix(in_srgb,var(--nav-active-bg)_55%,transparent)]',
             )}
             style={{ left: ratioLeft(selStart), width: ratioWidth(selStart, selEnd) }}
           />

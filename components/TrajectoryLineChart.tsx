@@ -85,7 +85,7 @@ function CustomTooltip(props: {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="max-w-[220px] rounded-lg border border-edge bg-card px-3 py-2 text-[0.8125rem] shadow-[var(--shadow-pop)]">
+    <div className="max-w-[220px] rounded-lg border border-edge bg-card px-3 py-2 text-[0.8125rem] shadow-pop">
       <div className="mb-0.5 text-ink-3">
         {d.label} · {d.value > 0 ? '+' : ''}{d.value.toFixed(1)}
       </div>
