@@ -33,3 +33,7 @@ Specs MUST auf Science verweisen, wo Verhalten empirisch begründet ist.
 Ein Markdown-File pro Tag: `YYYY-MM-DD.md`. Siehe `docs/diary/README.md`.
 
 Agents MUST nach wichtigen Entscheidungen einen Eintrag im Tagesfile anlegen oder ergänzen.
+
+## Backlog (`docs/backlog.md`)
+
+Nicht-dringende Feature-Ideen. Reife Ideen → in `docs/specs/` überführen, bevor Code entsteht.

@@ -34,9 +34,9 @@ export const MIRROR_EXHAUSTED_TEXT =
 
 /** UI labels — non-calendar; maps to DB `reminder_type` / expiry in MirrorFlow. */
 export const MIRROR_REMINDER_OPTIONS = [
-  { label: 'Heute', reminderType: 'today' as const },
-  { label: 'Ein paar Mal', reminderType: '3days' as const },
-  { label: 'Eine Weile', reminderType: '7days' as const },
+  { label: 'Ich melde mich heute noch', reminderType: 'today' as const },
+  { label: 'Ich melde mich noch ein paar Mal', reminderType: '3days' as const },
+  { label: 'Ich melde mich noch eine Weile', reminderType: '7days' as const },
   { label: 'Lieber nicht', reminderType: null },
 ] as const
 
