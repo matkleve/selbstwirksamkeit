@@ -28,10 +28,10 @@ export function getEntryMeta(entry: Entry): EntryMetaGroup[] {
     groups.push({ kind: 'person', values: splitMetaValues(entry.person) })
   }
   if (entry.location?.trim()) {
-    groups.push({ kind: 'location', values: [entry.location.trim()] })
+    groups.push({ kind: 'location', values: splitMetaValues(entry.location) })
   }
   if (entry.activity?.trim()) {
-    groups.push({ kind: 'activity', values: [entry.activity.trim()] })
+    groups.push({ kind: 'activity', values: splitMetaValues(entry.activity) })
   }
   if (entry.body_state) {
     groups.push({ kind: 'body', values: [BODY_LABELS[entry.body_state]] })

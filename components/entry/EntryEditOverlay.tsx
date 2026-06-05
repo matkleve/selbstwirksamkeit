@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MapPin, User, Zap, X } from 'lucide-react'
+import { MapPin, Plus, User, Zap, X } from 'lucide-react'
 import EntryGrid from '@/components/EntryGrid'
-import { AddChip, EntityChipEditor, FilledChip } from '@/components/EntityChip'
+import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -14,6 +14,8 @@ import { cardBoxShadow } from '@/lib/gridZones'
 import { createClient } from '@/lib/supabase'
 import { FEELINGS } from '@/lib/feelings'
 import { formatTime } from '@/lib/utils'
+import { splitMetaValues } from '@/lib/entryMeta'
+import { chipGhost } from '@/lib/chip-classes'
 import type { BodyState, Entry, GridPoint } from '@/lib/types'
 
 interface Props {
@@ -38,9 +40,10 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
     x: entry.grid_x ?? 0,
     y: entry.grid_y ?? 0,
   })
-  const [person, setPerson] = useState(entry.person ?? '')
-  const [location, setLocation] = useState(entry.location ?? '')
-  const [activity, setActivity] = useState(entry.activity ?? '')
+  const [persons, setPersons] = useState<string[]>(splitMetaValues(entry.person ?? ''))
+  const [locations, setLocations] = useState<string[]>(splitMetaValues(entry.location ?? ''))
+  const [activities, setActivities] = useState<string[]>(splitMetaValues(entry.activity ?? ''))
+  const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(entry.body_state)
   const [feelingLabel, setFeelingLabel] = useState<string | null>(feelingLabelFor(entry))
   const [reframe, setReframe] = useState(entry.reframe ?? '')
@@ -85,24 +88,9 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
   const cardShadow = cardBoxShadow(grid.x, grid.y)
 
   const saveEntityNames = async (uid: string) => {
-    if (person.trim()) {
-      await supabase.from('persons').upsert(
-        { user_id: uid, name: person.trim() },
-        { onConflict: 'user_id,name', ignoreDuplicates: true },
-      )
-    }
-    if (location.trim()) {
-      await supabase.from('locations').upsert(
-        { user_id: uid, name: location.trim() },
-        { onConflict: 'user_id,name', ignoreDuplicates: true },
-      )
-    }
-    if (activity.trim()) {
-      await supabase.from('activities').upsert(
-        { user_id: uid, name: activity.trim() },
-        { onConflict: 'user_id,name', ignoreDuplicates: true },
-      )
-    }
+    for (const name of persons) await supabase.from('persons').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true })
+    for (const name of locations) await supabase.from('locations').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true })
+    for (const name of activities) await supabase.from('activities').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true })
   }
 
   const handleSave = async () => {
@@ -120,9 +108,9 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
         text: text.trim(),
         grid_x: grid.x,
         grid_y: grid.y,
-        person: person.trim() || null,
-        location: location.trim() || null,
-        activity: activity.trim() || null,
+        person: persons.join(', ') || null,
+        location: locations.join(', ') || null,
+        activity: activities.join(', ') || null,
         body_state: bodyState,
         reframe: reframe.trim() || null,
       })
@@ -145,9 +133,9 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
   }
 
   const chips = [
-    { key: 'person' as const, Icon: User, placeholder: 'z.B. Mama', label: 'Person', value: person, setValue: setPerson },
-    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro', label: 'Ort', value: location, setValue: setLocation },
-    { key: 'activity' as const, Icon: Zap, placeholder: 'z.B. Pendeln', label: 'Tätigkeit', value: activity, setValue: setActivity },
+    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
+    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       values: locations,  setValues: setLocations },
+    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
   ]
 
   const titlePlaceholder = num != null ? `Eintrag #${num}` : 'Eintrag'
@@ -191,10 +179,10 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
               </button>
             )}
             <span className="inline-flex shrink-0 items-center gap-2 text-xs text-ink-3">
-              {location && (
+              {locations[0] && (
                 <span className="inline-flex items-center gap-1">
                   <MapPin size={12} strokeWidth={1.75} aria-hidden />
-                  {location}
+                  {locations[0]}
                 </span>
               )}
               <span>{clock}</span>
@@ -228,54 +216,59 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
               </div>
 
               <div className="entry-card-chips">
-                {chips.map(chip => {
-                  if (openChip === chip.key) {
-                    const commitChip = () => {
-                      if (!chip.value.trim()) chip.setValue('')
-                      setOpenChip(null)
-                    }
-                    return (
+                {chips.map(chip => (
+                  <Fragment key={chip.key}>
+                    {chip.values.map((v, i) => (
+                      <FilledChip
+                        key={`${chip.key}-${i}`}
+                        icon={chip.Icon}
+                        value={v}
+                        onClear={() => chip.setValues(vs => vs.filter((_, j) => j !== i))}
+                      />
+                    ))}
+                    {openChip === chip.key ? (
                       <div
-                        key={chip.key}
                         className="inline-flex"
                         onBlur={e => {
                           if (e.currentTarget.contains(e.relatedTarget as Node)) return
-                          commitChip()
-                        }}
-                      >
-                        <EntityChipEditor
-                          icon={chip.Icon}
-                          value={chip.value}
-                          onChange={chip.setValue}
-                          onClose={commitChip}
-                          placeholder={chip.placeholder}
-                          suggestions={suggestions[chip.key]}
-                        />
-                      </div>
-                    )
-                  }
-                  if (chip.value) {
-                    return (
-                      <FilledChip
-                        key={chip.key}
-                        icon={chip.Icon}
-                        value={chip.value}
-                        onClear={() => {
-                          chip.setValue('')
+                          setChipInput('')
                           setOpenChip(null)
                         }}
+                      >
+                        <MultiEntityChipEditor
+                          icon={chip.Icon}
+                          value={chipInput}
+                          onChange={setChipInput}
+                          onAdd={v => {
+                            const t = v.trim()
+                            if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                            setChipInput('')
+                          }}
+                          onClose={() => { setChipInput(''); setOpenChip(null) }}
+                          placeholder={chip.placeholder}
+                          suggestions={suggestions[chip.key]}
+                          existingValues={chip.values}
+                        />
+                      </div>
+                    ) : chip.values.length > 0 ? (
+                      <button
+                        type="button"
+                        className={chipGhost}
+                        onClick={() => setOpenChip(chip.key)}
+                        aria-label={`Weiteren ${chip.label} hinzufügen`}
+                      >
+                        <chip.Icon size={15} strokeWidth={1.75} className="shrink-0" aria-hidden />
+                        <Plus size={14} strokeWidth={2} className="shrink-0 opacity-55" aria-hidden />
+                      </button>
+                    ) : (
+                      <AddChip
+                        icon={chip.Icon}
+                        label={chip.label}
+                        onClick={() => setOpenChip(chip.key)}
                       />
-                    )
-                  }
-                  return (
-                    <AddChip
-                      key={chip.key}
-                      icon={chip.Icon}
-                      label={chip.label}
-                      onClick={() => setOpenChip(chip.key)}
-                    />
-                  )
-                })}
+                    )}
+                  </Fragment>
+                ))}
                 <FeelingChip
                   feelingLabel={feelingLabel}
                   bodyState={bodyState}

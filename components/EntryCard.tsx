@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import EntryGrid from './EntryGrid'
 import ReframeFlow from './ReframeFlow'
@@ -9,10 +9,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { cardBoxShadow, getZone, zoneTexts } from '@/lib/gridZones'
 import type { GridPoint, Entry, BodyState } from '@/lib/types'
 import { formatEntryDateTime } from '@/lib/utils'
-import { User, MapPin, Zap } from 'lucide-react'
-import { AddChip, FilledChip, EntityChipEditor } from '@/components/EntityChip'
+import { User, MapPin, Plus, Zap } from 'lucide-react'
+import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
 import { useEntries } from '@/components/EntriesProvider'
+import { chipGhost } from '@/lib/chip-classes'
 
 const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
 
@@ -23,9 +24,10 @@ export default function EntryCard() {
   const [editingTitle, setEditingTitle] = useState(false)
   const [entryCount, setEntryCount] = useState<number | null>(null)
   const [text, setText] = useState('')
-  const [person, setPerson] = useState('')
-  const [location, setLocation] = useState('')
-  const [activity, setActivity] = useState('')
+  const [persons, setPersons] = useState<string[]>([])
+  const [locations, setLocations] = useState<string[]>([])
+  const [activities, setActivities] = useState<string[]>([])
+  const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(null)
   const [feelingLabel, setFeelingLabel] = useState<string | null>(null)
   const [openChip, setOpenChip] = useState<'person' | 'location' | 'activity' | null>(null)
@@ -87,18 +89,19 @@ export default function EntryCard() {
   const cardShadow = cardBoxShadow(grid.x, grid.y)
 
   const saveEntityNames = (uid: string) => {
-    if (person.trim()) supabase.from('persons').upsert({ user_id: uid, name: person.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
-    if (location.trim()) supabase.from('locations').upsert({ user_id: uid, name: location.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
-    if (activity.trim()) supabase.from('activities').upsert({ user_id: uid, name: activity.trim() }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    for (const name of persons) supabase.from('persons').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    for (const name of locations) supabase.from('locations').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
+    for (const name of activities) supabase.from('activities').upsert({ user_id: uid, name }, { onConflict: 'user_id,name', ignoreDuplicates: true }).then()
   }
 
   const resetFormFields = () => {
     setTitle('')
     setEditingTitle(false)
     setText('')
-    setPerson('')
-    setLocation('')
-    setActivity('')
+    setPersons([])
+    setLocations([])
+    setActivities([])
+    setChipInput('')
     setBodyState(null)
     setFeelingLabel(null)
     setOpenChip(null)
@@ -136,9 +139,9 @@ export default function EntryCard() {
       text: text.trim(),
       grid_x: grid.x,
       grid_y: grid.y,
-      person: person.trim() || null,
-      location: location.trim() || null,
-      activity: activity.trim() || null,
+      person: persons.join(', ') || null,
+      location: locations.join(', ') || null,
+      activity: activities.join(', ') || null,
       body_state: bodyState,
     }).select(CHIP_SELECT).single()
 
@@ -173,9 +176,9 @@ export default function EntryCard() {
   }, [saveSuccess])
 
   const chips = [
-    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    value: person,   setValue: setPerson },
-    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       value: location, setValue: setLocation },
-    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', value: activity, setValue: setActivity },
+    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
+    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       values: locations,  setValues: setLocations },
+    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
   ]
 
   return (
@@ -208,10 +211,10 @@ export default function EntryCard() {
           fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0,
           display: 'inline-flex', alignItems: 'center', gap: 4,
         }}>
-          {location && (
+          {locations[0] && (
             <>
               <MapPin size={12} strokeWidth={1.75} aria-hidden />
-              <span>{location}</span>
+              <span>{locations[0]}</span>
               <span aria-hidden>·</span>
             </>
           )}
@@ -251,51 +254,59 @@ export default function EntryCard() {
           </div>
 
           <div className="entry-card-chips">
-        {chips.map(chip => {
-          if (openChip === chip.key) {
-            const commitChip = () => {
-              if (!chip.value.trim()) chip.setValue('')
-              setOpenChip(null)
-            }
-            return (
+        {chips.map(chip => (
+          <Fragment key={chip.key}>
+            {chip.values.map((v, i) => (
+              <FilledChip
+                key={`${chip.key}-${i}`}
+                icon={chip.Icon}
+                value={v}
+                onClear={() => chip.setValues(vs => vs.filter((_, j) => j !== i))}
+              />
+            ))}
+            {openChip === chip.key ? (
               <div
-                key={chip.key}
                 className="inline-flex"
-                onBlur={(e) => {
+                onBlur={e => {
                   if (e.currentTarget.contains(e.relatedTarget as Node)) return
-                  commitChip()
+                  setChipInput('')
+                  setOpenChip(null)
                 }}
               >
-                <EntityChipEditor
+                <MultiEntityChipEditor
                   icon={chip.Icon}
-                  value={chip.value}
-                  onChange={chip.setValue}
-                  onClose={commitChip}
+                  value={chipInput}
+                  onChange={setChipInput}
+                  onAdd={v => {
+                    const t = v.trim()
+                    if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                    setChipInput('')
+                  }}
+                  onClose={() => { setChipInput(''); setOpenChip(null) }}
                   placeholder={chip.placeholder}
                   suggestions={suggestions[chip.key]}
+                  existingValues={chip.values}
                 />
               </div>
-            )
-          }
-          if (chip.value) {
-            return (
-              <FilledChip
-                key={chip.key}
+            ) : chip.values.length > 0 ? (
+              <button
+                type="button"
+                className={chipGhost}
+                onClick={() => setOpenChip(chip.key)}
+                aria-label={`Weiteren ${chip.label} hinzufügen`}
+              >
+                <chip.Icon size={15} strokeWidth={1.75} className="shrink-0" aria-hidden />
+                <Plus size={14} strokeWidth={2} className="shrink-0 opacity-55" aria-hidden />
+              </button>
+            ) : (
+              <AddChip
                 icon={chip.Icon}
-                value={chip.value}
-                onClear={() => { chip.setValue(''); setOpenChip(null) }}
+                label={chip.label}
+                onClick={() => setOpenChip(chip.key)}
               />
-            )
-          }
-          return (
-            <AddChip
-              key={chip.key}
-              icon={chip.Icon}
-              label={chip.label}
-              onClick={() => setOpenChip(chip.key)}
-            />
-          )
-        })}
+            )}
+          </Fragment>
+        ))}
         <FeelingChip
           feelingLabel={feelingLabel}
           bodyState={bodyState}

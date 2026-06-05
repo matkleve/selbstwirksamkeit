@@ -272,6 +272,11 @@ function anchorEntryIds(cluster: SemanticCluster, n = 2): string[] {
   return scores.slice(0, n).map(([, id]) => id)
 }
 
+function splitMetaField(raw: string | null): string[] {
+  if (!raw) return []
+  return raw.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(Boolean)
+}
+
 function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   const items: string[] = []
   if (clusterId) items.push(`cluster:${clusterId}`)
@@ -280,10 +285,10 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   else if (entry.grid_x > 0.3) items.push('valence:positive')
   else items.push('valence:neutral')
 
-  if (entry.person) items.push(`tag:person:${entry.person.toLowerCase()}`)
+  for (const p of splitMetaField(entry.person)) items.push(`tag:person:${p}`)
   if (entry.body_state) items.push(`tag:mood:${entry.body_state.toLowerCase()}`)
-  if (entry.location) items.push(`tag:loc:${entry.location.toLowerCase()}`)
-  if (entry.activity) items.push(`tag:act:${entry.activity.toLowerCase()}`)
+  for (const l of splitMetaField(entry.location)) items.push(`tag:loc:${l}`)
+  for (const a of splitMetaField(entry.activity)) items.push(`tag:act:${a}`)
 
   const h = entry.hour_of_day
   if (h < 6) items.push('time:night')
