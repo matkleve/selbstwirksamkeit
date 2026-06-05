@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Plus, BarChart2, Sparkles, Eye } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { NavTabLabel } from '@/components/NavTabLabel'
 import { cn } from '@/lib/cn'
 
@@ -15,8 +16,27 @@ const TABS = [
 
 const TAB_WIDTH = 'w-[4.75rem]' as const
 
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    let maxHeight = vv.height
+    const handler = () => {
+      maxHeight = Math.max(maxHeight, vv.height)
+      setOpen(vv.height < maxHeight * 0.8)
+    }
+    vv.addEventListener('resize', handler)
+    return () => vv.removeEventListener('resize', handler)
+  }, [])
+  return open
+}
+
 export default function BottomTabBar() {
   const path = usePathname()
+  const keyboardOpen = useKeyboardOpen()
+
+  if (keyboardOpen) return null
 
   return (
     <div

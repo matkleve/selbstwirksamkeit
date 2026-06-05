@@ -1,5 +1,7 @@
 export type BodyState = 'stressed' | 'calm' | 'tired'
 
+export type Weather = 'sunny' | 'partly_cloudy' | 'cloudy' | 'rainy' | 'snowy' | 'stormy' | 'foggy'
+
 export interface GridPoint {
   x: number   // -5 to +5, valence
   y: number   // -5 to +5, reference (neg = self, pos = others)
@@ -17,6 +19,7 @@ export interface Entry {
   location: string | null
   activity: string | null
   body_state: BodyState | null
+  weather: Weather | null
   created_at: string
 }
 

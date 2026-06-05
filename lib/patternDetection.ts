@@ -1,5 +1,5 @@
 import { splitMetaValues } from './entryMeta'
-import { metaLabelsFromAntecedent } from './wgarmEc'
+import { metaLabelsFromAntecedent, regenerateInsightText } from './wgarmEc'
 import {
   intensity,
   timespan,
@@ -332,6 +332,18 @@ export function candidateFromStored(
         ? anchorIds.map(id => byId.get(id)).filter((e): e is Entry => !!e)
         : pickDisplayEntries(sorted)
 
+    let closingText = stored.template_text
+    const storedMeta = stored.pattern_metadata
+    if (Array.isArray(antecedent) && Array.isArray(storedMeta?.consequent)) {
+      const regen = regenerateInsightText({
+        antecedent: antecedent as string[],
+        consequent: storedMeta!.consequent as string[],
+        confidence: (storedMeta!.confidence as number) ?? 0,
+        is_escalating: (storedMeta!.is_escalating as boolean) ?? false,
+      })
+      if (regen) closingText = regen
+    }
+
     return {
       entryIds: stored.entry_ids,
       entries: display.length ? display : pickDisplayEntries(sorted),
@@ -339,7 +351,7 @@ export function candidateFromStored(
       signalStrength: stored.signal_strength as MirrorCandidate['signalStrength'],
       count: sorted.length,
       introText: '',
-      closingText: stored.template_text,
+      closingText,
       entriesFirst: true,
       question: stored.question ?? 'Erkennst du das?',
       relevantMeta: Array.isArray(antecedent)
