@@ -143,10 +143,22 @@ function expandAxis(v: number): number {
   return 0.5 + sign * Math.pow(mag, AXIS_CURVE) * 0.5
 }
 
-function bilinearFromUnit(tx: number, ty: number): [number, number, number] {
-  const bottom = lerpRgb(POLES.neg_ich, POLES.pos_ich, tx)
-  const top = lerpRgb(POLES.neg_andere, POLES.pos_andere, tx)
-  return lerpRgb(bottom, top, ty)
+function axisWeightBlend(x: number, y: number): [number, number, number] {
+  const tx = expandAxis(x)
+  const ty = expandAxis(y)
+  const wPosX = Math.max(0, tx - 0.5) * 2
+  const wNegX = Math.max(0, 0.5 - tx) * 2
+  const wPosY = Math.max(0, ty - 0.5) * 2
+  const wNegY = Math.max(0, 0.5 - ty) * 2
+  const total = wPosX + wNegX + wPosY + wNegY
+  const w = total < 0.02
+    ? ([0.25, 0.25, 0.25, 0.25] as const)
+    : ([wPosX / total, wNegX / total, wPosY / total, wNegY / total] as const)
+  return [
+    Math.round(w[0]*POLES.pos_andere[0] + w[1]*POLES.neg_ich[0] + w[2]*POLES.neg_andere[0] + w[3]*POLES.pos_ich[0]),
+    Math.round(w[0]*POLES.pos_andere[1] + w[1]*POLES.neg_ich[1] + w[2]*POLES.neg_andere[1] + w[3]*POLES.pos_ich[1]),
+    Math.round(w[0]*POLES.pos_andere[2] + w[1]*POLES.neg_ich[2] + w[2]*POLES.neg_andere[2] + w[3]*POLES.pos_ich[2]),
+  ]
 }
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -218,51 +230,20 @@ function enrichChroma(rgb: [number, number, number], dist: number, x: number, y:
   return hslToRgb(h, s, l)
 }
 
-/** Axis-led tint when one dimension is near neutral — avoids grey “cross” at x≈0 or y≈0. */
-function axisLeanColor(x: number, y: number): [number, number, number] {
-  const ax = Math.abs(x)
-  const ay = Math.abs(y)
-  if (ax < 0.2 && ay < 0.2) {
-    const ich = lerpRgb(POLES.neg_ich, POLES.pos_ich, expandAxis(x || 0.6))
-    const andere = lerpRgb(POLES.neg_andere, POLES.pos_andere, expandAxis(y || -0.6))
-    return lerpRgb(ich, andere, 0.48)
-  }
-  if (ax >= ay) {
-    return lerpRgb(POLES.neg_ich, POLES.pos_ich, expandAxis(x))
-  }
-  const ichMid = lerpRgb(POLES.neg_ich, POLES.pos_ich, 0.5)
-  const andereMid = lerpRgb(POLES.neg_andere, POLES.pos_andere, 0.5)
-  return lerpRgb(ichMid, andereMid, expandAxis(y))
-}
-
-/** Valence only (horizontal axis, ich row): terracotta ↔ sage. */
+/** Valence axis (x): neg_ich at x=-5, pos_andere at x=+5. */
 export function gridValenceAxisRgb(x: number): [number, number, number] {
-  const tx = expandAxis(x)
-  return lerpRgb(POLES.neg_ich, POLES.pos_ich, tx)
+  return axisWeightBlend(x, 0)
 }
 
-/** Referenz only (vertical axis): ich row ↔ andere row. */
+/** Referenz axis (y): pos_ich at y=-5, neg_andere at y=+5. */
 export function gridReferenzAxisRgb(y: number): [number, number, number] {
-  const ty = expandAxis(y)
-  const ich = lerpRgb(POLES.neg_ich, POLES.pos_ich, 0.5)
-  const andere = lerpRgb(POLES.neg_andere, POLES.pos_andere, 0.5)
-  return lerpRgb(ich, andere, ty)
+  return axisWeightBlend(0, y)
 }
 
 export function bilinearColor(x: number, y: number): [number, number, number] {
-  const tx = expandAxis(x)
-  const ty = expandAxis(y)
-  const base = bilinearFromUnit(tx, ty)
+  const base = axisWeightBlend(x, y)
   const dist = Math.hypot(x / 5, y / 5)
-
-  let rgb = base
-  if (dist < 0.58) {
-    const lean = axisLeanColor(x, y)
-    const t = (0.58 - dist) / 0.58
-    rgb = lerpRgb(base, lean, t * 0.72)
-  }
-
-  return enrichChroma(rgb, dist, x, y)
+  return enrichChroma(base, dist, x, y)
 }
 
 /** Compose + saved cards — one bilinear wash (matches `cardTintShadow`). */
