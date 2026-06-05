@@ -41,6 +41,14 @@
   --color-nav-active:    var(--nav-active-fg);
   --color-nav-active-bg: var(--nav-active-bg);
 
+  /* Mirror accent */
+  --color-mirror-gold:        var(--mirror-gold);
+  --color-mirror-gold-bg:     var(--mirror-gold-bg);
+  --color-mirror-gold-hover:  var(--mirror-gold-bg-hover);
+
+  /* Field */
+  --color-field-border-hover: var(--field-border-hover);
+
   /* Valence (1D fallback when only grid_x) */
   --color-v-pos-strong: var(--valence-pos-strong);
   --color-v-pos-mid:    var(--valence-pos-mid);
@@ -133,6 +141,7 @@
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card:       var(--bg-card);
+  --muted:      var(--bg-subtle);
   --muted-foreground: var(--text-muted);
 }
 
@@ -198,6 +207,7 @@
   --background: var(--bg-base);
   --foreground: var(--text-primary);
   --card:       var(--bg-card);
+  --muted:      var(--bg-subtle);
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --shadow-pop:  0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);

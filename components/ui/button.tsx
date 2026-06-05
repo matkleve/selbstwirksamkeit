@@ -19,18 +19,18 @@ const variants: Record<ButtonVariant, string> = {
     'active:scale-[0.97]',
   ].join(' '),
   secondary: [
-    'bg-[var(--nav-active-bg)] text-[var(--nav-active-fg)] border border-transparent',
+    'bg-nav-active-bg text-nav-active border border-transparent',
     'hover:brightness-95',
     'active:scale-[0.97]',
   ].join(' '),
   gold: [
-    'bg-[var(--mirror-gold-bg)] text-[var(--mirror-gold)] border border-transparent',
-    'hover:bg-[var(--mirror-gold-bg-hover)]',
+    'bg-mirror-gold-bg text-mirror-gold border border-transparent',
+    'hover:bg-mirror-gold-hover',
     'active:scale-[0.97]',
   ].join(' '),
   ghost: [
     'bg-transparent text-ink-2 border border-edge',
-    'hover:border-[var(--field-border-hover)] hover:bg-subtle hover:text-ink',
+    'hover:border-field-border-hover hover:bg-subtle hover:text-ink',
     'active:scale-[0.97]',
   ].join(' '),
   link: 'bg-transparent text-ink-2 hover:text-ink underline-offset-2 hover:underline p-0 h-auto',

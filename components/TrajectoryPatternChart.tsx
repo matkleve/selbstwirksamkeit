@@ -90,19 +90,11 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
         >
           <defs>
             <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
-              {mode === 'valence' ? (
-                <>
-                  <stop offset="0%" stopColor="var(--valence-neg-strong)" />
-                  <stop offset="50%" stopColor="var(--valence-neutral)" />
-                  <stop offset="100%" stopColor="var(--valence-pos-strong)" />
-                </>
-              ) : (
-                <>
-                  <stop offset="0%" stopColor="rgb(185, 100, 72)" />
-                  <stop offset="50%" stopColor="var(--valence-neutral)" />
-                  <stop offset="100%" stopColor="rgb(88, 138, 178)" />
-                </>
-              )}
+              <>
+              <stop offset="0%" stopColor="var(--grid-neg-ich)" />
+              <stop offset="50%" stopColor="var(--valence-neutral)" />
+              <stop offset="100%" stopColor="var(--grid-pos-andere)" />
+            </>
             </linearGradient>
           </defs>
 
