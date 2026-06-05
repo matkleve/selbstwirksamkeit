@@ -66,7 +66,7 @@ export function MirrorNarrativeBlock({
           variant="chips-closed"
           header="mirror"
           size="sm"
-          lines={2}
+          lines="none"
           menu={false}
           card
           relevantMeta={candidate?.relevantMeta}
