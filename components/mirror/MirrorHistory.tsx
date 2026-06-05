@@ -319,7 +319,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
                         size="sm"
                         card={true}
                         menu={true}
-                        lines={2}
+                        lines="none"
                       />
                     ))}
                   </div>
