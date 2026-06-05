@@ -3,10 +3,10 @@
 import { memo } from 'react'
 import { User, Users } from 'lucide-react'
 import {
-  LineChart, XAxis, YAxis, ReferenceLine,
+  LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { ZeroSplitLines } from '@/components/ZeroSplitLines'
+import { ZeroAxisGradient } from '@/components/ZeroAxisGradient'
 import { bilinearColor } from '@/lib/gridZones'
 import { TRAJECTORY_CHART_H } from '@/lib/trajectoryChartLayout'
 
@@ -100,9 +100,7 @@ function CustomTooltip(props: {
 }
 
 function TrajectoryLineChart({ data, mode }: Props) {
-  const splitId = `traj-y-${mode}`
-  const colorAbove = mode === 'valence' ? 'var(--grid-pos-andere)' : 'var(--grid-pos-ich)'
-  const colorBelow = mode === 'valence' ? 'var(--grid-neg-ich)' : 'var(--grid-neg-andere)'
+  const gradId = `traj-y-${mode}`
 
   return (
     <ResponsiveContainer width="100%" height={TRAJECTORY_CHART_H}>
@@ -124,12 +122,16 @@ function TrajectoryLineChart({ data, mode }: Props) {
         />
         <ReferenceLine y={0} stroke="var(--border-focus)" strokeDasharray="4 3" strokeWidth={1} />
         <Tooltip content={<CustomTooltip />} cursor={false} />
-        <ZeroSplitLines
-          id={splitId}
+        <ZeroAxisGradient id={gradId} mode={mode} />
+        <Line
+          type="monotone"
           dataKey="value"
-          colorAbove={colorAbove}
-          colorBelow={colorBelow}
+          stroke={`url(#${gradId})`}
+          strokeWidth={2}
           dot={<CustomDot mode={mode} />}
+          activeDot={false}
+          connectNulls={false}
+          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>

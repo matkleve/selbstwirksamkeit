@@ -9,6 +9,7 @@ import { EntryCardShell } from '@/components/entry/EntryCardShell'
 import { EntryCardMenu } from '@/components/entry/EntryCardMenu'
 import { EntryDate } from '@/components/entry/EntryDate'
 import { EntryMetaChips } from '@/components/entry/EntryMetaChips'
+import { EntryGridAxisMini } from '@/components/entry/EntryGridAxisMini'
 import { formatMirrorDateTime } from '@/lib/mirrorTransition'
 import { MirrorRevealWords } from '@/components/mirror/MirrorRevealWords'
 import { splitRevealWords } from '@/lib/mirrorReveal'
@@ -49,6 +50,8 @@ export interface EntryDisplayProps {
     bodyWordCount: number
     chipCount: number
   }
+  /** Footer: mini valence/referenz axis readout (default: true when grid_x set) */
+  showAxis?: boolean
   children?: ReactNode
 }
 
@@ -89,23 +92,28 @@ function ColorDot({ entry, size }: { entry: Entry; size: EntryDisplaySize }) {
 }
 
 function MirrorEntryHeader({
+  number,
   dateStr,
   reveal,
 }: {
+  number: number | null
   dateStr: string
   reveal?: EntryDisplayProps['reveal']
 }) {
   const words = splitRevealWords(formatMirrorDateTime(dateStr))
   const visible = reveal ? reveal.headerWordCount : words.length
   return (
-    <div className="mb-1.5 flex justify-end">
+    <div className="mb-1.5 flex items-center justify-between gap-2">
+      <span className="min-w-0 truncate text-xs font-medium text-ink-3">
+        {number != null ? `Entry #${number}` : 'Entry'}
+      </span>
       <MirrorRevealWords
         as="time"
         dateTime={dateStr}
         words={words}
         visibleCount={visible}
         showCursor={!!reveal && visible < words.length}
-        className="text-xs uppercase tracking-wide text-ink-3"
+        className="shrink-0 text-xs uppercase tracking-wide text-ink-3"
       />
     </div>
   )
@@ -219,6 +227,7 @@ export function EntryDisplay({
   menu: menuProp,
   relevantMeta,
   reveal,
+  showAxis: showAxisProp,
   children,
 }: EntryDisplayProps) {
   const { entryNumber: entryNumberFromCtx } = useEntries()
@@ -227,6 +236,16 @@ export function EntryDisplay({
   const card = cardProp ?? variant !== 'full'
   const showMenu = menuProp ?? variant !== 'color'
   const shellPadding = size === 'sm' ? 'sm' : 'md'
+  const showAxis = showAxisProp ?? entry.grid_x !== null
+
+  function axisFooter(className?: string) {
+    if (!showAxis || entry.grid_x === null) return null
+    return (
+      <div className={cn('mt-2 flex justify-start', className)}>
+        <EntryGridAxisMini x={entry.grid_x} y={entry.grid_y} size={size === 'sm' ? 'xs' : 'sm'} />
+      </div>
+    )
+  }
 
   if (variant === 'color') {
     return (
@@ -238,7 +257,7 @@ export function EntryDisplay({
 
   const headerBlock =
     header === 'mirror' ? (
-      <MirrorEntryHeader dateStr={entry.created_at} reveal={reveal} />
+      <MirrorEntryHeader number={number} dateStr={entry.created_at} reveal={reveal} />
     ) : (
       <EntryHeader
         entry={entry}
@@ -261,6 +280,7 @@ export function EntryDisplay({
           <p className="mb-0.5 text-xs font-medium text-ink-2">{entry.title}</p>
         )}
         <EntryBody text={entry.text} size={size} lines={lines} />
+        {axisFooter()}
       </>,
     )
   }
@@ -277,6 +297,7 @@ export function EntryDisplay({
           <ColorRail entry={entry} size={size} />
           <EntryBody text={entry.text} size={size} lines={lines} className="min-w-0 flex-1" />
         </div>
+        {axisFooter()}
       </>,
     )
   }
@@ -316,6 +337,7 @@ export function EntryDisplay({
           size={size}
           className="mt-2"
         />
+        {axisFooter()}
       </>,
     )
   }
@@ -332,6 +354,7 @@ export function EntryDisplay({
         {meta.length > 0 && (
           <EntryMetaChips groups={meta} mode="open" size={size} className="mb-2" />
         )}
+        {axisFooter('mb-2')}
         {children}
       </div>
     </div>

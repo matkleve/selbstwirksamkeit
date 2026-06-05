@@ -333,7 +333,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
                       {hasMore && (
                         <PillButton
                           type="button"
-                          className="self-start"
+                          className="self-center"
                           onClick={() =>
                             setVisibleAnchorCount(prev => ({
                               ...prev,

@@ -126,7 +126,7 @@ function loadSupabaseEnv(forceLocal = false): { url: string; key: string } {
 
 function runValenceShiftCandidates(entries: EntryRow[]): TestCandidate[] {
   const wgarmEntries = entries.map(toWgarmEntry).filter(Boolean)
-  if (wgarmEntries.length < 10) return []
+  if (wgarmEntries.length < 20) return []
 
   const result = runWgarmEc(wgarmEntries)
   if (result.error) return []
@@ -149,7 +149,7 @@ function runValenceShiftCandidates(entries: EntryRow[]): TestCandidate[] {
 }
 function runWgarmEcCandidates(entries: EntryRow[]): TestCandidate[] {
   const wgarmEntries = entries.map(toWgarmEntry).filter(Boolean)
-  if (wgarmEntries.length < 10) return []
+  if (wgarmEntries.length < 20) return []
 
   const result = runWgarmEc(wgarmEntries)
   if (result.error) {

@@ -135,14 +135,14 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
   if (valence > 0.3) {
     introText = withStrongIntro(
       strength,
-      `${intensity(count)} ${timespan(span, since)}.`,
+      `Deine Einträge ${best.label} klingen meist positiv — ${intensity(count)} ${timespan(span, since)}.`,
     )
     summaryText = `Du hast das ${count}× erlebt.`
     question = 'Fällt dir auf, was diese Momente verbindet?'
   } else if (valence < -0.3) {
     introText = withStrongIntro(
       strength,
-      `${intensity(count)} ${timespan(span, since)}.`,
+      `Deine Einträge ${best.label} klingen meist schwer — ${intensity(count)} ${timespan(span, since)}.`,
     )
     summaryText = `Das ist ${count}× aufgetaucht.`
     question = 'Fällt dir auf, was diese Momente verbindet?'

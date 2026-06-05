@@ -36,8 +36,9 @@ RESPONSE BLOCKS     ← universell, immer gleich
 
 [🔔] Reminder
      MUST NOT erscheinen wenn Wenn-Dann leer
-     Chips: Heute · Ein paar Mal · Eine Weile · Lieber nicht
+     Chips: Heute · 3 Tage · Diese Woche · Lieber nicht
      Reminder block MUST appear only after Weiter on Wenn-Dann (not while typing)
+     MUST NOT: Companion-Sprache („Ich melde mich …")
 
 [◎]  Summary
      "Du hast heute hingeschaut. Das zählt."
@@ -113,6 +114,7 @@ weak:     ""
 | Verwandlung | `transformation` | valence_shift · frequency_change |
 | Zusammenhang | `association` | wgarm_ec (person · location · time_valence) |
 | Echo | `echo` | temporal_echo · anniversary_echo |
+| Bedeutsamer Moment | `significant_moment` | significance_score |
 
 ---
 
@@ -150,7 +152,7 @@ weak:     ""
 *tag_frequency, positiv (valence_avg > 0.3):*
 
 ```
-Pattern:         strong_intro + intensity(count) + " " + timespan(span_days) + "."
+Pattern:         strong_intro + "Deine Einträge {label} klingen meist positiv — " + intensity(count) + " " + timespan(span_days) + "."
 Zusammenfassung: "Du hast das {count}× erlebt."
 Frage Mirror:    "Fällt dir auf, was diese Momente verbindet?"
 Frage Stärke:    "Was macht diese Momente möglich?"
@@ -159,7 +161,7 @@ Frage Stärke:    "Was macht diese Momente möglich?"
 *tag_frequency, negativ (valence_avg < -0.3):*
 
 ```
-Pattern:         strong_intro + intensity(count) + " " + timespan(span_days) + "."
+Pattern:         strong_intro + "Deine Einträge {label} klingen meist schwer — " + intensity(count) + " " + timespan(span_days) + "."
 Zusammenfassung: "Das ist {count}× aufgetaucht."
 Frage:           "Fällt dir auf, was diese Momente verbindet?"
 ```
@@ -334,6 +336,48 @@ MUST:     Mirror zeigt beide Richtungen neutral
 
 ---
 
+## 5. BEDEUTSAMER MOMENT
+
+*Ein einzelner Eintrag, der aus dem Rest heraussticht — nicht weil er wiederholt, sondern weil er Gewicht hat.*
+
+**Algorithmus:** `significant_moment` — `significance_score` auf Eintragsebene
+
+**Narrative Core:**
+
+```
+[❝]  Entry (der bedeutsame)
+
+[◦]  Pattern-Text (optional, kurz)
+```
+
+**Templates:**
+
+```
+Pattern:  "Das ist einer deiner Einträge, der besonders hängen geblieben ist."
+Frage:    "Was macht diesen Moment bedeutsam für dich?"
+```
+
+**Schwellenwerte:**
+
+| Feld | Minimum |
+|------|---------|
+| `significance_score` | ≥ 0.85 (TBD bei Implementierung) |
+| Einträge gesamt | ≥ 5 (Kontext nötig) |
+| Alter des Eintrags | ≥ 7 Tage (nicht „gerade eben") |
+
+**Invarianten:**
+
+```
+MUST NOT: In Stärke (positiv-only-Kontext passt nicht zu jedem bedeutsamen Moment)
+MUST NOT: Bewertung („besonders gut/schlecht")
+MUST:     Eigene Worte des Users zeigen — kein interpretierender Overlay-Text
+MUST:     Ein Eintrag, nicht eine Serie
+```
+
+**Erscheint in:** Mirror only (Implementierung offen)
+
+---
+
 ## Schwellenwerte
 
 | Typ | Min. Vorkommen | Min. Span | Weitere |
@@ -344,9 +388,10 @@ MUST:     Mirror zeigt beide Richtungen neutral
 | weekday_pattern | ≥ 3 pro Tag | — | Δ ≥ 0.35 |
 | valence_shift | ≥ 4 im Cluster | ≥ 30d | \|shift\| ≥ 0.35 |
 | frequency_change | — | — | Faktor ≥ 2× oder ≤ 0.5× |
-| wgarm_ec | — | ≥ 14d | confidence ≥ 0.65, lift ≥ 1.3 |
+| wgarm_ec | — | ≥ 14d | **≥ 20 Einträge gesamt**, confidence ≥ 0.65, lift ≥ 1.3, dediziertes Template |
 | temporal_echo | — | ≥ 21d | similarity ≥ 0.75 |
 | anniversary_echo | — | ≥ 300d | similarity ≥ 0.72, \|Δ365\| < 30 |
+| significant_moment | 1 | — | significance_score ≥ 0.85 |
 
 ---
 

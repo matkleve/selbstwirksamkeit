@@ -20,10 +20,10 @@ chips (same timeline row, not a separate block).
 
 One of four variants, chosen at random when the block mounts:
 
-- „Soll ich dich daran erinnern?"
-- „Ich kann dir einen Reminder setzen."
-- „Willst du, dass ich dich erinnere?"
-- „Magst du, dass ich dich nochmal anspreche?"
+- „Reminder optional."
+- „Für wie lange?"
+- „Erinnern lassen?"
+- „Dauer wählen."
 
 Style: small, italic, muted (`--muted-foreground`).
 
@@ -35,6 +35,8 @@ Implementation: `components/mirror/MirrorFlow.reminder.tsx`, `MIRROR_REMINDER_IN
 
 Scientific basis: full WENN+DANN on first exposure reactivates declarative memory
 (Pirolli et al. 2017; Wicaksono et al. 2019). DANN-only later assumes context is encoded.
+
+Notifications MUST reflect the user's own Wenn-Dann words — not the app's voice.
 
 ### Tag 1 (`fired_count === 0`)
 
@@ -66,9 +68,10 @@ Silence beats ineffective repetition (Pirolli: time since last confirmation).
 
 ```
 MUST NOT: "Du weißt...", "Vergiss nicht...", "Du wolltest..."
+MUST NOT: "Ich melde mich...", companion / coach / friend tone in UI or notifications
 MUST NOT: Motivational or coaching tone
 MUST NOT: More than two lines in notification body
-MUST:     Tag 1 always WENN + DANN together
+MUST:     Tag 1 always WENN + DANN together (user's words)
 MUST:     Stop after 3 fires OR expires_at — whichever comes first
 MUST:     active = false when reminder period ends
 ```
@@ -96,12 +99,26 @@ Delivery scheduler: future work (cron / push). Text rules MUST be enforced in
 
 | Chip (UI label) | `reminder_type` | `expires_at` |
 |-----------------|-----------------|--------------|
-| Ich melde mich heute noch | `today` | End of local day |
-| Ich melde mich noch ein paar Mal | `3days` | `created_at + 3d` (max 3 fires) |
-| Ich melde mich noch eine Weile | `7days` | `created_at + 7d` |
+| Heute | `today` | End of local day |
+| 3 Tage | `3days` | `created_at + 3d` (max 3 fires) |
+| Diese Woche | `7days` | `created_at + 7d` |
 | Lieber nicht | — | `wants_reminder = false` |
 
-UI labels MUST speak in first person from the app's perspective („Ich melde mich…”).
-MUST NOT use calendar phrasing („3 Tage”, „Diese Woche”) — duration-agnostic copy.
+Chip labels MUST be time/duration only (Heute · 3 Tage · Diese Woche).
+MUST NOT use first-person companion copy („Ich melde mich …").
 
 Max **3** notification fires per intention regardless of chip duration.
+
+---
+
+## Mirror closure (Summary block)
+
+After Reminder selection, closure copy MUST NOT position the app as an active companion.
+
+| Mode | Copy |
+|------|------|
+| Reminder set | „Wenn-Dann gespeichert." + „Einträge aus diesem Spiegel gespeichert." |
+| Wenn-Dann, no reminder | „Einträge und Wenn-Dann gespeichert." |
+| Session only | „Einträge aus diesem Spiegel gespeichert." |
+
+Implementation: `buildMirrorClosureMessages()` in `MirrorFlow.constants.ts`.

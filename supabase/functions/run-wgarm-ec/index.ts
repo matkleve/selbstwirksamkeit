@@ -2,6 +2,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 import {
   runWgarmEc,
   toWgarmEntry,
+  MIN_WGARM_ENTRIES,
 } from '../_shared/wgarmEc.ts'
 
 interface DbEntry {
@@ -31,7 +32,7 @@ async function processUser(supabase: ReturnType<typeof createClient>, userId: st
 
   if (error) throw error
   const wgarmEntries = (rows as DbEntry[]).map(toWgarmEntry).filter(Boolean)
-  if (wgarmEntries.length < 10) return { userId, inserted: 0, rules: 0 }
+  if (wgarmEntries.length < MIN_WGARM_ENTRIES) return { userId, inserted: 0, rules: 0 }
 
   const result = runWgarmEc(wgarmEntries)
   if (result.error) return { userId, inserted: 0, rules: 0, error: result.error }

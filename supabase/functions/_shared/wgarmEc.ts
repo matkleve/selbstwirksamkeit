@@ -96,6 +96,8 @@ export interface WgarmResult {
 }
 
 const VALENCE_ITEMS = new Set(['valence:negative', 'valence:positive', 'valence:neutral'])
+/** Total entries required before WGARM-EC runs — see docs/specs/wgarm-ec.md */
+export const MIN_WGARM_ENTRIES = 20
 const MIN_SPAN_DAYS = 7
 const VALENCE_SHIFT_MIN_ENTRIES = 4
 const VALENCE_SHIFT_MIN_SPAN_DAYS = 30
@@ -499,14 +501,8 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
     return `Du notierst ${w} häufiger positive Zustände (${confPct}% der Fälle).`
   }
 
-  const antLabels = ant.filter(a => !a.startsWith('cluster:')).map(formatItemLabel).filter(Boolean)
-  if (!antLabels.length) return null
-
-  const valenceStr =
-    cons === 'valence:negative' ? 'negativeren'
-    : cons === 'valence:neutral' ? 'neutraleren'
-    : 'positiveren'
-  return `Mir ist aufgefallen: ${antLabels.join(', ')} hängt in ${confPct}% der Fälle mit ${valenceStr} Zuständen zusammen.`
+  // No generic fallback — rules without a dedicated template MUST NOT become candidates.
+  return null
 }
 
 function isEligibleRule(rule: AssociationRule, clusters: SemanticCluster[]): boolean {
@@ -657,9 +653,9 @@ export function runWgarmEc(
   // Smaller histories need lower support (min 3 hits); cap at spec default 0.15
   const minSupport = Math.min(configuredSupport, Math.max(0.08, 10 / entries.length))
 
-  if (entries.length < 10) {
+  if (entries.length < MIN_WGARM_ENTRIES) {
     return {
-      error: 'Zu wenig Einträge (min. 10 erforderlich)',
+      error: `Zu wenig Einträge (min. ${MIN_WGARM_ENTRIES} erforderlich)`,
       mirror_candidates: [],
       valence_shift_candidates: [],
       stats: { entries: entries.length, clusters: 0, frequent_itemsets: 0, rules: 0, valence_shifts: 0 },

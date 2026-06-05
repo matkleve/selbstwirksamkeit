@@ -1,10 +1,11 @@
 'use client'
 
 import {
-  LineChart, XAxis, YAxis, ReferenceLine,
+  LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { ZeroSplitLines } from '@/components/ZeroSplitLines'
+import { ZeroAxisGradient } from '@/components/ZeroAxisGradient'
+import { chartValenceLineRgb } from '@/lib/gridZones'
 
 export interface ChartPoint {
   label: string
@@ -19,7 +20,8 @@ interface Props {
 function CustomDot(props: { cx?: number; cy?: number; payload?: ChartPoint }) {
   const { cx, cy, payload } = props
   if (!cx || !cy || payload?.value == null) return null
-  const color = payload.value >= 0 ? '#3B7DD8' : '#C4603A'
+  const [r, g, b] = chartValenceLineRgb(payload.value)
+  const color = `rgb(${r},${g},${b})`
   return <circle cx={cx} cy={cy} r={3.5} fill={color} stroke="none" />
 }
 
@@ -71,12 +73,15 @@ export default function ValenceChart({ data }: Props) {
         />
         <ReferenceLine y={0} stroke="var(--border-focus)" strokeDasharray="4 3" strokeWidth={1} />
         <Tooltip content={<CustomTooltip />} cursor={false} />
-        <ZeroSplitLines
-          id="valGrad"
+        <ZeroAxisGradient id="valGrad" mode="valenceChart" />
+        <Line
+          type="monotone"
           dataKey="value"
-          colorAbove="#3B7DD8"
-          colorBelow="#C4603A"
+          stroke="url(#valGrad)"
+          strokeWidth={2}
           dot={<CustomDot />}
+          activeDot={false}
+          connectNulls={false}
         />
       </LineChart>
     </ResponsiveContainer>

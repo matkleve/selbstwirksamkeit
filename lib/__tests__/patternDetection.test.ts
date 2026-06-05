@@ -95,7 +95,18 @@ test('positiv template mit summaryText', () => {
   const r = detectTagFrequency(entries)
   assert(r !== null, 'erwartete Kandidaten')
   assert(!!r!.summaryText?.includes('5×'), `summary: ${r!.summaryText}`)
-  assert(r!.introText.includes('wieder'), `intensity fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('Mama'), `tag fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('positiv'), `valence fehlt: ${r!.introText}`)
+})
+
+test('negativ template nennt Tag und Valence', () => {
+  const entries = Array.from({ length: 5 }, (_, i) =>
+    makeEntry({ location: 'Bibliothek', grid_x: -3, daysAgo: 15 + i * 30 }),
+  )
+  const r = detectTagFrequency(entries)
+  assert(r !== null, 'erwartete Kandidaten')
+  assert(r!.introText.includes('Bibliothek'), `ort fehlt: ${r!.introText}`)
+  assert(r!.introText.includes('schwer'), `valence fehlt: ${r!.introText}`)
 })
 
 test('wählt den häufigsten Tag wenn mehrere konkurrieren', () => {

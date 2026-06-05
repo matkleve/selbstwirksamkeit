@@ -241,6 +241,14 @@ export function gridValenceAxisRgb(x: number): [number, number, number] {
   return lerpRgb(POLES.neg_ich, POLES.pos_ich, tx)
 }
 
+/** Legacy valence line chart (blue ↔ orange) with axis curve — 50% blend at 0. */
+const VALENCE_LINE_NEG: [number, number, number] = [196, 96, 58]
+const VALENCE_LINE_POS: [number, number, number] = [59, 125, 216]
+
+export function chartValenceLineRgb(v: number): [number, number, number] {
+  return lerpRgb(VALENCE_LINE_NEG, VALENCE_LINE_POS, expandAxis(v))
+}
+
 /** Referenz only (vertical axis): ich row ↔ andere row. */
 export function gridReferenzAxisRgb(y: number): [number, number, number] {
   const ty = expandAxis(y)

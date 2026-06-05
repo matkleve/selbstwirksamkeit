@@ -4,10 +4,11 @@ import type { MirrorCandidate } from '@/lib/patternDetection'
 import type { Entry } from '@/lib/types'
 
 export function patternTextFromCandidate(candidate: MirrorCandidate): string {
-  const parts = [candidate.introText, candidate.summaryText, candidate.closingText, candidate.question]
+  const parts = [candidate.introText, candidate.summaryText, candidate.closingText]
     .map(s => s?.trim())
     .filter(Boolean)
-  return parts[0] ?? candidate.question
+  if (parts.length) return parts.join('\n\n')
+  return candidate.question?.trim() ?? ''
 }
 
 export const MIRROR_SESSION_SELECT =

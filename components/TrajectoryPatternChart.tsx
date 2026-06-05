@@ -8,6 +8,7 @@ import {
   TRAJECTORY_CHART_H,
   TRAJECTORY_CHART_W,
 } from '@/lib/trajectoryChartLayout'
+import { AxisGradientDefs } from '@/components/AxisGradientDefs'
 import {
   patternSeriesColor,
   slotShortLabel,
@@ -73,10 +74,7 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
     }[]
   } | null>(null)
 
-  const clipId = `pattern-y-${mode}`
-  const colorAbove = mode === 'valence' ? 'var(--grid-pos-andere)' : 'var(--grid-pos-ich)'
-  const colorBelow = mode === 'valence' ? 'var(--grid-neg-ich)' : 'var(--grid-neg-andere)'
-  const yZero = yPos(0)
+  const gradId = `pattern-y-${mode}`
   const n = slots.length
   const singleSeries = series.length === 1
   const multiYear = series.length > 1
@@ -91,14 +89,12 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
           role="img"
           aria-label="Zeitspur Muster"
         >
-          <defs>
-            <clipPath id={`${clipId}-above`}>
-              <rect x={M.left} y={M.top} width={PLOT_W} height={Math.max(0, yZero - M.top)} />
-            </clipPath>
-            <clipPath id={`${clipId}-below`}>
-              <rect x={M.left} y={yZero} width={PLOT_W} height={Math.max(0, M.top + PLOT_H - yZero)} />
-            </clipPath>
-          </defs>
+          <AxisGradientDefs
+            id={gradId}
+            mode={mode}
+            yTop={yPos(5)}
+            yBottom={yPos(-5)}
+          />
 
           <line
             x1={M.left}
@@ -156,46 +152,20 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
             })
             const paths = smoothPathsForSeries(values, n)
             if (!paths.length) return null
-            if (!singleSeries) {
-              const stroke = patternSeriesColor(s)
-              return paths.map((d, pi) => (
-                <path
-                  key={`${s.id}-${pi}`}
-                  d={d}
-                  fill="none"
-                  stroke={stroke}
-                  strokeWidth={1.35}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  opacity={s.opacity}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ))
-            }
-            return paths.flatMap((d, pi) => [
-              <g key={`${s.id}-${pi}-above`} clipPath={`url(#${clipId}-above)`}>
-                <path
-                  d={d}
-                  fill="none"
-                  stroke={colorAbove}
-                  strokeWidth={1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </g>,
-              <g key={`${s.id}-${pi}-below`} clipPath={`url(#${clipId}-below)`}>
-                <path
-                  d={d}
-                  fill="none"
-                  stroke={colorBelow}
-                  strokeWidth={1.75}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
-                />
-              </g>,
-            ])
+            const stroke = singleSeries ? `url(#${gradId})` : patternSeriesColor(s)
+            return paths.map((d, pi) => (
+              <path
+                key={`${s.id}-${pi}`}
+                d={d}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={singleSeries ? 1.75 : 1.35}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                opacity={singleSeries ? 1 : s.opacity}
+                vectorEffect="non-scaling-stroke"
+              />
+            ))
           })}
 
           {slots.map((slot, i) => {

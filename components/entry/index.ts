@@ -5,3 +5,12 @@ export { EntryEditOverlay } from './EntryEditOverlay'
 export { EntryDate } from './EntryDate'
 export { EntryMetaChips } from './EntryMetaChips'
 export { EntryMetaPopover } from './EntryMetaPopover'
+export {
+  GridAxisSlider,
+  EntryGridAxisReadout,
+  gridAxisDotColor,
+  type GridAxisSliderSize,
+  type GridAxisSliderProps,
+  type EntryGridAxisReadoutProps,
+} from '@/components/GridAxisSlider'
+export { EntryGridAxisMini, type EntryGridAxisMiniProps } from './EntryGridAxisMini'

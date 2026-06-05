@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { ConfirmPillButton } from '@/components/PillButton'
 import { MirrorTitle } from '@/components/mirror/MirrorTitle'
 import { bilinearColor } from '@/lib/gridZones'
 
@@ -424,14 +425,13 @@ export function MirrorNetworkLoader({
       aria-busy="true"
     >
       {onClose ? (
-        <button
-          type="button"
-          onClick={onClose}
-          className="nav-interactive nav-interactive--ink absolute right-4 top-3 z-10 flex size-[34px] items-center justify-center rounded-lg border border-edge max-sm:right-3.5"
-          aria-label="Schließen"
-        >
-          <X size={18} strokeWidth={1.75} />
-        </button>
+        <ConfirmPillButton
+          icon={<X size={18} strokeWidth={1.75} aria-hidden />}
+          confirmLabel="Abbrechen"
+          onConfirm={onClose}
+          align="right"
+          className="absolute right-4 top-3 z-10 max-sm:right-3.5"
+        />
       ) : null}
       <MirrorTitle />
       <div

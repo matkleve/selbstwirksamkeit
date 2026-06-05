@@ -200,14 +200,14 @@ LLM MAY für Cluster-Labels verwendet werden (einmalig pro Cluster).
 | `tag:*` (Person) | `valence:positive` | "Einträge mit {person} sind in {conf}% der Fälle positiv." |
 | `time:*` | `valence:negative` | "Deine {time}-Einträge zeigen systematisch negativere Zustände." |
 | `weekday:*` | `valence:negative` | "An {day} notierst du häufiger negative Zustände als an anderen Tagen." |
-| default | beliebig | "Mir ist aufgefallen: {antecedent} hängt in {conf}% mit {valence} Zuständen zusammen." |
+| *(kein Fallback)* | — | Regel verwerfen wenn kein dediziertes Template passt |
 
 ### 8.2 Priorität bei mehreren Antecedents
 
 Wenn eine Regel mehrere Antecedents hat:  
 1. Cluster-Item hat Priorität (spezifischstes Template)  
 2. Person-Tag hat zweite Priorität  
-3. Default wenn nichts passt
+3. **MUST NOT** generischen Default-Text erzeugen — Regel verwerfen
 
 ---
 
@@ -260,7 +260,7 @@ weak:     alles andere über den Mindest-Schwellenwerten
 
 - MUST NOT positive Gegenbeispiele im Mirror-Kontext zeigen
 - MUST NOT Kausalität behaupten (nur Assoziation)
-- MUST NOT bei < 10 Entries ausgeführt werden (zu wenig Basis)
+- MUST NOT bei < **20** Entries ausgeführt werden (zu wenig Basis)
 - MUST NOT Zeitfenster vordefinieren — die gesamte Entry-History MUST verwendet werden
 
 ---

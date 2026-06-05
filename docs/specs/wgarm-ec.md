@@ -52,7 +52,18 @@ weak:     everything else above minimum thresholds
 
 ## Minimum entries
 
-MUST NOT run with < 10 entries.
+MUST NOT run with **< 20 entries** (`MIN_WGARM_ENTRIES` in `lib/wgarmEc.ts`).
+
+Below this threshold WGARM-EC MUST NOT emit mirror candidates — percentages from tiny
+samples (e.g. „100% der Fälle" from three hits) are not meaningful.
+
+## Template fallback
+
+MUST NOT use a generic default template (e.g. „Mir ist aufgefallen: {antecedent} …").
+
+Rules that do not match a dedicated template branch (person, mood, location, weather,
+time, weekday, cluster) MUST be discarded — `template_text` MUST be empty and the rule
+MUST NOT become a mirror candidate.
 
 ## Temporal span
 
@@ -87,7 +98,8 @@ MUST NOT show positive counterexamples in Mirror context. MUST NOT claim causali
 Previously documented defects — resolved in TypeScript port:
 
 1. **Person vs mood tags** — namespaced items (`tag:person:` / `tag:mood:`) with separate templates.
-2. **Empty antecedent in default template** — cluster-only rules without label are filtered out; default branch uses human-readable labels only.
+2. **Empty antecedent in default template** — cluster-only rules without label are filtered out; **generic fallback removed** (no „Mir ist aufgefallen: …" catch-all).
 3. **Rule deduplication** — subset-dominance dedup (drop strict superset when higher-lift subset exists) plus `template_text` dedup.
 4. **Raw field names** — `formatItemLabel()` maps time/weekday/tag items to German text.
 5. **Short span** — `span_days < 7` rules are excluded.
+6. **Small corpus** — MUST NOT run when total entries < 20.

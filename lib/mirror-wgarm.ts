@@ -5,6 +5,7 @@ import {
   pickBestWgarmCandidate,
   pickBestValenceShift,
   metaLabelsFromAntecedent,
+  MIN_WGARM_ENTRIES,
   type WgarmMirrorCandidate,
   type ValenceShiftCandidate,
 } from '@/lib/wgarmEc'
@@ -73,7 +74,7 @@ export function valenceShiftToMirror(
 
 export function runWgarmForEntries(entries: EntryWithEmbedding[]) {
   const wgarmEntries = entriesToWgarm(entries)
-  if (wgarmEntries.length < 10) {
+  if (wgarmEntries.length < MIN_WGARM_ENTRIES) {
     return {
       result: null,
       best: null as WgarmMirrorCandidate | null,

@@ -7,15 +7,15 @@ export function buildMirrorClosureMessages(mode: MirrorClosureMode): string[] {
   switch (mode) {
     case 'reminder':
       return [
-        'Hey — ich hab dir diesen Reminder angelegt. Ich melde mich in den kommenden Tagen bei dir.',
-        'Deine Einträge aus diesem Spiegel habe ich für dich hinterlegt.',
+        'Wenn-Dann gespeichert.',
+        'Einträge aus diesem Spiegel gespeichert.',
       ]
     case 'no_reminder':
       return [
-        'Deine Einträge und dein Wenn-Dann habe ich für dich hinterlegt.',
+        'Einträge und Wenn-Dann gespeichert.',
       ]
     case 'session_only':
-      return ['Deine Einträge aus diesem Spiegel habe ich für dich hinterlegt.']
+      return ['Einträge aus diesem Spiegel gespeichert.']
   }
 }
 
@@ -34,9 +34,9 @@ export const MIRROR_EXHAUSTED_TEXT =
 
 /** UI labels — non-calendar; maps to DB `reminder_type` / expiry in MirrorFlow. */
 export const MIRROR_REMINDER_OPTIONS = [
-  { label: 'Ich melde mich heute noch', reminderType: 'today' as const },
-  { label: 'Ich melde mich noch ein paar Mal', reminderType: '3days' as const },
-  { label: 'Ich melde mich noch eine Weile', reminderType: '7days' as const },
+  { label: 'Heute', reminderType: 'today' as const },
+  { label: '3 Tage', reminderType: '3days' as const },
+  { label: 'Diese Woche', reminderType: '7days' as const },
   { label: 'Lieber nicht', reminderType: null },
 ] as const
 
@@ -50,10 +50,10 @@ export function reminderTypeForLabel(
 }
 
 export const MIRROR_REMINDER_INTROS = [
-  'Soll ich dich daran erinnern?',
-  'Ich kann dir einen Reminder setzen.',
-  'Willst du, dass ich dich erinnere?',
-  'Magst du, dass ich dich nochmal anspreche?',
+  'Reminder optional.',
+  'Für wie lange?',
+  'Erinnern lassen?',
+  'Dauer wählen.',
 ] as const
 
 export function pickMirrorReminderIntro(): (typeof MIRROR_REMINDER_INTROS)[number] {

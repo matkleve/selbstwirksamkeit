@@ -2,6 +2,7 @@
 
 import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { ConfirmPillButton } from '@/components/PillButton'
 
 export function MirrorFlowChrome({
   onClose,
@@ -13,14 +14,13 @@ export function MirrorFlowChrome({
   return (
     <div className="relative mx-auto w-full max-w-lg">
       {onClose ? (
-        <button
-          type="button"
-          onClick={onClose}
-          className="nav-interactive nav-interactive--ink absolute right-0 top-0 z-30 flex size-[34px] items-center justify-center rounded-full border border-edge bg-canvas"
-          aria-label="Schließen"
-        >
-          <X size={18} strokeWidth={1.75} />
-        </button>
+        <ConfirmPillButton
+          icon={<X size={18} strokeWidth={1.75} aria-hidden />}
+          confirmLabel="Abbrechen"
+          onConfirm={onClose}
+          align="right"
+          className="absolute right-0 top-0 z-30"
+        />
       ) : null}
       {children}
     </div>
