@@ -7,15 +7,16 @@ import ReframeFlow from './ReframeFlow'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { cardBoxShadow, getZone, zoneTexts } from '@/lib/gridZones'
-import type { GridPoint, Entry, BodyState } from '@/lib/types'
+import type { GridPoint, Entry, BodyState, Weather } from '@/lib/types'
 import { formatEntryDateTime } from '@/lib/utils'
 import { User, MapPin, Plus, Zap } from 'lucide-react'
 import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
+import WeatherChip from '@/components/WeatherChip'
 import { useEntries } from '@/components/EntriesProvider'
 import { chipGhost } from '@/lib/chip-classes'
 
-const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,created_at'
+const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,weather,created_at'
 
 export default function EntryCard() {
   const { refresh: refreshEntries } = useEntries()
@@ -30,6 +31,7 @@ export default function EntryCard() {
   const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(null)
   const [feelingLabel, setFeelingLabel] = useState<string | null>(null)
+  const [weather, setWeather] = useState<Weather | null>(null)
   const [openChip, setOpenChip] = useState<'person' | 'location' | 'activity' | null>(null)
   const [quote, setQuote] = useState('')
   const [quoteVisible, setQuoteVisible] = useState(true)
@@ -104,6 +106,7 @@ export default function EntryCard() {
     setChipInput('')
     setBodyState(null)
     setFeelingLabel(null)
+    setWeather(null)
     setOpenChip(null)
     setGrid({ x: 0, y: 0 })
   }
@@ -143,6 +146,7 @@ export default function EntryCard() {
       location: locations.join(', ') || null,
       activity: activities.join(', ') || null,
       body_state: bodyState,
+      weather,
     }).select(CHIP_SELECT).single()
 
     setSaving(false)
@@ -313,6 +317,7 @@ export default function EntryCard() {
           onSelect={(label, state) => { setFeelingLabel(label); setBodyState(state) }}
           onClear={() => { setFeelingLabel(null); setBodyState(null) }}
         />
+        <WeatherChip value={weather} onChange={setWeather} />
           </div>
 
           {saveSuccess && !savedEntry && (

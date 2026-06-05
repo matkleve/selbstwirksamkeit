@@ -12,6 +12,7 @@ export interface WgarmEntry {
   location: string | null
   activity: string | null
   body_state: string | null
+  weather: string | null
   hour_of_day: number
   day_of_week: number
   text: string
@@ -120,6 +121,16 @@ const TIME_LABELS: Record<string, string> = {
   abend: 'abends',
 }
 
+const WEATHER_LABELS: Record<string, string> = {
+  sunny:         'sonnigem Wetter',
+  partly_cloudy: 'leicht bewölktem Wetter',
+  cloudy:        'bewölktem Wetter',
+  rainy:         'Regen',
+  snowy:         'Schnee',
+  stormy:        'stürmischem Wetter',
+  foggy:         'Nebel',
+}
+
 const WEEKDAY_LABELS: Record<string, string> = {
   weekend: 'am Wochenende',
   midweek: 'unter der Woche',
@@ -148,6 +159,10 @@ function formatItemLabel(item: string): string {
   }
   if (item.startsWith('tag:loc:')) return capitalize(item.slice('tag:loc:'.length))
   if (item.startsWith('tag:act:')) return capitalize(item.slice('tag:act:'.length))
+  if (item.startsWith('tag:weather:')) {
+    const raw = item.slice('tag:weather:'.length)
+    return WEATHER_LABELS[raw] ?? capitalize(raw)
+  }
   return ''
 }
 
@@ -289,6 +304,7 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   if (entry.body_state) items.push(`tag:mood:${entry.body_state.toLowerCase()}`)
   for (const l of splitMetaField(entry.location)) items.push(`tag:loc:${l}`)
   for (const a of splitMetaField(entry.activity)) items.push(`tag:act:${a}`)
+  if (entry.weather) items.push(`tag:weather:${entry.weather.toLowerCase()}`)
 
   const h = entry.hour_of_day
   if (h < 6) items.push('time:night')
@@ -450,6 +466,10 @@ export function regenerateInsightText(meta: {
     return MOOD_LABELS[raw] ?? capitalize(raw)
   })
   const locations = ant.filter(i => i.startsWith('tag:loc:')).map(i => capitalize(i.slice('tag:loc:'.length)))
+  const weatherItems = ant.filter(i => i.startsWith('tag:weather:')).map(i => {
+    const raw = i.slice('tag:weather:'.length)
+    return WEATHER_LABELS[raw] ?? capitalize(raw)
+  })
   const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.slice(5)!)
   const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.slice(8)!)
 
@@ -470,6 +490,12 @@ export function regenerateInsightText(meta: {
   }
   if (locations.length && cons === 'valence:positive') {
     return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle positivere Zustände.`
+  }
+  if (weatherItems.length && cons === 'valence:negative') {
+    return `Bei ${weatherItems.join(' und ')} hast du in ${confPct}% der Fälle negativere Einträge.${escalationNote}`
+  }
+  if (weatherItems.length && cons === 'valence:positive') {
+    return `Bei ${weatherItems.join(' und ')} sind deine Einträge in ${confPct}% der Fälle positiver.${escalationNote}`
   }
   if (timeItems.length && weekdayItems.length) {
     const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]!
@@ -773,6 +799,7 @@ export function toWgarmEntry(e: {
   location: string | null
   activity: string | null
   body_state: string | null
+  weather?: string | null
   text: string
   embedding?: number[] | string | null
 }): WgarmEntry | null {
@@ -790,6 +817,7 @@ export function toWgarmEntry(e: {
     location: e.location,
     activity: e.activity,
     body_state: e.body_state,
+    weather: e.weather ?? null,
     hour_of_day: dt.getHours(),
     day_of_week: dt.getDay() === 0 ? 6 : dt.getDay() - 1,
     text: e.text,

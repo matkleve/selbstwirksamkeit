@@ -29,6 +29,7 @@ Die zentrale Tabelle. Jeder Eintrag = eine Beobachtungsmoment des Nutzers.
 | `person`, `location`, `activity` | Komma/Semikolon-getrennt — mehrere Werte | `lib/entryMeta.ts → splitMetaValues()` |
 | `grid_x`, `grid_y` | Quadrant, Zone, Farbe berechnet | `lib/gridZones.ts` |
 | `body_state` | Enum-Label → deutsch | `lib/entryMeta.ts → BODY_LABELS` |
+| `weather` | Auto-fetch via Geolocation + Open-Meteo (WMO-Code → Enum) | `lib/weather.ts → fetchCurrentWeather()` |
 | `reframe` | Optional; erscheint wenn `grid_x < 0` | `components/ReframeFlow.tsx` |
 
 ---
@@ -123,6 +124,7 @@ Web-Push-Endpunkte der Nutzer.
 | `lib/supabase-server.ts` | `createServerSupabaseClient` | — | Server-Supabase-Client |
 | `lib/changelog.ts` | `CHANGELOG`, `APP_VERSION` | — | Versionsverlauf |
 | `lib/feelings.ts` | `FEELINGS` | — | Gefühls-Enum → Label-Mapping |
+| `lib/weather.ts` | `fetchCurrentWeather`, `WEATHER_LABELS`, `WEATHER_EMOJI` | Geolocation + Open-Meteo | `Weather` enum-Wert |
 | `lib/utils.ts` | `formatTime`, `formatEntryDateTime`, `cn` | — | Datum-Formatierung, CSS-Klassen |
 | `lib/chip-classes.ts` | `chipGhost`, `chipFilled`, `chipField` | — | Tailwind-Klassen für Chips |
 

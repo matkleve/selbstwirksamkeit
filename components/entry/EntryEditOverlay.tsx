@@ -6,6 +6,7 @@ import { MapPin, Plus, User, Zap, X } from 'lucide-react'
 import EntryGrid from '@/components/EntryGrid'
 import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
 import FeelingChip from '@/components/FeelingChip'
+import WeatherChip from '@/components/WeatherChip'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { useEntries } from '@/components/EntriesProvider'
@@ -16,7 +17,7 @@ import { FEELINGS } from '@/lib/feelings'
 import { formatTime } from '@/lib/utils'
 import { splitMetaValues } from '@/lib/entryMeta'
 import { chipGhost } from '@/lib/chip-classes'
-import type { BodyState, Entry, GridPoint } from '@/lib/types'
+import type { BodyState, Entry, GridPoint, Weather } from '@/lib/types'
 
 interface Props {
   entry: Entry
@@ -46,6 +47,7 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
   const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(entry.body_state)
   const [feelingLabel, setFeelingLabel] = useState<string | null>(feelingLabelFor(entry))
+  const [weather, setWeather] = useState<Weather | null>(entry.weather)
   const [reframe, setReframe] = useState(entry.reframe ?? '')
   const [openChip, setOpenChip] = useState<'person' | 'location' | 'activity' | null>(null)
   const [suggestions, setSuggestions] = useState({
@@ -112,6 +114,7 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
         location: locations.join(', ') || null,
         activity: activities.join(', ') || null,
         body_state: bodyState,
+        weather,
         reframe: reframe.trim() || null,
       })
       .eq('id', entry.id)
@@ -281,6 +284,7 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
                     setBodyState(null)
                   }}
                 />
+                <WeatherChip value={weather} onChange={setWeather} />
               </div>
 
               <div className="entry-textarea">
