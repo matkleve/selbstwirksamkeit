@@ -2,17 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Info, Star, MoreVertical, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronDown, Info, Star, MoreVertical, RefreshCw, Trash2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { DropdownPanel } from '@/components/DropdownPanel'
 import { EntryDisplay } from '@/components/entry/EntryDisplay'
 import type { MirrorSessionRow } from '@/lib/mirror-session'
 import type { Entry } from '@/lib/types'
+import {
+  applySortFilter,
+  type MirrorHistorySort,
+  type MirrorHistoryFilter,
+} from '@/lib/mirror-history-view'
 
 interface Props {
   sessions: MirrorSessionRow[]
   entriesById: Record<string, Entry>
+  sort: MirrorHistorySort
+  filter: MirrorHistoryFilter
   onSessionsChange?: (sessions: MirrorSessionRow[]) => void
 }
 
@@ -59,23 +66,19 @@ const SIGNAL_LABELS: Record<string, string> = {
 function formatSessionDate(iso: string) {
   const d = new Date(iso)
   return d.toLocaleString('de-DE', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: 'numeric', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
   })
 }
 
 const MENU_GAP = 6
 
 interface SessionMenuProps {
-  session: MirrorSessionRow
   onRedo: () => Promise<void>
   onDelete: () => Promise<void>
 }
 
-function SessionMenu({ session: _session, onRedo, onDelete }: SessionMenuProps) {
+function SessionMenu({ onRedo, onDelete }: SessionMenuProps) {
   const [open, setOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -112,19 +115,12 @@ function SessionMenu({ session: _session, onRedo, onDelete }: SessionMenuProps) 
 
   const items = [
     {
-      type: 'item' as const,
-      id: 'redo',
-      label: 'Erneut machen',
-      icon: RefreshCw,
+      type: 'item' as const, id: 'redo', label: 'Erneut machen', icon: RefreshCw,
       onClick: () => { setOpen(false); void onRedo() },
     },
     { type: 'separator' as const },
     {
-      type: 'item' as const,
-      id: 'delete',
-      label: 'Löschen',
-      icon: Trash2,
-      destructive: true,
+      type: 'item' as const, id: 'delete', label: 'Löschen', icon: Trash2, destructive: true,
       onClick: () => { setOpen(false); void onDelete() },
     },
   ]
@@ -146,7 +142,6 @@ function SessionMenu({ session: _session, onRedo, onDelete }: SessionMenuProps) 
       >
         <MoreVertical size={16} strokeWidth={1.75} />
       </button>
-
       {open && menuPos && createPortal(
         <div
           ref={menuRef}
@@ -161,10 +156,18 @@ function SessionMenu({ session: _session, onRedo, onDelete }: SessionMenuProps) 
   )
 }
 
-export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props) {
+export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsChange }: Props) {
   const supabase = createClient()
   const [busyId, setBusyId] = useState<string | null>(null)
   const [openInfoId, setOpenInfoId] = useState<string | null>(null)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  const toggleExpanded = (id: string) =>
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
 
   const toggleFavorite = async (session: MirrorSessionRow) => {
     setBusyId(session.id)
@@ -176,7 +179,6 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
 
   const handleRedo = async (session: MirrorSessionRow) => {
     setBusyId(session.id)
-    // Reset associated candidate so it re-enters the queue
     if (session.pattern_type && session.anchor_entry_ids?.length) {
       await supabase
         .from('mirror_candidates')
@@ -196,6 +198,8 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
     setBusyId(null)
   }
 
+  const visible = applySortFilter(sessions, sort, filter)
+
   if (!sessions.length) {
     return (
       <p className="text-sm text-ink-3">
@@ -204,53 +208,63 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
     )
   }
 
+  if (!visible.length) {
+    return <p className="text-sm text-ink-3">Keine Sitzungen für diesen Filter.</p>
+  }
+
   return (
     <ul className="m-0 flex list-none flex-col gap-3 p-0">
-      {sessions.map(session => {
+      {visible.map(session => {
         const anchors = (session.anchor_entry_ids ?? [])
           .map(id => entriesById[id])
           .filter(Boolean) as Entry[]
-
         const typeInfo = session.pattern_type ? PATTERN_TYPE_INFO[session.pattern_type] : null
         const infoOpen = openInfoId === session.id
         const busy = busyId === session.id
+        const expanded = expandedIds.has(session.id)
 
         return (
           <li
             key={session.id}
             className={cn(
-              'rounded-card border border-edge bg-card p-4 shadow-[var(--shadow-card)]',
-              busy && 'opacity-60 pointer-events-none',
+              'rounded-card border border-edge bg-card shadow-[var(--shadow-card)]',
+              busy && 'pointer-events-none opacity-60',
             )}
           >
-            {/* Header row */}
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <time className="text-[0.6875rem] font-medium uppercase tracking-wide text-ink-3">
+            {/* Clickable header — always visible */}
+            <button
+              type="button"
+              onClick={() => toggleExpanded(session.id)}
+              className="flex w-full items-start gap-2 p-4 text-left"
+            >
+              <div className="min-w-0 flex-1">
+                {/* Date row with ⓘ — inline-flex so icon sits on same baseline */}
+                <div className="mb-1 inline-flex items-center gap-1.5">
+                  <time className="text-[0.6875rem] font-medium uppercase leading-none tracking-wide text-ink-3">
                     {formatSessionDate(session.created_at)}
                   </time>
                   {typeInfo && (
-                    <button
-                      type="button"
+                    <span
+                      role="button"
+                      tabIndex={0}
                       aria-label="Muster-Info anzeigen"
-                      onClick={() => setOpenInfoId(infoOpen ? null : session.id)}
+                      onClick={e => { e.stopPropagation(); setOpenInfoId(infoOpen ? null : session.id) }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); setOpenInfoId(infoOpen ? null : session.id) }}}
                       className={cn(
-                        'flex items-center justify-center rounded p-0.5 transition-colors',
+                        'inline-flex items-center justify-center rounded p-0.5 transition-colors',
                         infoOpen ? 'text-ink-2' : 'text-ink-3 hover:text-ink-2',
                       )}
                     >
                       <Info size={12} strokeWidth={1.75} />
-                    </button>
+                    </span>
                   )}
                 </div>
                 {session.pattern_text && (
-                  <p className="mt-1 text-sm leading-snug text-ink">{session.pattern_text}</p>
+                  <p className="text-sm leading-snug text-ink">{session.pattern_text}</p>
                 )}
               </div>
-
-              {/* Actions: star + three-dot menu */}
-              <div className="flex shrink-0 items-center gap-0.5">
+              {/* Right side: star + menu + chevron */}
+              <div className="flex shrink-0 items-center gap-0.5" onClick={e => e.stopPropagation()}>
                 <button
                   type="button"
                   aria-label={session.is_favorited ? 'Favorit entfernen' : 'Als Favorit markieren'}
@@ -264,53 +278,62 @@ export function MirrorHistory({ sessions, entriesById, onSessionsChange }: Props
                   <Star size={18} strokeWidth={1.5} fill={session.is_favorited ? 'currentColor' : 'none'} />
                 </button>
                 <SessionMenu
-                  session={session}
                   onRedo={() => handleRedo(session)}
                   onDelete={() => handleDelete(session)}
                 />
               </div>
-            </div>
+              <ChevronDown
+                size={16}
+                strokeWidth={1.75}
+                className={cn('shrink-0 self-center text-ink-3 transition-transform', expanded && 'rotate-180')}
+                aria-hidden
+              />
+            </button>
 
-            {/* Info panel */}
-            {infoOpen && typeInfo && (
-              <div className="mb-3 rounded-lg bg-[var(--muted)] px-3 py-2.5">
-                <div className="mb-1 flex items-baseline justify-between gap-2">
-                  <span className="text-xs font-medium text-ink-2">{typeInfo.label}</span>
-                  {session.signal_strength && (
-                    <span className="text-[0.6875rem] text-ink-3">
-                      {SIGNAL_LABELS[session.signal_strength] ?? session.signal_strength}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs leading-relaxed text-ink-3">{typeInfo.description}</p>
+            {/* Expanded content */}
+            {expanded && (
+              <div className="px-4 pb-4">
+                {/* Info panel */}
+                {infoOpen && typeInfo && (
+                  <div className="mb-3 rounded-lg bg-[var(--muted)] px-3 py-2.5">
+                    <div className="mb-1 flex items-baseline justify-between gap-2">
+                      <span className="text-xs font-medium text-ink-2">{typeInfo.label}</span>
+                      {session.signal_strength && (
+                        <span className="text-[0.6875rem] text-ink-3">
+                          {SIGNAL_LABELS[session.signal_strength] ?? session.signal_strength}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs leading-relaxed text-ink-3">{typeInfo.description}</p>
+                  </div>
+                )}
+
+                {/* Anchor entries — EntryDisplay without color rail */}
+                {anchors.length > 0 && (
+                  <div className="mb-3 flex flex-col gap-2">
+                    {anchors.map(entry => (
+                      <EntryDisplay
+                        key={entry.id}
+                        entry={entry}
+                        variant="text"
+                        size="sm"
+                        card={true}
+                        menu={true}
+                        lines={2}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {session.user_response && (
+                  <p className="mb-2 text-sm italic text-ink-3">{session.user_response}</p>
+                )}
+                {session.intention_wenn && session.intention_dann && (
+                  <p className="text-sm text-ink-2">
+                    Wenn {session.intention_wenn}, dann {session.intention_dann}.
+                  </p>
+                )}
               </div>
-            )}
-
-            {/* Anchor entries — proper EntryDisplay component with menu */}
-            {anchors.length > 0 && (
-              <div className="mb-3 flex flex-col gap-2">
-                {anchors.map(entry => (
-                  <EntryDisplay
-                    key={entry.id}
-                    entry={entry}
-                    variant="compact"
-                    size="sm"
-                    card={true}
-                    menu={true}
-                    lines={2}
-                  />
-                ))}
-              </div>
-            )}
-
-            {session.user_response && (
-              <p className="mb-2 text-sm italic text-ink-3">{session.user_response}</p>
-            )}
-
-            {session.intention_wenn && session.intention_dann && (
-              <p className="text-sm text-ink-2">
-                Wenn {session.intention_wenn}, dann {session.intention_dann}.
-              </p>
             )}
           </li>
         )
