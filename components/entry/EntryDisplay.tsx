@@ -12,7 +12,7 @@ import { EntryMetaChips } from '@/components/entry/EntryMetaChips'
 import { formatMirrorDateTime } from '@/lib/mirrorTransition'
 import { MirrorRevealWords } from '@/components/mirror/MirrorRevealWords'
 import { splitRevealWords } from '@/lib/mirrorReveal'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 export type EntryDisplayVariant =
   | 'color'
@@ -137,6 +137,11 @@ function EntryHeader({
   )
 }
 
+const collapsedMaxHeight: Record<EntryDisplaySize, Record<1 | 2 | 3, string>> = {
+  sm: { 1: '1.75em', 2: '3.25em', 3: '4.75em' },
+  md: { 1: '2em',    2: '3.75em', 3: '5.5em'  },
+}
+
 function EntryBody({
   text,
   size,
@@ -148,10 +153,33 @@ function EntryBody({
   lines: 1 | 2 | 3 | 'none'
   className?: string
 }) {
+  const [expanded, setExpanded] = useState(false)
+  const expandable = lines !== 'none'
+
+  if (!expandable) {
+    return <p className={cn(entryTextStyle[size], className)}>{text}</p>
+  }
+
   return (
-    <p className={cn(entryTextStyle[size], lineClamp[lines], className)}>
-      {text}
-    </p>
+    <div
+      className="overflow-hidden transition-[max-height] duration-300 ease-out"
+      style={{ maxHeight: expanded ? '120em' : collapsedMaxHeight[size][lines] }}
+    >
+      <p
+        role="button"
+        tabIndex={expanded ? -1 : 0}
+        onClick={() => setExpanded(true)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true) }}
+        className={cn(
+          entryTextStyle[size],
+          !expanded && lineClamp[lines],
+          !expanded && 'cursor-pointer',
+          className,
+        )}
+      >
+        {text}
+      </p>
+    </div>
   )
 }
 
