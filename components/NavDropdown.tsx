@@ -38,7 +38,7 @@ export function NavDropdown({
   const close = () => setOpen(false)
 
   const panelItems: DropdownMenuItem[] = items.map(entry => {
-    if (entry.type === 'separator') return entry
+    if (entry.type === 'separator' || entry.type === 'header') return entry
     const onClick = entry.onClick
     return { ...entry, onClick: () => { close(); onClick() } }
   })

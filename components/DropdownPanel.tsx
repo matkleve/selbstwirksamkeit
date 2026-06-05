@@ -15,6 +15,7 @@ export type DropdownMenuItem =
       selected?: boolean
     }
   | { type: 'separator' }
+  | { type: 'header'; id: string; label: string }
 
 interface SearchConfig {
   value: string
@@ -32,6 +33,8 @@ interface Props {
   itemTone?: 'default' | 'nav'
   /** When false, parent handles position (e.g. fixed portal) */
   anchored?: boolean
+  /** Max height of the scrollable list in px (default 200) */
+  listMaxHeight?: number
   /** Prefer over `item.icon` when Lucide refs must render in the parent module */
   renderIcon?: (item: Extract<DropdownMenuItem, { type: 'item' }>) => ReactNode
 }
@@ -46,6 +49,7 @@ export function DropdownPanel({
   itemTone = 'default',
   renderIcon,
   anchored = true,
+  listMaxHeight = 200,
 }: Props) {
   const optionItems = items.filter((i): i is Extract<DropdownMenuItem, { type: 'item' }> => i.type === 'item')
   const showEmpty = search && optionItems.length === 0
@@ -73,13 +77,22 @@ export function DropdownPanel({
         </div>
       )}
 
-      <ul className="m-0 max-h-[200px] list-none overflow-y-auto p-1">
+      <ul className="m-0 list-none overflow-y-auto p-1" style={{ maxHeight: listMaxHeight }}>
         {showEmpty ? (
           <li className="px-3 py-2.5 text-sm text-ink-3">{emptyMessage}</li>
         ) : (
           items.map((entry, i) => {
             if (entry.type === 'separator') {
               return <li key={`sep-${i}`} className="my-1 h-px bg-edge" role="separator" />
+            }
+            if (entry.type === 'header') {
+              return (
+                <li key={entry.id} className="px-3 pb-0.5 pt-2 first:pt-1">
+                  <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-ink-3">
+                    {entry.label}
+                  </span>
+                </li>
+              )
             }
             return (
               <li key={entry.id}>

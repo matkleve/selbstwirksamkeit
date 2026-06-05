@@ -11,17 +11,20 @@ import { RemindersPanel } from '@/components/RemindersPanel'
 import MirrorFlow from '@/components/MirrorFlow'
 import { MirrorNetworkLoader } from '@/components/mirror/MirrorNetworkLoader'
 import { MirrorHistory } from '@/components/mirror/MirrorHistory'
+import { MirrorHistoryToolbar } from '@/components/mirror/MirrorHistoryToolbar'
 import { Button } from '@/components/ui/button'
 import {
   MIRROR_EXHAUSTED_TEXT,
   MIRROR_LOADER_MIN_MS,
 } from '@/components/mirror/MirrorFlow.constants'
 import { openMirrorCandidate } from '@/lib/mirror-actions'
+import { applySortFilter, type MirrorHistoryFilter, type MirrorHistorySort } from '@/lib/mirror-history-view'
 import type { MirrorSessionRow } from '@/lib/mirror-session'
 import type { MirrorCandidate } from '@/lib/patternDetection'
 import type { Entry } from '@/lib/types'
 
 type View = 'landing' | 'loading' | 'flow' | 'exhausted'
+type MenuId = 'filter' | 'sort'
 
 interface Props {
   initialSessions: MirrorSessionRow[]
@@ -37,6 +40,9 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
   const [opening, setOpening] = useState(false)
   const [remindersOpen, setRemindersOpen] = useState(false)
   const [openError, setOpenError] = useState<string | null>(null)
+  const [historySort, setHistorySort] = useState<MirrorHistorySort>('newest_first')
+  const [historyFilter, setHistoryFilter] = useState<MirrorHistoryFilter>('all')
+  const [historyOpenMenu, setHistoryOpenMenu] = useState<MenuId | null>(null)
 
   useEffect(() => {
     setSessions(initialSessions)
@@ -155,9 +161,25 @@ export function MirrorPageView({ initialSessions, entriesById }: Props) {
 
         <section>
           <h2 className="mb-4">Verlauf</h2>
+          <MirrorHistoryToolbar
+            filter={historyFilter}
+            sort={historySort}
+            onFilterChange={setHistoryFilter}
+            onSortChange={setHistorySort}
+            summary={(() => {
+              const visible = applySortFilter(sessions, historySort, historyFilter)
+              return visible.length === sessions.length
+                ? `${sessions.length} Sitzung${sessions.length !== 1 ? 'en' : ''}`
+                : `${visible.length} von ${sessions.length}`
+            })()}
+            openMenu={historyOpenMenu}
+            onOpenMenu={setHistoryOpenMenu}
+          />
           <MirrorHistory
             sessions={sessions}
             entriesById={entriesByIdState}
+            sort={historySort}
+            filter={historyFilter}
             onSessionsChange={setSessions}
           />
         </section>

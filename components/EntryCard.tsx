@@ -11,6 +11,7 @@ import type { GridPoint, Entry, BodyState, Weather } from '@/lib/types'
 import { formatEntryDateTime } from '@/lib/utils'
 import { User, MapPin, Plus, Zap } from 'lucide-react'
 import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
+import { LocationChipEditor } from '@/components/LocationChipEditor'
 import FeelingChip from '@/components/FeelingChip'
 import WeatherChip from '@/components/WeatherChip'
 import { useEntries } from '@/components/EntriesProvider'
@@ -277,20 +278,35 @@ export default function EntryCard() {
                   setOpenChip(null)
                 }}
               >
-                <MultiEntityChipEditor
-                  icon={chip.Icon}
-                  value={chipInput}
-                  onChange={setChipInput}
-                  onAdd={v => {
-                    const t = v.trim()
-                    if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
-                    setChipInput('')
-                  }}
-                  onClose={() => { setChipInput(''); setOpenChip(null) }}
-                  placeholder={chip.placeholder}
-                  suggestions={suggestions[chip.key]}
-                  existingValues={chip.values}
-                />
+                {chip.key === 'location' ? (
+                  <LocationChipEditor
+                    value={chipInput}
+                    onChange={setChipInput}
+                    onAdd={v => {
+                      const t = v.trim()
+                      if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                      setChipInput('')
+                    }}
+                    onClose={() => { setChipInput(''); setOpenChip(null) }}
+                    suggestions={suggestions.location}
+                    existingValues={chip.values}
+                  />
+                ) : (
+                  <MultiEntityChipEditor
+                    icon={chip.Icon}
+                    value={chipInput}
+                    onChange={setChipInput}
+                    onAdd={v => {
+                      const t = v.trim()
+                      if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                      setChipInput('')
+                    }}
+                    onClose={() => { setChipInput(''); setOpenChip(null) }}
+                    placeholder={chip.placeholder}
+                    suggestions={suggestions[chip.key]}
+                    existingValues={chip.values}
+                  />
+                )}
               </div>
             ) : chip.values.length > 0 ? (
               <button
