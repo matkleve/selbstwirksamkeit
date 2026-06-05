@@ -167,13 +167,13 @@ function EntryBody({
     >
       <p
         role="button"
-        tabIndex={expanded ? -1 : 0}
-        onClick={() => setExpanded(true)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(true) }}
+        tabIndex={0}
+        onClick={() => setExpanded(e => !e)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setExpanded(e => !e) }}
         className={cn(
           entryTextStyle[size],
           !expanded && lineClamp[lines],
-          !expanded && 'cursor-pointer',
+          'cursor-pointer',
           className,
         )}
       >
