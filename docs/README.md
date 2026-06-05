@@ -13,7 +13,8 @@ Spec **before** code. Bei Konflikt Spec aktualisieren oder Entscheidung in `docs
 | `intention-reminders.md` | Reminder-Chips + Notification-Texte |
 | `wgarm-ec.md` | WGARM-EC Pipeline |
 | `embeddings.md` | Mistral Embed, Backfill |
-| `data-model.md` | Tabellen, Felder |
+| `data-model.md` | Tabellen, Felder, RLS |
+| `data-catalog.md` | Welche Services lesen/schreiben welche Daten — Lib-Layer, API, Datenfluss |
 | `design-system.md` | Tokens, Komponenten |
 | `features.md` | Feature-Liste |
 | `motivation.md` | Motivation/Stärke (geplant) |
