@@ -76,12 +76,20 @@ function wordTickDelayAt(
   return ms
 }
 
+type WordRevealTiming = {
+  wordBase: number
+  wordSlowEvery: number
+  wordSlowExtra: number
+  wordPauseEvery: number
+  wordPauseExtra: number
+}
+
 export function scheduleWordTicks(
   count: number,
   startAt: number,
   onTick: (wordIndex: number) => void,
   sched: (fn: () => void, ms: number) => void,
-  cfg: typeof MIRROR_REVEAL = MIRROR_REVEAL,
+  cfg: WordRevealTiming = MIRROR_REVEAL,
 ): number {
   if (count <= 0) return startAt
   let t = startAt + Math.round(cfg.wordBase * 0.55)

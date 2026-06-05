@@ -1,14 +1,18 @@
 'use client'
 
-import { Menu, User, Settings, LogOut, Moon } from 'lucide-react'
+import { useState } from 'react'
+import { Menu, User, Settings, LogOut, Moon, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { THEME_STORAGE_KEY } from '@/lib/theme'
 import { NavDropdown } from '@/components/NavDropdown'
+import { ChangelogPanel } from '@/components/ChangelogPanel'
+import { APP_VERSION } from '@/lib/changelog'
 
 export default function MenuDropdown() {
   const supabase = createClient()
   const router = useRouter()
+  const [showChangelog, setShowChangelog] = useState(false)
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -24,6 +28,7 @@ export default function MenuDropdown() {
   }
 
   return (
+    <>
     <NavDropdown
       align="right"
       minWidth={190}
@@ -31,6 +36,7 @@ export default function MenuDropdown() {
         { type: 'item', id: 'profile', label: 'Profil', icon: User, onClick: () => {} },
         { type: 'item', id: 'settings', label: 'Einstellungen', icon: Settings, onClick: () => {} },
         { type: 'item', id: 'theme', label: 'Theme wechseln', icon: Moon, onClick: toggleTheme },
+        { type: 'item', id: 'changelog', label: `Neuigkeiten · v${APP_VERSION}`, icon: Sparkles, onClick: () => setShowChangelog(true) },
         { type: 'separator' },
         { type: 'item', id: 'signout', label: 'Abmelden', icon: LogOut, onClick: handleSignOut, destructive: true },
       ]}
@@ -49,5 +55,7 @@ export default function MenuDropdown() {
         </button>
       )}
     </NavDropdown>
+    {showChangelog && <ChangelogPanel onClose={() => setShowChangelog(false)} />}
+    </>
   )
 }

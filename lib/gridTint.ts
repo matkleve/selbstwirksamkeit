@@ -325,16 +325,15 @@ export function gridTintBlobColor(
     const [r, g, b] = rgb
     return `rgb(${r}, ${g}, ${b})`
   }
-  return gridTintMix(rgb, PRESETS[preset].smokeMix)
+  return gridTintMix(rgb, PRESETS[preset].baseMix)
 }
 
 export function gridTintBlobWidth(
   blob: GridTintBlob,
   preset: GridTintPreset,
 ): number {
-  const cfg = PRESETS[preset]
-  const base = blob.layer === 'hero' ? cfg.heroWidth : cfg.smokeWidth
-  return base * blob.scale
+  const base = blob.layer === 'hero' ? 120 : 80
+  return base * blob.scale * PRESETS[preset].meshScale
 }
 
 export function gridTintShouldAnimate(preset: GridTintPreset): boolean {

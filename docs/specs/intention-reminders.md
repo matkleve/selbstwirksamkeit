@@ -96,12 +96,12 @@ Delivery scheduler: future work (cron / push). Text rules MUST be enforced in
 
 | Chip (UI label) | `reminder_type` | `expires_at` |
 |-----------------|-----------------|--------------|
-| Heute | `today` | End of local day |
-| Ein paar Mal | `3days` | `created_at + 3d` (max 3 fires) |
-| Eine Weile | `7days` | `created_at + 7d` |
+| Ich melde mich heute noch | `today` | End of local day |
+| Ich melde mich noch ein paar Mal | `3days` | `created_at + 3d` (max 3 fires) |
+| Ich melde mich noch eine Weile | `7days` | `created_at + 7d` |
 | Lieber nicht | — | `wants_reminder = false` |
 
-UI labels MUST NOT use calendar phrasing („3 Tage“, „Diese Woche“) — non-direktive,
-duration-agnostic copy.
+UI labels MUST speak in first person from the app's perspective („Ich melde mich…”).
+MUST NOT use calendar phrasing („3 Tage”, „Diese Woche”) — duration-agnostic copy.
 
 Max **3** notification fires per intention regardless of chip duration.

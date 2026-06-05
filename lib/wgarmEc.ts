@@ -12,6 +12,7 @@ export interface WgarmEntry {
   location: string | null
   activity: string | null
   body_state: string | null
+  weather: string | null
   hour_of_day: number
   day_of_week: number
   text: string
@@ -114,11 +115,27 @@ const TIME_LABELS: Record<string, string> = {
   midday: 'tagsüber',
   evening: 'abends',
   late_evening: 'spät abends',
+  nacht: 'nachts',
+  morgen: 'morgens',
+  mittag: 'tagsüber',
+  abend: 'abends',
+}
+
+const WEATHER_LABELS: Record<string, string> = {
+  sunny:         'sonnigem Wetter',
+  partly_cloudy: 'leicht bewölktem Wetter',
+  cloudy:        'bewölktem Wetter',
+  rainy:         'Regen',
+  snowy:         'Schnee',
+  stormy:        'stürmischem Wetter',
+  foggy:         'Nebel',
 }
 
 const WEEKDAY_LABELS: Record<string, string> = {
   weekend: 'am Wochenende',
   midweek: 'unter der Woche',
+  wochenende: 'am Wochenende',
+  woche: 'unter der Woche',
 }
 
 function capitalize(s: string): string {
@@ -142,6 +159,10 @@ function formatItemLabel(item: string): string {
   }
   if (item.startsWith('tag:loc:')) return capitalize(item.slice('tag:loc:'.length))
   if (item.startsWith('tag:act:')) return capitalize(item.slice('tag:act:'.length))
+  if (item.startsWith('tag:weather:')) {
+    const raw = item.slice('tag:weather:'.length)
+    return WEATHER_LABELS[raw] ?? capitalize(raw)
+  }
   return ''
 }
 
@@ -266,6 +287,11 @@ function anchorEntryIds(cluster: SemanticCluster, n = 2): string[] {
   return scores.slice(0, n).map(([, id]) => id)
 }
 
+function splitMetaField(raw: string | null): string[] {
+  if (!raw) return []
+  return raw.split(/[,;]/).map(s => s.trim().toLowerCase()).filter(Boolean)
+}
+
 function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   const items: string[] = []
   if (clusterId) items.push(`cluster:${clusterId}`)
@@ -274,10 +300,11 @@ function entryToTransaction(entry: WgarmEntry, clusterId?: string): string[] {
   else if (entry.grid_x > 0.3) items.push('valence:positive')
   else items.push('valence:neutral')
 
-  if (entry.person) items.push(`tag:person:${entry.person.toLowerCase()}`)
+  for (const p of splitMetaField(entry.person)) items.push(`tag:person:${p}`)
   if (entry.body_state) items.push(`tag:mood:${entry.body_state.toLowerCase()}`)
-  if (entry.location) items.push(`tag:loc:${entry.location.toLowerCase()}`)
-  if (entry.activity) items.push(`tag:act:${entry.activity.toLowerCase()}`)
+  for (const l of splitMetaField(entry.location)) items.push(`tag:loc:${l}`)
+  for (const a of splitMetaField(entry.activity)) items.push(`tag:act:${a}`)
+  if (entry.weather) items.push(`tag:weather:${entry.weather.toLowerCase()}`)
 
   const h = entry.hour_of_day
   if (h < 6) items.push('time:night')
@@ -422,24 +449,16 @@ function signalStrength(rule: AssociationRule): 'weak' | 'moderate' | 'strong' {
   return 'weak'
 }
 
-function generateText(rule: AssociationRule, clusters: SemanticCluster[]): string | null {
-  const ant = rule.antecedent
-  const cons = rule.consequent[0] ?? ''
-  const confPct = Math.round(rule.confidence * 100)
-  const count = rule.occurrence_count
-  const weeksStr = formatSpanWeeks(rule.span_days)
-  const escalationNote = rule.is_escalating ? ' Die Häufigkeit nimmt zu.' : ''
-
-  let cluster: SemanticCluster | undefined
-  for (const item of ant) {
-    if (item.startsWith('cluster:')) {
-      cluster = clusters.find(c => c.id === item.split(':')[1])
-      break
-    }
-  }
-
-  const label = cluster?.label ?? ''
-  const clusterBias = cluster?.valenceBias ?? 'mixed'
+export function regenerateInsightText(meta: {
+  antecedent: string[]
+  consequent: string[]
+  confidence: number
+  is_escalating: boolean
+}): string | null {
+  const ant = meta.antecedent
+  const cons = meta.consequent[0] ?? ''
+  const confPct = Math.round(meta.confidence * 100)
+  const escalationNote = meta.is_escalating ? ' Die Häufigkeit nimmt zu.' : ''
 
   const persons = ant.filter(i => i.startsWith('tag:person:')).map(i => capitalize(i.slice('tag:person:'.length)))
   const moods = ant.filter(i => i.startsWith('tag:mood:')).map(i => {
@@ -447,15 +466,13 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
     return MOOD_LABELS[raw] ?? capitalize(raw)
   })
   const locations = ant.filter(i => i.startsWith('tag:loc:')).map(i => capitalize(i.slice('tag:loc:'.length)))
+  const weatherItems = ant.filter(i => i.startsWith('tag:weather:')).map(i => {
+    const raw = i.slice('tag:weather:'.length)
+    return WEATHER_LABELS[raw] ?? capitalize(raw)
+  })
   const timeItems = ant.filter(i => i.startsWith('time:')).map(i => i.slice(5)!)
   const weekdayItems = ant.filter(i => i.startsWith('weekday:')).map(i => i.slice(8)!)
 
-  if (label && clusterBias === 'negative' && cons === 'valence:negative') {
-    return `Das Thema „${label}" taucht seit ${weeksStr} regelmäßig auf — ${count}× beschrieben.${escalationNote}`
-  }
-  if (label && clusterBias === 'positive' && cons === 'valence:positive') {
-    return `„${label}" erscheint als wiederkehrende positive Kraft — ${count}× in ${weeksStr}.`
-  }
   if (persons.length && cons === 'valence:negative') {
     return `Wenn du mit ${persons.join(', ')} zusammen bist, fühlst du dich in ${confPct}% der Fälle unwohl.`
   }
@@ -474,20 +491,36 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
   if (locations.length && cons === 'valence:positive') {
     return `An Orten wie ${locations.join(', ')} notierst du in ${confPct}% der Fälle positivere Zustände.`
   }
+  if (weatherItems.length && cons === 'valence:negative') {
+    return `Bei ${weatherItems.join(' und ')} hast du in ${confPct}% der Fälle negativere Einträge.${escalationNote}`
+  }
+  if (weatherItems.length && cons === 'valence:positive') {
+    return `Bei ${weatherItems.join(' und ')} sind deine Einträge in ${confPct}% der Fälle positiver.${escalationNote}`
+  }
+  if (timeItems.length && weekdayItems.length) {
+    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]!
+    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]!
+    if (cons === 'valence:negative') {
+      return `Du notierst ${t} und ${w} häufiger negative Zustände (${confPct}% der Fälle).${escalationNote}`
+    }
+    if (cons === 'valence:positive') {
+      return `${capitalize(t)} und ${w} gehen bei dir in ${confPct}% der Fälle mit positiven Zuständen einher.${escalationNote}`
+    }
+  }
   if (timeItems.length && cons === 'valence:negative') {
-    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
+    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]!
     return `Deine Einträge ${t} zeigen systematisch negativere Zustände als zu anderen Tageszeiten.`
   }
   if (timeItems.length && cons === 'valence:positive') {
-    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]
+    const t = TIME_LABELS[timeItems[0]!] ?? timeItems[0]!
     return `Deine Einträge ${t} hängen in ${confPct}% der Fälle mit positiveren Zuständen zusammen.`
   }
   if (weekdayItems.length && cons === 'valence:negative') {
-    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
+    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]!
     return `Du notierst ${w} häufiger negative Zustände (${confPct}% der Fälle).`
   }
   if (weekdayItems.length && cons === 'valence:positive') {
-    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]
+    const w = WEEKDAY_LABELS[weekdayItems[0]!] ?? weekdayItems[0]!
     return `Du notierst ${w} häufiger positive Zustände (${confPct}% der Fälle).`
   }
 
@@ -499,6 +532,39 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
     : cons === 'valence:neutral' ? 'neutraleren'
     : 'positiveren'
   return `Mir ist aufgefallen: ${antLabels.join(', ')} hängt in ${confPct}% der Fälle mit ${valenceStr} Zuständen zusammen.`
+}
+
+function generateText(rule: AssociationRule, clusters: SemanticCluster[]): string | null {
+  const ant = rule.antecedent
+  const cons = rule.consequent[0] ?? ''
+  const count = rule.occurrence_count
+  const weeksStr = formatSpanWeeks(rule.span_days)
+  const escalationNote = rule.is_escalating ? ' Die Häufigkeit nimmt zu.' : ''
+
+  let cluster: SemanticCluster | undefined
+  for (const item of ant) {
+    if (item.startsWith('cluster:')) {
+      cluster = clusters.find(c => c.id === item.split(':')[1])
+      break
+    }
+  }
+
+  const label = cluster?.label ?? ''
+  const clusterBias = cluster?.valenceBias ?? 'mixed'
+
+  if (label && clusterBias === 'negative' && cons === 'valence:negative') {
+    return `Das Thema „${label}" taucht seit ${weeksStr} regelmäßig auf — ${count}× beschrieben.${escalationNote}`
+  }
+  if (label && clusterBias === 'positive' && cons === 'valence:positive') {
+    return `„${label}" erscheint als wiederkehrende positive Kraft — ${count}× in ${weeksStr}.`
+  }
+
+  return regenerateInsightText({
+    antecedent: rule.antecedent,
+    consequent: rule.consequent,
+    confidence: rule.confidence,
+    is_escalating: rule.is_escalating,
+  })
 }
 
 function isEligibleRule(rule: AssociationRule, clusters: SemanticCluster[]): boolean {
@@ -733,6 +799,7 @@ export function toWgarmEntry(e: {
   location: string | null
   activity: string | null
   body_state: string | null
+  weather?: string | null
   text: string
   embedding?: number[] | string | null
 }): WgarmEntry | null {
@@ -750,6 +817,7 @@ export function toWgarmEntry(e: {
     location: e.location,
     activity: e.activity,
     body_state: e.body_state,
+    weather: e.weather ?? null,
     hour_of_day: dt.getHours(),
     day_of_week: dt.getDay() === 0 ? 6 : dt.getDay() - 1,
     text: e.text,

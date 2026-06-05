@@ -63,6 +63,71 @@ export function ChipInput({ value, onChange, onClose, placeholder }: ChipInputPr
   )
 }
 
+interface MultiEntityChipEditorProps {
+  icon: LucideIcon
+  value: string
+  onChange: (v: string) => void
+  onAdd: (v: string) => void
+  onClose: () => void
+  placeholder: string
+  suggestions: string[]
+  existingValues: string[]
+}
+
+export function MultiEntityChipEditor({
+  icon: Icon,
+  value,
+  onChange,
+  onAdd,
+  onClose,
+  placeholder,
+  suggestions,
+  existingValues,
+}: MultiEntityChipEditorProps) {
+  const existingLower = useMemo(() => existingValues.map(v => v.toLowerCase()), [existingValues])
+  const filtered = useMemo(() => {
+    const q = value.trim().toLowerCase()
+    const list = q ? suggestions.filter(s => s.toLowerCase().includes(q)) : suggestions
+    return list.filter(s => !existingLower.includes(s.toLowerCase())).slice(0, 10)
+  }, [value, suggestions, existingLower])
+
+  const items: DropdownMenuItem[] = filtered.map(name => ({
+    type: 'item',
+    id: name,
+    label: name,
+    icon: Icon,
+    onClick: () => onAdd(name),
+  }))
+
+  return (
+    <div className="relative inline-flex">
+      <input
+        autoFocus
+        value={value}
+        onChange={e => onChange(e.target.value.slice(0, 40))}
+        onKeyDown={e => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            if (value.trim()) onAdd(value.trim())
+            else onClose()
+          }
+          if (e.key === 'Escape') {
+            e.preventDefault()
+            onClose()
+          }
+        }}
+        placeholder={placeholder}
+        className={chipField}
+      />
+      {items.length > 0 && (
+        <div onMouseDown={e => e.preventDefault()}>
+          <DropdownPanel role="listbox" items={items} minWidth={160} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface EntityChipEditorProps {
   icon: LucideIcon
   value: string

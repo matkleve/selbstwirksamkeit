@@ -55,9 +55,7 @@ function YAxisTick(props: {
     return (
       <g transform={`translate(${x},${y})`}>
         <foreignObject x={-24} y={-6} width={22} height={12}>
-          <div
-            xmlns="http://www.w3.org/1999/xhtml"
-            className="flex h-full items-center justify-end text-ink-3"
+          <div className="flex h-full items-center justify-end text-ink-3"
           >
             <Icon size={10} strokeWidth={1.5} aria-hidden />
           </div>
