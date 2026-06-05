@@ -100,11 +100,17 @@ function CustomTooltip(props: {
 
 function TrajectoryLineChart({ data, mode }: Props) {
   const gradId = `traj-y-${mode}`
-  const yStops = (
+  const yStops = mode === 'valence' ? (
     <>
       <stop offset="0%" stopColor="var(--grid-neg-ich)" />
       <stop offset="50%" stopColor="var(--valence-neutral)" />
       <stop offset="100%" stopColor="var(--grid-pos-andere)" />
+    </>
+  ) : (
+    <>
+      <stop offset="0%" stopColor="var(--grid-pos-ich)" />
+      <stop offset="50%" stopColor="var(--valence-neutral)" />
+      <stop offset="100%" stopColor="var(--grid-neg-andere)" />
     </>
   )
 
