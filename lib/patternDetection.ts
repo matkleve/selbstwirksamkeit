@@ -1,4 +1,4 @@
-import { splitMetaValues } from './entryMeta'
+import { atomicMetaValues, metaTagKey } from './entryMeta'
 import { metaLabelsFromAntecedent, regenerateInsightText } from './wgarmEc'
 import {
   intensity,
@@ -62,9 +62,10 @@ const QUADRANT_LABELS: Record<string, string> = {
 }
 
 function relevantMetaFromField(field: keyof Entry, raw: string): string[] {
-  if (field === 'body_state') return [BODY_STATE_LABELS[raw] ?? raw]
-  if (field === 'person') return splitMetaValues(raw)
-  return [raw.trim()]
+  return atomicMetaValues(
+    field as 'person' | 'location' | 'activity' | 'body_state',
+    raw,
+  )
 }
 
 function tagLabel(field: keyof Entry, val: string): string {
@@ -94,11 +95,18 @@ export function detectTagFrequency(entries: Entry[]): MirrorCandidate | null {
     for (const field of fields) {
       const val = e[field] as string | null
       if (!val) continue
-      const key = `${field}:${val}`
-      if (!buckets.has(key)) {
-        buckets.set(key, { field, raw: val, label: tagLabel(field, val), hits: [] })
+      const atomics = atomicMetaValues(
+        field as 'person' | 'location' | 'activity' | 'body_state',
+        val,
+      )
+      for (const atomic of atomics) {
+        const key =
+          field === 'body_state' ? `${field}:${atomic}` : `${field}:${metaTagKey(atomic)}`
+        if (!buckets.has(key)) {
+          buckets.set(key, { field, raw: atomic, label: tagLabel(field, atomic), hits: [] })
+        }
+        buckets.get(key)!.hits.push(e)
       }
-      buckets.get(key)!.hits.push(e)
     }
   }
 

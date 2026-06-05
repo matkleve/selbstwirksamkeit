@@ -139,6 +139,38 @@ test('gibt null zurück bei leerer Liste', () => {
   assert(detectTagFrequency([]) === null, 'erwartete null für leere Liste')
 })
 
+test('zählt atomare Personen in komma-getrennten Werten', () => {
+  const entries = [
+    makeEntry({ person: 'Tom, Anna', daysAgo: 30 }),
+    makeEntry({ person: 'Tom', daysAgo: 20 }),
+    makeEntry({ person: 'Anna, Tom', daysAgo: 10 }),
+  ]
+  const r = detectTagFrequency(entries)
+  assert(r !== null, 'Tom sollte 3× in History vorkommen')
+  assert(r!.introText.includes('Tom') || r!.summaryText?.includes('Tom'), `Tom fehlt: ${r!.introText}`)
+  assert(r!.count === 3, `count soll 3 sein (alle Einträge mit Tom), bekam: ${r!.count}`)
+})
+
+test('zählt atomare Orte in komma-getrennten Werten', () => {
+  const entries = Array.from({ length: 4 }, (_, i) =>
+    makeEntry({ location: 'Bibliothek, Café', daysAgo: 15 + i * 7 }),
+  )
+  const r = detectTagFrequency(entries)
+  assert(r !== null, 'Bibliothek sollte 4× zählen')
+  assert(r!.introText.includes('Bibliothek'), `Ort fehlt: ${r!.introText}`)
+  assert(r!.count === 4, `count: ${r!.count}`)
+})
+
+test('relevantMeta enthält den atomaren Gewinner-Tag', () => {
+  const entries = [
+    ...Array.from({ length: 4 }, (_, i) => makeEntry({ person: 'Tom, Anna', daysAgo: 15 + i * 7 })),
+    makeEntry({ person: 'Anna', daysAgo: 12 }),
+  ]
+  const r = detectTagFrequency(entries)
+  assert(r !== null, 'erwartete Kandidaten — Tom 4× vs Anna 5×')
+  assert(r!.relevantMeta?.includes('Anna'), `Anna sollte Gewinner sein: ${r!.relevantMeta}`)
+})
+
 console.log('\n── detectGridCluster ──')
 
 test('gibt null zurück wenn keine 5 Einträge im selben Quadranten', () => {

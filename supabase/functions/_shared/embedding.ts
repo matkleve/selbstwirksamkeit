@@ -2,6 +2,12 @@ export const EMBEDDING_DIM = 1024
 export const MISTRAL_EMBED_MODEL = 'mistral-embed'
 export const MISTRAL_EMBED_URL = 'https://api.mistral.ai/v1/embeddings'
 
+const BODY_STATE_LABELS: Record<string, string> = {
+  stressed: 'gestresst',
+  calm: 'ruhig',
+  tired: 'müde',
+}
+
 export interface EmbedRecord {
   id: string
   text: string
@@ -11,12 +17,30 @@ export interface EmbedRecord {
   body_state?: string | null
 }
 
-/** Spec format: "[{tags}] {freitext}" */
+function splitMetaValues(raw: string): string[] {
+  return raw
+    .split(/[,;]/)
+    .map(s => s.trim())
+    .filter(Boolean)
+}
+
+function embedBracketTags(record: EmbedRecord): string[] {
+  const tags: string[] = []
+  for (const p of splitMetaValues(record.person ?? '')) tags.push(p)
+  for (const l of splitMetaValues(record.location ?? '')) tags.push(l)
+  for (const a of splitMetaValues(record.activity ?? '')) tags.push(a)
+  if (record.body_state?.trim()) {
+    const raw = record.body_state.trim()
+    tags.push(BODY_STATE_LABELS[raw] ?? raw)
+  }
+  return tags
+}
+
+/** Spec format: "[{tag1}][{tag2}] {freitext}" — one bracket per atomic meta value. */
 export function buildEmbedInput(record: EmbedRecord): string {
-  const tags = [record.person, record.location, record.activity, record.body_state]
-    .filter((t): t is string => !!t && t.trim().length > 0)
-    .map(t => `[${t.trim()}]`)
-  const prefix = tags.join('')
+  const prefix = embedBracketTags(record)
+    .map(t => `[${t}]`)
+    .join('')
   const text = (record.text ?? '').trim()
   return prefix ? `${prefix} ${text}` : text
 }

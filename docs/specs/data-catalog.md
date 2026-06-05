@@ -112,7 +112,7 @@ Web-Push-Endpunkte der Nutzer.
 
 | Datei | Exportiert | Eingabe | Ausgabe |
 |---|---|---|---|
-| `lib/entryMeta.ts` | `splitMetaValues`, `getEntryMeta`, `isMetaRelevant` | `Entry` / raw string | Strukturierte Meta-Gruppen |
+| `lib/entryMeta.ts` | `splitMetaValues`, `joinMetaValues`, `atomicMetaValues`, `metaTagKey`, `getEntryMeta`, `isMetaRelevant` | `Entry` / raw string | Atomare Meta-Werte, UI-Chips, Detektoren, WGARM |
 | `lib/gridZones.ts` | `getZone`, `getQuadrant`, `cardBoxShadow`, `bilinearColor` | `grid_x, grid_y` | Zone-Key, Farbe, Shadow |
 | `lib/wgarmEc.ts` | `runWgarmEc`, `toWgarmEntry`, `regenerateInsightText`, `metaLabelsFromAntecedent` | `Entry[]` | WGARM-Kandidaten, Insight-Texte |
 | `lib/patternDetection.ts` | `detectTagFrequency`, `detectTemporalEcho`, `detectTimeCorrelation`, `detectWeekdayPattern`, `candidateFromStored` | `Entry[]` / stored row | `MirrorCandidate \| null` |

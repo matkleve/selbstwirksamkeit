@@ -6,6 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { ZeroSplitGradient } from '@/components/ZeroSplitGradient'
 import { bilinearColor } from '@/lib/gridZones'
 import { TRAJECTORY_CHART_H } from '@/lib/trajectoryChartLayout'
 
@@ -117,11 +118,9 @@ function TrajectoryLineChart({ data, mode }: Props) {
   return (
     <ResponsiveContainer width="100%" height={TRAJECTORY_CHART_H}>
       <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 4 }}>
-        <defs>
-          <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
-            {yStops}
-          </linearGradient>
-        </defs>
+        <ZeroSplitGradient id={gradId} yAt0={-5} yAt100={5}>
+          {yStops}
+        </ZeroSplitGradient>
         <XAxis
           dataKey="label"
           tick={{ fontSize: 9, fill: 'var(--text-muted)' }}

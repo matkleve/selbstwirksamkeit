@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isMirrorDevMode } from '@/lib/mirror-config'
 import {
-  detectPattern,
+  detectAllPhase1,
   candidateFromStored,
   type MirrorCandidate,
 } from '@/lib/patternDetection'
@@ -46,10 +46,14 @@ function candidateFingerprint(source: string, entryIds: string[]): string {
   return `${source}:${[...entryIds].sort().join(',')}`
 }
 
-async function fetchShownFingerprints(supabase: SupabaseClient): Promise<Set<string>> {
+async function fetchShownFingerprints(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<Set<string>> {
   const { data, error } = await supabase
     .from('mirror_candidates')
     .select('entry_ids, source')
+    .eq('user_id', userId)
     .eq('shown', true)
 
   if (error) throw new Error(error.message)
@@ -133,23 +137,24 @@ async function resolveDevMode(
   userId: string,
   entries: EntryWithEmbedding[],
 ): Promise<MirrorCandidate | null> {
-  const shown = await fetchShownFingerprints(supabase)
+  const shown = await fetchShownFingerprints(supabase, userId)
 
-  const phase1 = detectPattern(entries)
+  const phase1All = detectAllPhase1(entries)
   const { best: wgarmBest, bestValenceShift } = runWgarmForEntries(entries)
 
   const wgarmMirror = wgarmBest ? wgarmToMirrorCandidate(wgarmBest, entries) : null
   const valenceMirror = bestValenceShift ? valenceShiftToMirror(bestValenceShift, entries) : null
 
-  const pool = [phase1, wgarmMirror, valenceMirror].filter(
+  const pool = [...phase1All, wgarmMirror, valenceMirror].filter(
     (c): c is MirrorCandidate => c !== null && !isCandidateAlreadyShown(c, shown),
   )
   const best = pickBestMirrorCandidate(pool)
 
   if (!best) return null
 
-  if (sameMirrorCandidate(best, phase1) && phase1) {
-    await persistPhase1Candidate(supabase, userId, phase1, true)
+  const phase1Match = phase1All.find(c => sameMirrorCandidate(best, c))
+  if (phase1Match) {
+    await persistPhase1Candidate(supabase, userId, phase1Match, true)
   } else if (sameMirrorCandidate(best, wgarmMirror) && wgarmBest) {
     await persistWgarmCandidate(supabase, userId, wgarmBest, true)
   } else if (sameMirrorCandidate(best, valenceMirror) && bestValenceShift) {

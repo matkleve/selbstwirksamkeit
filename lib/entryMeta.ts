@@ -13,12 +13,35 @@ const BODY_LABELS: Record<BodyState, string> = {
   tired: 'müde',
 }
 
-/** Split comma- or semicolon-separated names. */
+export type MetaTextField = 'person' | 'location' | 'activity'
+
+/** Split comma- or semicolon-separated meta values (display case preserved). */
 export function splitMetaValues(raw: string): string[] {
   return raw
     .split(/[,;]/)
     .map(s => s.trim())
     .filter(Boolean)
+}
+
+/** Persist chip arrays as one DB column (comma-separated). */
+export function joinMetaValues(values: string[]): string | null {
+  const cleaned = values.map(s => s.trim()).filter(Boolean)
+  return cleaned.length > 0 ? cleaned.join(', ') : null
+}
+
+/** Atomic tag values for one meta field (body_state → single German label). */
+export function atomicMetaValues(
+  field: MetaTextField | 'body_state',
+  raw: string | null | undefined,
+): string[] {
+  if (!raw?.trim()) return []
+  if (field === 'body_state') return [BODY_LABELS[raw as BodyState] ?? raw]
+  return splitMetaValues(raw)
+}
+
+/** Case-insensitive identity for detector buckets and WGARM tag keys. */
+export function metaTagKey(value: string): string {
+  return value.toLowerCase().trim()
 }
 
 export function getEntryMeta(entry: Entry): EntryMetaGroup[] {

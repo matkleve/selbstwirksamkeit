@@ -17,6 +17,8 @@ export interface Entry {
   reframe: string | null
   person: string | null
   location: string | null
+  location_gps: string | null
+  location_resolved: string | null
   activity: string | null
   body_state: BodyState | null
   weather: Weather | null

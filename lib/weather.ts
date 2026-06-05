@@ -1,3 +1,4 @@
+import { getPosition } from '@/lib/geolocation'
 import type { Weather } from '@/lib/types'
 
 export const WEATHER_LABELS: Record<Weather, string> = {
@@ -31,15 +32,6 @@ function wmoToWeather(code: number): Weather {
   if (code === 85 || code === 86)       return 'snowy'
   if (code >= 95)                       return 'stormy'
   return 'cloudy'
-}
-
-function getPosition(): Promise<GeolocationPosition> {
-  return new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      timeout: 8000,
-      maximumAge: 600_000,
-    }),
-  )
 }
 
 export async function fetchCurrentWeather(): Promise<Weather | null> {

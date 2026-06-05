@@ -2,8 +2,9 @@
 
 import {
   LineChart, Line, XAxis, YAxis, ReferenceLine,
-  Tooltip, ResponsiveContainer
+  Tooltip, ResponsiveContainer,
 } from 'recharts'
+import { ZeroSplitGradient } from '@/components/ZeroSplitGradient'
 
 export interface ChartPoint {
   label: string
@@ -53,12 +54,12 @@ export default function ValenceChart({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={130}>
       <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 24 }}>
-        <defs>
-          <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="50%" stopColor="#3B7DD8" />
-            <stop offset="50%" stopColor="#C4603A" />
-          </linearGradient>
-        </defs>
+        <ZeroSplitGradient id="valGrad" yAt0={5} yAt100={-5}>
+          <stop offset="0%" stopColor="#3B7DD8" />
+          <stop offset="50%" stopColor="#3B7DD8" />
+          <stop offset="50%" stopColor="#C4603A" />
+          <stop offset="100%" stopColor="#C4603A" />
+        </ZeroSplitGradient>
         <XAxis
           dataKey="label"
           tick={{ fontSize: 9, fill: 'var(--text-muted)' }}

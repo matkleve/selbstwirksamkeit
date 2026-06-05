@@ -147,6 +147,21 @@ const SCENARIOS = [
     body_state: ['stressed', 'tired', 'calm'],
   },
   {
+    id: 'library_group',
+    weight: 0.9,
+    texts: [
+      'Lerngruppe in der Bibliothek mit Tom und Anna — heute ging wenig voran.',
+      'Mit Tom, Anna in der Bib gelernt — alle müde, aber wir blieben sitzen.',
+      'Gruppenarbeit Bibliothek: Tom, Anna und ich vor der Klausur.',
+    ],
+    grid_x: [-3, 0.5],
+    grid_y: [-1, 2],
+    person: 'Tom, Anna',
+    location: 'Bibliothek',
+    activity: 'Lernen',
+    body_state: ['tired', 'stressed'],
+  },
+  {
     id: 'office_meeting',
     weight: 2.0,
     texts: [

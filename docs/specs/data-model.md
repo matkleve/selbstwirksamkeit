@@ -12,7 +12,9 @@
 | `grid_y` | numeric(3,1) | −5..+5, referenz axis (neg=self, pos=other) |
 | `reframe` | text nullable | CBT reframe text |
 | `person` | text nullable | person context chip |
-| `location` | text nullable | location context chip |
+| `location` | text nullable | location context chip (short label, user-facing) |
+| `location_gps` | text nullable | GPS coordinates when auto-captured (`lat,lon`, 6 decimals) |
+| `location_resolved` | text nullable | full reverse-geocoded address from GPS |
 | `activity` | text nullable | activity context chip |
 | `body_state` | enum nullable | 'stressed' \| 'calm' \| 'tired' |
 | `created_at` | timestamptz | server default now() |

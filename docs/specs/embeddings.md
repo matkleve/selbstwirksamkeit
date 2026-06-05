@@ -44,10 +44,14 @@ On entry save, the text sent to the embedding API MUST be:
 Example:
 
 ```
-[müde][zuhause] schon wieder so spät geworden
+[Tom][Anna][Bibliothek][müde] Gruppenarbeit in der Bibliothek
 ```
 
 Tags MUST be assembled from structured fields: `person`, `location`, `activity`, `body_state` (non-null only).
+
+- **One bracket per atomic meta value** — multi-value columns (`person`, `location`, `activity`) MUST be split on comma/semicolon via `splitMetaValues()` before bracket assembly
+- Order: all `person` values, then all `location`, then all `activity`, then `body_state` (German label: `ruhig` / `müde` / `gestresst`)
+- `body_state` remains single-value (enum, not multi-tag)
 
 ---
 

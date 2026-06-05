@@ -14,7 +14,9 @@ Combines Phase-1 structural detectors, WGARM-EC association-rule engine, and Mir
 No free text analysis, no embeddings, no NLP.
 
 **Detector 1 — Tag frequency**
-- Same tag type (person / location / activity / body_state) appears ≥3× across full entry history
+- Same **atomic** tag value (person / location / activity / body_state) appears ≥3× across full entry history
+- `person`, `location`, `activity` MAY contain multiple values in one column (comma- or semicolon-separated); each atomic value MUST be counted separately via `lib/entryMeta.ts → atomicMetaValues()`
+- One entry with `person = "Tom, Anna"` contributes one hit each to `Tom` and `Anna` — copy means „Einträge, in denen Tom vorkommt“, not causal co-presence
 - Input: structured tags + `created_at` — **no time-window filter**
 - Signal: `mirror_candidates.source = 'tag_frequency'`
 - Output describes interval + span in **Mirror voice** (not Dashboard stats): „müde kommt alle ~5 Tage vor — 8× seit Januar"

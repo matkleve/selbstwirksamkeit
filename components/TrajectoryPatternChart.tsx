@@ -89,7 +89,14 @@ export default function TrajectoryPatternChart({ series, slots, mode }: Props) {
           aria-label="Zeitspur Muster"
         >
           <defs>
-            <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+            <linearGradient
+              id={gradId}
+              gradientUnits="userSpaceOnUse"
+              x1="0"
+              y1={yPos(-5)}
+              x2="0"
+              y2={yPos(5)}
+            >
               {mode === 'valence' ? (
                 <>
                   <stop offset="0%" stopColor="var(--grid-neg-ich)" />

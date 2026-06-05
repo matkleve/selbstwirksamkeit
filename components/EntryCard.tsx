@@ -11,13 +11,14 @@ import type { GridPoint, Entry, BodyState, Weather } from '@/lib/types'
 import { formatEntryDateTime } from '@/lib/utils'
 import { User, MapPin, Plus, Zap } from 'lucide-react'
 import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
-import { LocationChipEditor } from '@/components/LocationChipEditor'
+import { LocationChips, type LocationGpsMeta } from '@/components/LocationChips'
 import FeelingChip from '@/components/FeelingChip'
 import WeatherChip from '@/components/WeatherChip'
 import { useEntries } from '@/components/EntriesProvider'
 import { chipGhost } from '@/lib/chip-classes'
 
-const CHIP_SELECT = 'id,user_id,title,text,grid_x,grid_y,reframe,person,location,activity,body_state,weather,created_at'
+const CHIP_SELECT =
+  'id,user_id,title,text,grid_x,grid_y,reframe,person,location,location_gps,location_resolved,activity,body_state,weather,created_at'
 
 export default function EntryCard() {
   const { refresh: refreshEntries } = useEntries()
@@ -28,6 +29,8 @@ export default function EntryCard() {
   const [text, setText] = useState('')
   const [persons, setPersons] = useState<string[]>([])
   const [locations, setLocations] = useState<string[]>([])
+  const [locationGpsMeta, setLocationGpsMeta] = useState<LocationGpsMeta | null>(null)
+  const [locationGpsAutoDisabled, setLocationGpsAutoDisabled] = useState(false)
   const [activities, setActivities] = useState<string[]>([])
   const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(null)
@@ -103,6 +106,8 @@ export default function EntryCard() {
     setText('')
     setPersons([])
     setLocations([])
+    setLocationGpsMeta(null)
+    setLocationGpsAutoDisabled(false)
     setActivities([])
     setChipInput('')
     setBodyState(null)
@@ -145,6 +150,8 @@ export default function EntryCard() {
       grid_y: grid.y,
       person: persons.join(', ') || null,
       location: locations.join(', ') || null,
+      location_gps: locationGpsMeta?.gps ?? null,
+      location_resolved: locationGpsMeta?.resolved ?? null,
       activity: activities.join(', ') || null,
       body_state: bodyState,
       weather,
@@ -180,10 +187,9 @@ export default function EntryCard() {
     return () => clearTimeout(t)
   }, [saveSuccess])
 
-  const chips = [
-    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
-    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       values: locations,  setValues: setLocations },
-    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
+  const entityChips = [
+    { key: 'person'   as const, Icon: User, placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
+    { key: 'activity' as const, Icon: Zap,  placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
   ]
 
   return (
@@ -259,7 +265,7 @@ export default function EntryCard() {
           </div>
 
           <div className="entry-card-chips">
-        {chips.map(chip => (
+        {entityChips.map(chip => (
           <Fragment key={chip.key}>
             {chip.values.map((v, i) => (
               <FilledChip
@@ -278,35 +284,20 @@ export default function EntryCard() {
                   setOpenChip(null)
                 }}
               >
-                {chip.key === 'location' ? (
-                  <LocationChipEditor
-                    value={chipInput}
-                    onChange={setChipInput}
-                    onAdd={v => {
-                      const t = v.trim()
-                      if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
-                      setChipInput('')
-                    }}
-                    onClose={() => { setChipInput(''); setOpenChip(null) }}
-                    suggestions={suggestions.location}
-                    existingValues={chip.values}
-                  />
-                ) : (
-                  <MultiEntityChipEditor
-                    icon={chip.Icon}
-                    value={chipInput}
-                    onChange={setChipInput}
-                    onAdd={v => {
-                      const t = v.trim()
-                      if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
-                      setChipInput('')
-                    }}
-                    onClose={() => { setChipInput(''); setOpenChip(null) }}
-                    placeholder={chip.placeholder}
-                    suggestions={suggestions[chip.key]}
-                    existingValues={chip.values}
-                  />
-                )}
+                <MultiEntityChipEditor
+                  icon={chip.Icon}
+                  value={chipInput}
+                  onChange={setChipInput}
+                  onAdd={v => {
+                    const t = v.trim()
+                    if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                    setChipInput('')
+                  }}
+                  onClose={() => { setChipInput(''); setOpenChip(null) }}
+                  placeholder={chip.placeholder}
+                  suggestions={suggestions[chip.key]}
+                  existingValues={chip.values}
+                />
               </div>
             ) : chip.values.length > 0 ? (
               <button
@@ -327,6 +318,19 @@ export default function EntryCard() {
             )}
           </Fragment>
         ))}
+        <LocationChips
+          locations={locations}
+          onLocationsChange={setLocations}
+          gpsMeta={locationGpsMeta}
+          onGpsMetaChange={setLocationGpsMeta}
+          suggestions={suggestions.location}
+          chipInput={chipInput}
+          onChipInputChange={setChipInput}
+          open={openChip === 'location'}
+          onOpenChange={open => setOpenChip(open ? 'location' : null)}
+          gpsAutoDisabled={locationGpsAutoDisabled}
+          onGpsAutoDisabledChange={setLocationGpsAutoDisabled}
+        />
         <FeelingChip
           feelingLabel={feelingLabel}
           bodyState={bodyState}

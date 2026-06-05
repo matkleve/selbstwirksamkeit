@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { MapPin, Plus, User, Zap, X } from 'lucide-react'
 import EntryGrid from '@/components/EntryGrid'
 import { AddChip, FilledChip, MultiEntityChipEditor } from '@/components/EntityChip'
-import { LocationChipEditor } from '@/components/LocationChipEditor'
+import { LocationChips, type LocationGpsMeta } from '@/components/LocationChips'
 import FeelingChip from '@/components/FeelingChip'
 import WeatherChip from '@/components/WeatherChip'
 import { Button } from '@/components/ui/button'
@@ -44,6 +44,11 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
   })
   const [persons, setPersons] = useState<string[]>(splitMetaValues(entry.person ?? ''))
   const [locations, setLocations] = useState<string[]>(splitMetaValues(entry.location ?? ''))
+  const [locationGpsMeta, setLocationGpsMeta] = useState<LocationGpsMeta | null>(() =>
+    entry.location_gps && entry.location_resolved
+      ? { gps: entry.location_gps, resolved: entry.location_resolved }
+      : null,
+  )
   const [activities, setActivities] = useState<string[]>(splitMetaValues(entry.activity ?? ''))
   const [chipInput, setChipInput] = useState('')
   const [bodyState, setBodyState] = useState<BodyState | null>(entry.body_state)
@@ -113,6 +118,8 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
         grid_y: grid.y,
         person: persons.join(', ') || null,
         location: locations.join(', ') || null,
+        location_gps: locationGpsMeta?.gps ?? null,
+        location_resolved: locationGpsMeta?.resolved ?? null,
         activity: activities.join(', ') || null,
         body_state: bodyState,
         weather,
@@ -136,10 +143,9 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
     onClose()
   }
 
-  const chips = [
-    { key: 'person'   as const, Icon: User,   placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
-    { key: 'location' as const, Icon: MapPin, placeholder: 'z.B. Büro',    label: 'Ort',       values: locations,  setValues: setLocations },
-    { key: 'activity' as const, Icon: Zap,    placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
+  const entityChips = [
+    { key: 'person'   as const, Icon: User, placeholder: 'z.B. Mama',    label: 'Person',    values: persons,    setValues: setPersons },
+    { key: 'activity' as const, Icon: Zap,  placeholder: 'z.B. Pendeln', label: 'Tätigkeit', values: activities, setValues: setActivities },
   ]
 
   const titlePlaceholder = num != null ? `Eintrag #${num}` : 'Eintrag'
@@ -220,7 +226,7 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
               </div>
 
               <div className="entry-card-chips">
-                {chips.map(chip => (
+                {entityChips.map(chip => (
                   <Fragment key={chip.key}>
                     {chip.values.map((v, i) => (
                       <FilledChip
@@ -239,35 +245,20 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
                           setOpenChip(null)
                         }}
                       >
-                        {chip.key === 'location' ? (
-                          <LocationChipEditor
-                            value={chipInput}
-                            onChange={setChipInput}
-                            onAdd={v => {
-                              const t = v.trim()
-                              if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
-                              setChipInput('')
-                            }}
-                            onClose={() => { setChipInput(''); setOpenChip(null) }}
-                            suggestions={suggestions.location}
-                            existingValues={chip.values}
-                          />
-                        ) : (
-                          <MultiEntityChipEditor
-                            icon={chip.Icon}
-                            value={chipInput}
-                            onChange={setChipInput}
-                            onAdd={v => {
-                              const t = v.trim()
-                              if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
-                              setChipInput('')
-                            }}
-                            onClose={() => { setChipInput(''); setOpenChip(null) }}
-                            placeholder={chip.placeholder}
-                            suggestions={suggestions[chip.key]}
-                            existingValues={chip.values}
-                          />
-                        )}
+                        <MultiEntityChipEditor
+                          icon={chip.Icon}
+                          value={chipInput}
+                          onChange={setChipInput}
+                          onAdd={v => {
+                            const t = v.trim()
+                            if (t) chip.setValues(vs => vs.includes(t) ? vs : [...vs, t])
+                            setChipInput('')
+                          }}
+                          onClose={() => { setChipInput(''); setOpenChip(null) }}
+                          placeholder={chip.placeholder}
+                          suggestions={suggestions[chip.key]}
+                          existingValues={chip.values}
+                        />
                       </div>
                     ) : chip.values.length > 0 ? (
                       <button
@@ -288,6 +279,19 @@ export function EntryEditOverlay({ entry, onClose }: Props) {
                     )}
                   </Fragment>
                 ))}
+                <LocationChips
+                  locations={locations}
+                  onLocationsChange={setLocations}
+                  gpsMeta={locationGpsMeta}
+                  onGpsMetaChange={setLocationGpsMeta}
+                  suggestions={suggestions.location}
+                  chipInput={chipInput}
+                  onChipInputChange={setChipInput}
+                  open={openChip === 'location'}
+                  onOpenChange={open => setOpenChip(open ? 'location' : null)}
+                  gpsAutoDisabled
+                  onGpsAutoDisabledChange={() => {}}
+                />
                 <FeelingChip
                   feelingLabel={feelingLabel}
                   bodyState={bodyState}

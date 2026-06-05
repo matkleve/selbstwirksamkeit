@@ -74,11 +74,20 @@ function loadEnv() {
   return { url, key, mistral }
 }
 
+const BODY_STATE_LABELS = { stressed: 'gestresst', calm: 'ruhig', tired: 'müde' }
+
+function splitMetaValues(raw) {
+  if (!raw) return []
+  return String(raw).split(/[,;]/).map(s => s.trim()).filter(Boolean)
+}
+
 function buildEmbedInput(row) {
-  const tags = [row.person, row.location, row.activity, row.body_state]
-    .filter(Boolean)
-    .map(t => `[${t}]`)
-  const prefix = tags.join('')
+  const tags = []
+  for (const p of splitMetaValues(row.person)) tags.push(p)
+  for (const l of splitMetaValues(row.location)) tags.push(l)
+  for (const a of splitMetaValues(row.activity)) tags.push(a)
+  if (row.body_state) tags.push(BODY_STATE_LABELS[row.body_state] ?? row.body_state)
+  const prefix = tags.map(t => `[${t}]`).join('')
   const text = (row.text ?? '').trim()
   return prefix ? `${prefix} ${text}` : text
 }
