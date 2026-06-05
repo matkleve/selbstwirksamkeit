@@ -13,7 +13,7 @@ export function MirrorFlowChrome({
   return (
     <div className="relative mx-auto w-full max-w-lg">
       {onClose ? (
-        <div className="sticky top-0 z-50 mb-1 flex justify-end bg-canvas/90 py-1 backdrop-blur-[2px]">
+        <div className="sticky top-[52px] z-30 mb-1 flex justify-end bg-canvas/90 py-1 backdrop-blur-[2px]">
           <button
             type="button"
             onClick={onClose}
