@@ -13,16 +13,14 @@ export function MirrorFlowChrome({
   return (
     <div className="relative mx-auto w-full max-w-lg">
       {onClose ? (
-        <div className="sticky top-[52px] z-30 mb-1 flex justify-end bg-canvas/90 py-1 backdrop-blur-[2px]">
-          <button
-            type="button"
-            onClick={onClose}
-            className="nav-interactive nav-interactive--ink flex size-[34px] items-center justify-center rounded-lg border border-edge"
-            aria-label="Schließen"
-          >
-            <X size={18} strokeWidth={1.75} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="nav-interactive nav-interactive--ink absolute right-0 top-0 z-30 flex size-[34px] items-center justify-center rounded-full border border-edge bg-canvas"
+          aria-label="Schließen"
+        >
+          <X size={18} strokeWidth={1.75} />
+        </button>
       ) : null}
       {children}
     </div>

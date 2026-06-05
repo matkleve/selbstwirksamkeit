@@ -98,6 +98,7 @@ export interface WgarmResult {
 
 const VALENCE_ITEMS = new Set(['valence:negative', 'valence:positive', 'valence:neutral'])
 const MIN_SPAN_DAYS = 7
+const MIN_OCCURRENCE_COUNT = 3
 const VALENCE_SHIFT_MIN_ENTRIES = 4
 const VALENCE_SHIFT_MIN_SPAN_DAYS = 30
 const VALENCE_SHIFT_MODERATE = 0.35
@@ -323,7 +324,7 @@ function findFrequentItemsets(
   maxItemsetSize = 3,
 ): Map<string, number> {
   const n = transactions.length
-  const minCount = Math.max(2, Math.floor(minSupport * n))
+  const minCount = Math.max(3, Math.floor(minSupport * n))
   const tSets = transactions.map(t => new Set(t))
 
   const itemCounts = new Map<string, number>()
@@ -569,6 +570,7 @@ function generateText(rule: AssociationRule, clusters: SemanticCluster[]): strin
 
 function isEligibleRule(rule: AssociationRule, clusters: SemanticCluster[]): boolean {
   if (rule.span_days < MIN_SPAN_DAYS) return false
+  if (rule.occurrence_count < MIN_OCCURRENCE_COUNT) return false
 
   const hasCluster = rule.antecedent.some(a => a.startsWith('cluster:'))
   const nonClusterAnt = rule.antecedent.filter(a => !a.startsWith('cluster:'))
