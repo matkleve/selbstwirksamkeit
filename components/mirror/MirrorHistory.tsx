@@ -6,6 +6,7 @@ import { ChevronDown, Info, Star, MoreVertical, RefreshCw, Trash2 } from 'lucide
 import { createClient } from '@/lib/supabase'
 import { cn } from '@/lib/cn'
 import { DropdownPanel } from '@/components/DropdownPanel'
+import { PillButton } from '@/components/PillButton'
 import { EntryDisplay } from '@/components/entry/EntryDisplay'
 import type { MirrorSessionRow } from '@/lib/mirror-session'
 import type { Entry } from '@/lib/types'
@@ -72,6 +73,7 @@ function formatSessionDate(iso: string) {
 }
 
 const MENU_GAP = 6
+const ANCHOR_PAGE_SIZE = 3
 
 interface SessionMenuProps {
   onRedo: () => Promise<void>
@@ -161,6 +163,7 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
   const [busyId, setBusyId] = useState<string | null>(null)
   const [openInfoId, setOpenInfoId] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [visibleAnchorCount, setVisibleAnchorCount] = useState<Record<string, number>>({})
 
   const toggleExpanded = (id: string) =>
     setExpandedIds(prev => {
@@ -308,22 +311,42 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
                   </div>
                 )}
 
-                {/* Anchor entries — EntryDisplay without color rail */}
-                {anchors.length > 0 && (
-                  <div className="mb-3 flex flex-col gap-2">
-                    {anchors.map(entry => (
-                      <EntryDisplay
-                        key={entry.id}
-                        entry={entry}
-                        variant="text"
-                        size="sm"
-                        card={true}
-                        menu={true}
-                        lines="none"
-                      />
-                    ))}
-                  </div>
-                )}
+                {/* Anchor entries — max 3 initially, then „Lade mehr“ */}
+                {anchors.length > 0 && (() => {
+                  const limit = visibleAnchorCount[session.id] ?? ANCHOR_PAGE_SIZE
+                  const visibleAnchors = anchors.slice(0, limit)
+                  const hasMore = anchors.length > limit
+
+                  return (
+                    <div className="mb-3 flex flex-col gap-2">
+                      {visibleAnchors.map(entry => (
+                        <EntryDisplay
+                          key={entry.id}
+                          entry={entry}
+                          variant="text"
+                          size="sm"
+                          card={true}
+                          menu={true}
+                          lines="none"
+                        />
+                      ))}
+                      {hasMore && (
+                        <PillButton
+                          type="button"
+                          className="self-start"
+                          onClick={() =>
+                            setVisibleAnchorCount(prev => ({
+                              ...prev,
+                              [session.id]: limit + ANCHOR_PAGE_SIZE,
+                            }))
+                          }
+                        >
+                          Lade mehr
+                        </PillButton>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {session.user_response && (
                   <p className="mb-2 text-sm italic text-ink-3">{session.user_response}</p>

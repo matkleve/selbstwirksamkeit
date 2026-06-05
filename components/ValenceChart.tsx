@@ -1,10 +1,10 @@
 'use client'
 
 import {
-  LineChart, Line, XAxis, YAxis, ReferenceLine,
+  LineChart, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { ZeroSplitGradient } from '@/components/ZeroSplitGradient'
+import { ZeroSplitLines } from '@/components/ZeroSplitLines'
 
 export interface ChartPoint {
   label: string
@@ -54,12 +54,6 @@ export default function ValenceChart({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={130}>
       <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 24 }}>
-        <ZeroSplitGradient id="valGrad" yAt0={5} yAt100={-5}>
-          <stop offset="0%" stopColor="#3B7DD8" />
-          <stop offset="50%" stopColor="#3B7DD8" />
-          <stop offset="50%" stopColor="#C4603A" />
-          <stop offset="100%" stopColor="#C4603A" />
-        </ZeroSplitGradient>
         <XAxis
           dataKey="label"
           tick={{ fontSize: 9, fill: 'var(--text-muted)' }}
@@ -77,14 +71,12 @@ export default function ValenceChart({ data }: Props) {
         />
         <ReferenceLine y={0} stroke="var(--border-focus)" strokeDasharray="4 3" strokeWidth={1} />
         <Tooltip content={<CustomTooltip />} cursor={false} />
-        <Line
-          type="monotone"
+        <ZeroSplitLines
+          id="valGrad"
           dataKey="value"
-          stroke="url(#valGrad)"
-          strokeWidth={2}
+          colorAbove="#3B7DD8"
+          colorBelow="#C4603A"
           dot={<CustomDot />}
-          activeDot={false}
-          connectNulls={false}
         />
       </LineChart>
     </ResponsiveContainer>

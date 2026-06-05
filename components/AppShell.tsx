@@ -14,15 +14,17 @@ export function AppShell({ children }: Props) {
     <EntriesProvider>
       <PushRegistrar />
       <div className="min-h-screen bg-canvas">
-        <header className="sticky top-0 z-40 flex h-[52px] items-center justify-between bg-canvas px-5">
-          <span className="inline-flex items-center gap-2 font-display text-[1.0625rem] font-normal italic text-ink">
-            <Sprout size={18} strokeWidth={1.75} className="shrink-0 text-ink-2" aria-hidden />
-            Selbstwirksamkeit
-          </span>
-          <MenuDropdown />
+        <header className="sticky top-0 z-40 bg-canvas">
+          <div className="app-content flex h-[52px] items-center justify-between">
+            <span className="inline-flex items-center gap-2 font-display text-[1.0625rem] font-normal italic text-ink">
+              <Sprout size={18} strokeWidth={1.75} className="shrink-0 text-ink-2" aria-hidden />
+              Selbstwirksamkeit
+            </span>
+            <MenuDropdown />
+          </div>
         </header>
 
-        <div className="app-main">
+        <div className="app-main app-content">
           {children}
         </div>
 

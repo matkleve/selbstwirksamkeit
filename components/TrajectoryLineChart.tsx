@@ -3,10 +3,10 @@
 import { memo } from 'react'
 import { User, Users } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, ReferenceLine,
+  LineChart, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { ZeroSplitGradient } from '@/components/ZeroSplitGradient'
+import { ZeroSplitLines } from '@/components/ZeroSplitLines'
 import { bilinearColor } from '@/lib/gridZones'
 import { TRAJECTORY_CHART_H } from '@/lib/trajectoryChartLayout'
 
@@ -100,27 +100,13 @@ function CustomTooltip(props: {
 }
 
 function TrajectoryLineChart({ data, mode }: Props) {
-  const gradId = `traj-y-${mode}`
-  const yStops = mode === 'valence' ? (
-    <>
-      <stop offset="0%" stopColor="var(--grid-neg-ich)" />
-      <stop offset="50%" stopColor="var(--valence-neutral)" />
-      <stop offset="100%" stopColor="var(--grid-pos-andere)" />
-    </>
-  ) : (
-    <>
-      <stop offset="0%" stopColor="var(--grid-pos-ich)" />
-      <stop offset="50%" stopColor="var(--valence-neutral)" />
-      <stop offset="100%" stopColor="var(--grid-neg-andere)" />
-    </>
-  )
+  const splitId = `traj-y-${mode}`
+  const colorAbove = mode === 'valence' ? 'var(--grid-pos-andere)' : 'var(--grid-pos-ich)'
+  const colorBelow = mode === 'valence' ? 'var(--grid-neg-ich)' : 'var(--grid-neg-andere)'
 
   return (
     <ResponsiveContainer width="100%" height={TRAJECTORY_CHART_H}>
       <LineChart data={data} margin={{ top: 10, right: 6, bottom: 4, left: 4 }}>
-        <ZeroSplitGradient id={gradId} yAt0={-5} yAt100={5}>
-          {yStops}
-        </ZeroSplitGradient>
         <XAxis
           dataKey="label"
           tick={{ fontSize: 9, fill: 'var(--text-muted)' }}
@@ -138,15 +124,12 @@ function TrajectoryLineChart({ data, mode }: Props) {
         />
         <ReferenceLine y={0} stroke="var(--border-focus)" strokeDasharray="4 3" strokeWidth={1} />
         <Tooltip content={<CustomTooltip />} cursor={false} />
-        <Line
-          type="monotone"
+        <ZeroSplitLines
+          id={splitId}
           dataKey="value"
-          stroke={`url(#${gradId})`}
-          strokeWidth={2}
+          colorAbove={colorAbove}
+          colorBelow={colorBelow}
           dot={<CustomDot mode={mode} />}
-          activeDot={false}
-          connectNulls={false}
-          isAnimationActive={false}
         />
       </LineChart>
     </ResponsiveContainer>
