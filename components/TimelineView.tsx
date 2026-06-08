@@ -168,13 +168,13 @@ export default function TimelineView() {
       ) : (
         <>
           {density === 'full' ? (
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
               {filtered.map(entry => (
                 <TimelineCard key={entry.id} entry={entry} className="min-w-0" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {filtered.map(entry => (
                 <div key={entry.id} className="min-w-0">
                   {density === 'text' && (
