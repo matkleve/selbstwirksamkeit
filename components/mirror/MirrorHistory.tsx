@@ -202,14 +202,22 @@ export function MirrorHistory({ sessions, entriesById, sort, filter, onSessionsC
 
   if (!sessions.length) {
     return (
-      <p className="text-sm text-ink-3">
-        Noch keine Spiegel-Sitzungen — öffne deinen ersten Spiegel oben.
-      </p>
+      <div>
+        <p className="section-label">Verlauf</p>
+        <p className="text-sm text-ink-3">
+          Noch keine Spiegel-Sitzungen — öffne deinen ersten Spiegel oben.
+        </p>
+      </div>
     )
   }
 
   if (!visible.length) {
-    return <p className="text-sm text-ink-3">Keine Sitzungen für diesen Filter.</p>
+    return (
+      <div>
+        <p className="section-label">Verlauf</p>
+        <p className="text-sm text-ink-3">Keine Sitzungen für diesen Filter.</p>
+      </div>
+    )
   }
 
   return (

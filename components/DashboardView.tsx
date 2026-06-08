@@ -16,10 +16,10 @@ import { EntryDisplay } from '@/components/entry'
 import { PageHeader } from '@/components/PageHeader'
 
 const QUADRANT_META = [
-  { key: 'neg-other' as const, label: '− / andere', bar: 'bg-grid-neg-andere' },
-  { key: 'pos-other' as const, label: '+ / andere', bar: 'bg-grid-pos-andere' },
-  { key: 'neg-self' as const, label: '− / ich', bar: 'bg-grid-neg-ich' },
-  { key: 'pos-self' as const, label: '+ / ich', bar: 'bg-grid-pos-ich' },
+  { key: 'neg-other' as const, label: '− / andere', bar: 'bg-[image:linear-gradient(90deg,transparent,var(--grid-neg-andere))]' },
+  { key: 'pos-other' as const, label: '+ / andere', bar: 'bg-[image:linear-gradient(90deg,transparent,var(--grid-pos-andere))]' },
+  { key: 'neg-self' as const, label: '− / ich', bar: 'bg-[image:linear-gradient(90deg,transparent,var(--grid-neg-ich))]' },
+  { key: 'pos-self' as const, label: '+ / ich', bar: 'bg-[image:linear-gradient(90deg,transparent,var(--grid-pos-ich))]' },
 ]
 
 export default function DashboardView() {
@@ -146,7 +146,7 @@ export default function DashboardView() {
                 </div>
                 <div className="h-1.5 rounded-sm bg-subtle">
                   <div
-                    className={cn('h-full rounded-sm opacity-70', bar)}
+                    className={cn('h-full rounded-sm opacity-85', bar)}
                     style={{ width: `${(weekQC[key] / maxWeekQ) * 100}%` }}
                   />
                 </div>
@@ -177,18 +177,21 @@ export default function DashboardView() {
       <TrajectoryPatternCard entries={entries} className="min-w-0" />
 
       <Card className="min-w-0 p-5">
-        <p className="section-label">Kalender</p>
+        <p className="section-label mb-1">Kalender</p>
+        <p className="mb-3.5 text-xs text-ink-3">Wie sich deine Stimmung über die Wochen verteilt.</p>
         <CalendarHeatmap weeks={calWeeks} />
       </Card>
 
       <Card className="min-w-0 p-5">
-        <p className="section-label">Tageszeit</p>
+        <p className="section-label mb-1">Tageszeit</p>
+        <p className="mb-3.5 text-xs text-ink-3">Wann am Tag du am häufigsten schreibst.</p>
         <TimeOfDayBars periods={periodData} />
       </Card>
 
       {bodyPatterns.length > 0 && (
         <Card className="min-w-0 p-5">
-          <p className="section-label">Körper-Muster</p>
+          <p className="section-label mb-1">Körper-Muster</p>
+          <p className="mb-2.5 text-xs text-ink-3">Wiederkehrende körperliche Signale aus deinen Einträgen.</p>
           {bodyPatterns.map((p, i) => (
             <p
               key={i}

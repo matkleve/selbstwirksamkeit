@@ -223,9 +223,9 @@ function enrichChroma(rgb: [number, number, number], dist: number, x: number, y:
   let [h, s, l] = rgbToHsl(rgb[0], rgb[1], rgb[2])
   if (s < 0.08) h = poleHueAt(x, y)
   const nearCenter = dist < 0.22
-  const minSat = nearCenter ? 0.34 : 0.2 + (1 - dist) * 0.16
-  const mult = 1.28 + (1 - dist) * 0.42
-  s = Math.min(0.82, Math.max(minSat, s * mult))
+  const minSat = nearCenter ? 0.4 : 0.26 + (1 - dist) * 0.18
+  const mult = 1.42 + (1 - dist) * 0.48
+  s = Math.min(0.88, Math.max(minSat, s * mult))
   l = Math.min(0.9, Math.max(0.42, l))
   return hslToRgb(h, s, l)
 }
@@ -247,7 +247,7 @@ export function bilinearColor(x: number, y: number): [number, number, number] {
 }
 
 /** Compose + saved cards — one bilinear wash (matches `cardTintShadow`). */
-export const CARD_TINT_OPACITY = 0.22
+export const CARD_TINT_OPACITY = 0.3
 
 export function cardTintShadow(
   x: number,

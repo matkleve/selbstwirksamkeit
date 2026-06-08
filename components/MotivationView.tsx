@@ -220,8 +220,8 @@ export default function MotivationView() {
       {reframeCandidate && (
         <div style={card}>
           <p className="section-label">Neuer Blick · Reframe-Übung</p>
-          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 10 }}>
-            Vor {Math.floor((now.getTime() - new Date(reframeCandidate.created_at).getTime()) / 86400000)} Tagen hast du geschrieben:
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: 10 }}>
+            Vor {Math.floor((now.getTime() - new Date(reframeCandidate.created_at).getTime()) / 86400000)} Tagen hast du geschrieben — wie liest sich das heute?
           </p>
           <blockquote style={{
             borderLeft: '3px solid var(--valence-neg-mid)',
@@ -239,6 +239,7 @@ export default function MotivationView() {
 
       {!enough && (
         <div style={{ ...card, textAlign: 'center', padding: '36px 24px' }}>
+          <p className="section-label justify-center">Auf dem Weg zu deinen Mustern</p>
           <p style={{ fontFamily: 'var(--font-display)', fontStyle: 'italic', fontSize: '1.0625rem', color: 'var(--text-secondary)', marginBottom: 12 }}>
             &quot;Jeder Eintrag ist ein Datenpunkt auf dem Weg zu dir.&quot;
           </p>

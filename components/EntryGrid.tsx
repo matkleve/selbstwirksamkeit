@@ -113,109 +113,117 @@ export default function EntryGrid({ value, onChange }: EntryGridProps) {
   }
 
   return (
-    <div
-      ref={gridRef}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      className="relative aspect-square w-full overflow-hidden rounded-field cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-      aria-label="Stimmungsfeld"
-    >
-      <div className={`${axisLabelClass} inset-x-0 top-2 justify-center`}>
-        <Users size={12} strokeWidth={1.5} aria-hidden />
-        <span>andere</span>
+    <div className="space-y-2">
+      <div>
+        <p className="section-label mb-0.5">Stimmungsfeld</p>
+        <p className="text-xs leading-snug text-ink-3">
+          Wie fühlt sich dieser Moment an — für dich und im Verhältnis zu anderen?
+        </p>
       </div>
-      <div className={`${axisLabelClass} inset-x-0 bottom-2 justify-center`}>
-        <User size={12} strokeWidth={1.5} aria-hidden />
-        <span>ich</span>
-      </div>
-      <span
-        className={`${axisLabelClass} left-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
-        aria-hidden
-      >
-        −
-      </span>
-      <span
-        className={`${axisLabelClass} right-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
-        aria-hidden
-      >
-        +
-      </span>
-
       <div
-        className="absolute inset-0 pointer-events-none overflow-hidden [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
-        aria-hidden
+        ref={gridRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className="relative aspect-square w-full overflow-hidden rounded-field cursor-crosshair touch-none select-none bg-subtle p-2.5 shadow-[inset_0_2px_8px_rgba(0,0,0,0.08),inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+        aria-label="Stimmungsfeld"
       >
-        {trailPath && (
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            className="absolute inset-0 size-full"
-            style={{
-              opacity: trailFading ? 0 : 1,
-              transition: trailFading ? 'opacity 1500ms ease' : 'none',
-            }}
-          >
-            <defs>
-              {trailEnds && (
-                <linearGradient
-                  id={trailGradId}
-                  gradientUnits="userSpaceOnUse"
-                  x1={trailEnds.start.x}
-                  y1={trailEnds.start.y}
-                  x2={trailEnds.end.x}
-                  y2={trailEnds.end.y}
-                >
-                  <stop offset="0%" stopColor={dotColor} stopOpacity={0} />
-                  <stop offset="30%" stopColor={dotColor} stopOpacity={0.08} />
-                  <stop offset="70%" stopColor={dotColor} stopOpacity={0.22} />
-                  <stop offset="100%" stopColor={dotColor} stopOpacity={0.38} />
-                </linearGradient>
-              )}
-              <filter
-                id={trailFilterId}
-                x="-50%"
-                y="-50%"
-                width="200%"
-                height="200%"
-                colorInterpolationFilters="sRGB"
-              >
-                <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
-              </filter>
-            </defs>
-            <path
-              d={trailPath}
-              fill="none"
-              stroke={`url(#${trailGradId})`}
-              strokeWidth={3.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-              filter={`url(#${trailFilterId})`}
-            />
-            <path
-              d={trailPath}
-              fill="none"
-              stroke={`url(#${trailGradId})`}
-              strokeWidth={1}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              vectorEffect="non-scaling-stroke"
-            />
-          </svg>
-        )}
-
+        <div className={`${axisLabelClass} inset-x-0 top-2 justify-center`}>
+          <Users size={12} strokeWidth={1.5} aria-hidden />
+          <span>andere</span>
+        </div>
+        <div className={`${axisLabelClass} inset-x-0 bottom-2 justify-center`}>
+          <User size={12} strokeWidth={1.5} aria-hidden />
+          <span>ich</span>
+        </div>
+        <span
+          className={`${axisLabelClass} left-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
+          aria-hidden
+        >
+          −
+        </span>
+        <span
+          className={`${axisLabelClass} right-2 top-1/2 -translate-y-1/2 text-base text-ink-3`}
+          aria-hidden
+        >
+          +
+        </span>
+  
         <div
-          className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
-          style={{
-            left: `${dotPct.left}%`,
-            top: `${dotPct.top}%`,
-            background: dotColor,
-            boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
-            transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
-          }}
-        />
+          className="absolute inset-0 pointer-events-none overflow-hidden [background-image:radial-gradient(circle,var(--grid-dot)_1px,transparent_0)] [background-size:28px_28px] [background-position:14px_14px]"
+          aria-hidden
+        >
+          {trailPath && (
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="absolute inset-0 size-full"
+              style={{
+                opacity: trailFading ? 0 : 1,
+                transition: trailFading ? 'opacity 1500ms ease' : 'none',
+              }}
+            >
+              <defs>
+                {trailEnds && (
+                  <linearGradient
+                    id={trailGradId}
+                    gradientUnits="userSpaceOnUse"
+                    x1={trailEnds.start.x}
+                    y1={trailEnds.start.y}
+                    x2={trailEnds.end.x}
+                    y2={trailEnds.end.y}
+                  >
+                    <stop offset="0%" stopColor={dotColor} stopOpacity={0} />
+                    <stop offset="30%" stopColor={dotColor} stopOpacity={0.08} />
+                    <stop offset="70%" stopColor={dotColor} stopOpacity={0.22} />
+                    <stop offset="100%" stopColor={dotColor} stopOpacity={0.38} />
+                  </linearGradient>
+                )}
+                <filter
+                  id={trailFilterId}
+                  x="-50%"
+                  y="-50%"
+                  width="200%"
+                  height="200%"
+                  colorInterpolationFilters="sRGB"
+                >
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
+                </filter>
+              </defs>
+              <path
+                d={trailPath}
+                fill="none"
+                stroke={`url(#${trailGradId})`}
+                strokeWidth={3.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+                filter={`url(#${trailFilterId})`}
+              />
+              <path
+                d={trailPath}
+                fill="none"
+                stroke={`url(#${trailGradId})`}
+                strokeWidth={1}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+          )}
+  
+          <div
+            className="absolute size-2.5 rounded-full -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${dotPct.left}%`,
+              top: `${dotPct.top}%`,
+              background: dotColor,
+              boxShadow: `0 0 10px 4px rgba(${r},${g},${b},0.55), 0 0 20px 8px rgba(${r},${g},${b},0.25)`,
+              transition: isDragging.current ? 'none' : 'left 60ms ease, top 60ms ease',
+            }}
+          />
+        </div>
       </div>
     </div>
   )
