@@ -420,16 +420,34 @@ function annotateRule(
     isEscalating = secondAvg < firstAvg * 0.7
   }
 
+  // Anchors must confirm the consequent direction, not just match the antecedent
+  const consSet = new Set(rule.consequent)
+  const matchingConsequent = matching.filter(e => {
+    const cid = entryToCluster.get(e.id)
+    const t = new Set(entryToTransaction(e, cid))
+    return [...consSet].every(c => t.has(c))
+  })
+  const anchorPool = matchingConsequent.length ? matchingConsequent : matching
+  const anchorPoolIds = new Set(anchorPool.map(e => e.id))
+
   const clusterIdsInAnt = rule.antecedent.filter(i => i.startsWith('cluster:')).map(i => i.split(':')[1]!)
   let anchorIds: string[] = []
   for (const cid of clusterIdsInAnt) {
     const cluster = clusters.find(c => c.id === cid)
-    if (cluster) anchorIds = anchorEntryIds(cluster, 2)
+    if (cluster) {
+      const keepIdx = cluster.member_ids.map((id, i) => anchorPoolIds.has(id) ? i : -1).filter(i => i >= 0)
+      const filtered: SemanticCluster = {
+        ...cluster,
+        member_ids: keepIdx.map(i => cluster.member_ids[i]!),
+        member_embeddings: keepIdx.map(i => cluster.member_embeddings[i]!),
+      }
+      if (filtered.member_ids.length) anchorIds = anchorEntryIds(filtered, 2)
+    }
   }
-  if (!anchorIds.length && matching.length) {
-    anchorIds = matching.length > 1
-      ? [matching[0]!.id, matching[matching.length - 1]!.id]
-      : [matching[0]!.id]
+  if (!anchorIds.length && anchorPool.length) {
+    anchorIds = anchorPool.length > 1
+      ? [anchorPool[0]!.id, anchorPool[anchorPool.length - 1]!.id]
+      : [anchorPool[0]!.id]
   }
 
   return {
